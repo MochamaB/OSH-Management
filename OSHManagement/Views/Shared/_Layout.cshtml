@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-nav-layout="vertical" data-theme-mode="light" data-header-styles="transparent" data-width="fullwidth" data-menu-styles="transparent" data-page-style="flat" data-toggled="close" data-vertical-style="doublemenu" data-toggled="double-menu-open">
+<head>
+    <!-- Meta Data -->
+    <meta charset="UTF-8">
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>@ViewData["Title"] - KTDA OSH Management System</title>
+    <meta name="Description" content="KTDA Occupational Safety & Health Management System">
+    <meta name="Author" content="KTDA">
+    <meta name="keywords" content="OSH,safety,health,management,KTDA,tea,factories,compliance,risk assessment">
+@{
+    await Html.RenderPartialAsync("styles");
+}
+</head>
+<body>
+    <div class="progress-top-bar"></div>
+
+<!-- Theme Switcher -->
+@{
+    await Html.RenderPartialAsync("_ThemeSwitcher");
+}
+
+@{
+    await Html.RenderPartialAsync("_Loader");
+}
+
+<div class="page">
+    @{
+        await Html.RenderPartialAsync("_Navbar");
+    }
+
+    @{
+        await Html.RenderPartialAsync("_Sidebar");
+    }
+
+    <!-- Start::app-content -->
+    <div class="main-content">
+        <div class="page-content">
+            <div class="container-fluid">
+                @{
+                    await Html.RenderPartialAsync("_Breadcrumb");
+                }
+
+                @RenderBody()
+            </div>
+            <!-- container-fluid -->
+        </div>
+        <!-- End Page-content -->
+
+        @{
+            await Html.RenderPartialAsync("_Footer");
+        }
+    </div>
+    <!-- End::app-content -->
+</div>
+
+@{
+    await Html.RenderPartialAsync("_UIComponents");
+}
+
+@{
+    await Html.RenderPartialAsync("_Scripts");
+}
+</body>
+</html>

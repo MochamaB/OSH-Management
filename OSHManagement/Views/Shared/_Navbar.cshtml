@@ -1,0 +1,143 @@
+<!-- app-header -->
+<header class="app-header sticky" id="header">
+    <!-- Start::main-header-container -->
+    <div class="main-header-container container-fluid">
+        <!-- Start::header-content-left -->
+        <div class="header-content-left">
+            <!-- Start::header-element -->
+            <div class="header-element">
+                <div class="horizontal-logo">
+                    <a href="~/" class="header-logo">
+                        <img src="~/images/velzon/brand-logos/desktop-logo.png" alt="KTDA Logo" class="desktop-logo">
+                        <img src="~/images/velzon/brand-logos/toggle-logo.png" alt="KTDA Logo" class="toggle-logo">
+                        <img src="~/images/velzon/brand-logos/desktop-dark.png" alt="KTDA Logo" class="desktop-dark">
+                        <img src="~/images/velzon/brand-logos/toggle-dark.png" alt="KTDA Logo" class="toggle-dark">
+                    </a>
+                </div>
+            </div>
+            <!-- End::header-element -->
+
+            <!-- Start::header-element -->
+            <div class="header-element mx-lg-0 mx-2">
+                <a aria-label="Hide Sidebar" class="sidemenu-toggle header-link animated-arrow hor-toggle horizontal-navtoggle" data-bs-toggle="sidebar" href="javascript:void(0);"><span></span></a>
+            </div>
+            <!-- End::header-element -->
+
+            <div class="header-element header-search header-search-content d-md-block d-none">
+                <!-- Start::header-link -->
+                <input type="text" class="header-search-bar form-control bg-white" id="header-search" placeholder="Search OSH records..." spellcheck="false" autocomplete="off" autocapitalize="off">
+                <a href="javascript:void(0);" class="header-search-icon border-0">
+                    <i class="bi bi-search fs-12 mb-1"></i>
+                </a>
+                <!-- End::header-link -->
+            </div>
+        </div>
+        <!-- End::header-content-left -->
+
+        <!-- Start::header-content-right -->
+        <ul class="header-content-right">
+            <!-- Start::header-element -->
+            <li class="header-element d-md-none d-block">
+                <a href="javascript:void(0);" class="header-link" data-bs-toggle="modal" data-bs-target="#header-responsive-search">
+                    <!-- Start::header-link-icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="header-link-icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="112" cy="112" r="80" opacity="0.2"/><circle cx="112" cy="112" r="80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="168.57" y1="168.57" x2="224" y2="224" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+                    <!-- End::header-link-icon -->
+                </a>  
+            </li>
+            <!-- End::header-element -->
+
+            <!-- Start::header-element - Notifications -->
+            <li class="header-element dropdown">
+                <a href="javascript:void(0);" class="header-link dropdown-toggle" data-bs-auto-close="outside" data-bs-toggle="dropdown">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="header-link-icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M96,192a32,32,0,0,0,64,0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M56,104a72,72,0,0,1,144,0c0,35.82,8.3,56.6,14.9,68A8,8,0,0,1,208,184H48a8,8,0,0,1-6.88-12C47.71,160.6,56,139.81,56,104Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+                    <span class="badge bg-danger rounded-pill header-icon-badge pulse pulse-danger" id="notification-icon-badge">5</span>
+                </a>
+                <div class="main-header-dropdown dropdown-menu dropdown-menu-end" data-popper-placement="none">
+                    <div class="p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <p class="mb-0 fs-17 fw-medium">OSH Notifications</p>
+                            <span class="badge bg-danger-transparent" id="notifiation-data">5 Unread</span>
+                        </div>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <ul class="list-unstyled mb-0" id="header-notification-scroll">
+                        <li class="dropdown-item">
+                            <div class="d-flex align-items-start">
+                                <div class="pe-2">
+                                    <span class="avatar avatar-md bg-danger-transparent avatar-rounded"><i class="ti ti-alert-triangle fs-18"></i></span>
+                                </div>
+                                <div class="flex-fill">
+                                    <div class="d-flex align-items-center justify-content-between mb-0">
+                                        <h6 class="mb-0 fw-medium">High Risk Incident</h6>
+                                        <span class="text-muted fs-11">2 min ago</span>
+                                    </div>
+                                    <div class="text-muted fw-normal fs-12">New incident reported at Factory A-12</div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="dropdown-item">
+                            <div class="d-flex align-items-start">
+                                <div class="pe-2">
+                                    <span class="avatar avatar-md bg-warning-transparent avatar-rounded"><i class="ti ti-calendar fs-18"></i></span>
+                                </div>
+                                <div class="flex-fill">
+                                    <div class="d-flex align-items-center justify-content-between mb-0">
+                                        <h6 class="mb-0 fw-medium">Safety Training Due</h6>
+                                        <span class="text-muted fs-11">1 hour ago</span>
+                                    </div>
+                                    <div class="text-muted fw-normal fs-12">15 employees need safety refresher training</div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                    <div class="p-3 empty-header-item1 border-top">
+                        <div class="d-grid">
+                            <a href="~/Notifications" class="btn btn-primary">View All</a>
+                        </div>
+                    </div>
+                </div>
+            </li>
+            <!-- End::header-element -->
+
+            <!-- Start::header-element - User Profile -->
+            <li class="header-element dropdown">
+                <a href="javascript:void(0);" class="header-link dropdown-toggle" id="mainHeaderProfile" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                    <div class="d-flex align-items-center">
+                        <div class="me-sm-2 me-0">
+                            <img src="~/images/velzon/faces/user-avatar.jpg" alt="User" width="32" height="32" class="rounded-circle">
+                        </div>
+                        <div class="d-sm-block d-none">
+                            <p class="fw-medium mb-0 lh-1">OSH Admin</p>
+                            <span class="op-7 fw-normal d-block fs-11">Administrator</span>
+                        </div>
+                    </div>
+                </a>
+                <ul class="main-header-dropdown dropdown-menu pt-0 overflow-hidden header-profile-dropdown dropdown-menu-end" aria-labelledby="mainHeaderProfile">
+                    <li><a class="dropdown-item d-flex" href="~/Profile"><i class="ti ti-user-circle fs-18 me-2 op-7"></i>Profile</a></li>
+                    <li><a class="dropdown-item d-flex" href="~/Settings"><i class="ti ti-settings fs-18 me-2 op-7"></i>Settings</a></li>
+                    <li><a class="dropdown-item d-flex border-block-end" href="~/Help"><i class="ti ti-help fs-18 me-2 op-7"></i>Help Center</a></li>
+                    <li><a class="dropdown-item d-flex" href="~/Account/Logout"><i class="ti ti-logout fs-18 me-2 op-7"></i>Log Out</a></li>
+                </ul>
+            </li>
+            <!-- End::header-element -->
+
+            <!-- Start::header-element - Theme Switcher -->
+            <li class="header-element">
+                <a href="javascript:void(0);" class="header-link layout-setting">
+                    <span class="light-layout">
+                        <!-- moon icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="header-link-icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><path d="M216.7,152.6A91.9,91.9,0,0,1,103.4,39.3a92,92,0,1,0,113.3,113.3Z" opacity="0.2"/><path d="M216.7,152.6A91.9,91.9,0,0,1,103.4,39.3a92,92,0,1,0,113.3,113.3Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+                    </span>
+                    <span class="dark-layout">
+                        <!-- sun icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="header-link-icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"/><circle cx="128" cy="128" r="60" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="128" y1="36" x2="128" y2="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="62.9" y1="62.9" x2="48.8" y2="48.8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="36" y1="128" x2="16" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="62.9" y1="193.1" x2="48.8" y2="207.2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="128" y1="220" x2="128" y2="240" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="193.1" y1="193.1" x2="207.2" y2="207.2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="220" y1="128" x2="240" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="193.1" y1="62.9" x2="207.2" y2="48.8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>
+                    </span>
+                </a>
+            </li>
+            <!-- End::header-element -->
+        </ul>
+        <!-- End::header-content-right -->
+    </div>
+    <!-- End::main-header-container -->
+</header>
+<!-- /app-header -->

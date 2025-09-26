@@ -1,0 +1,53 @@
+<!-- Choices JS -->
+<script src="~/lib/velzon/choices.js/public/assets/scripts/choices.min.js"></script>
+
+<!-- Main Theme Js -->
+<script src="~/js/velzon/main.js"></script>
+
+<!-- Popper JS -->
+<script src="~/lib/velzon/@popperjs/core/umd/popper.min.js"></script>
+
+<!-- Bootstrap JS -->
+<script src="~/lib/velzon/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<!-- Defaultmenu JS -->
+<script src="~/js/velzon/defaultmenu.min.js"></script>
+
+<!-- Node Waves JS-->
+<script src="~/lib/velzon/node-waves/waves.min.js"></script>
+
+<!-- Sticky JS -->
+<script src="~/js/velzon/sticky.js"></script>
+
+<!-- Simplebar JS -->
+<script src="~/lib/velzon/simplebar/simplebar.min.js"></script>
+<script src="~/js/velzon/simplebar.js"></script>
+
+<!-- Auto Complete JS -->
+<script src="~/lib/velzon/@tarekraafat/autocomplete.js/autoComplete.min.js"></script>
+
+<!-- Color Picker JS -->
+<script src="~/lib/velzon/@simonwep/pickr/pickr.es5.min.js"></script>
+
+<!-- Date & Time Picker JS -->
+<script src="~/lib/velzon/flatpickr/flatpickr.min.js"></script>
+
+<!-- Apex Charts JS -->
+<script src="~/lib/velzon/apexcharts/apexcharts.min.js"></script>
+
+<!-- Custom JS -->
+<script src="~/js/velzon/custom.js"></script>
+
+<!-- Custom-Switcher JS -->
+<script src="~/js/velzon/custom-switcher.min.js"></script>
+
+<!-- KTDA OSH Custom JS -->
+<script src="~/js/velzon/osh-custom.js"></script>
+
+<!-- Page-specific scripts -->
+@await RenderSectionAsync("Scripts", required: false)
+
+<!-- Initialize current year in footer -->
+<script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+</script>
