@@ -419,7 +419,7 @@ $RECYCLE.BIN/
 ##
 
 # OSH Files folder - contains theme files and documentation
-OSHManagement/OSHfiles/
+# OSHManagement/OSHfiles/
 
 # Custom ignores for development
 *.user

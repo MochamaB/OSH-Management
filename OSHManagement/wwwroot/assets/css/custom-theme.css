@@ -1,0 +1,289 @@
+/* Velzon Theme Integration for KTDA OSH Management System */
+
+/* Import the main Velzon styles */
+@import url('./styles.css');
+@import url('./icons.css');
+
+/* KTDA Brand Colors Override */
+:root {
+  /* Primary KTDA Green */
+  --primary-rgb: 50, 71, 33;
+  --bs-primary: #324721;
+  --bs-primary-rgb: 50, 71, 33;
+  
+  /* Secondary Light Green */
+  --secondary-rgb: 255, 175, 0;
+--bs-secondary: #ffaf00;
+--bs-secondary-rgb: 255, 175, 0;
+  
+  /* Success Green (Safety Compliance) */
+  --success-rgb: 50, 205, 50;
+  --bs-success: #32CD32;
+  
+  /* Warning Orange (Safety Warning) */
+  --warning-rgb: 255, 140, 0;
+  --bs-warning: #FF8C00;
+  
+  /* Danger Red (Safety Critical) */
+  --danger-rgb: 220, 20, 60;
+  --bs-danger: #DC143C;
+  
+  /* Info Blue (Information) */
+  --info-rgb: 70, 130, 180;
+  --bs-info: #4682B4;
+}
+
+/* Global Border Radius Override */
+* {
+  border-radius: 0 !important;
+}
+
+.btn, .card, .form-control, .form-select, .input-group, .modal-content, 
+.dropdown-menu, .nav-pills .nav-link, .badge, .alert, .progress, 
+.toast, .popover, .tooltip-inner, .pagination .page-link {
+  border-radius: 0 !important;
+}
+
+/* KTDA Specific Customizations */
+.navbar-brand {
+  font-weight: 600;
+  color: var(--bs-primary) !important;
+}
+
+.sidebar-brand {
+  background: linear-gradient(135deg, var(--bs-primary), var(--bs-secondary));
+}
+
+/* Safety Status Indicators */
+.safety-status-compliant {
+  background-color: var(--bs-success);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.safety-status-warning {
+  background-color: var(--bs-warning);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.safety-status-critical {
+  background-color: var(--bs-danger);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* OSH Module Specific Styling */
+.osh-card {
+  border-left: 4px solid var(--bs-primary);
+  transition: all 0.3s ease;
+  border-radius: 0;
+}
+
+.osh-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.incident-priority-high {
+  border-left-color: var(--bs-danger) !important;
+}
+
+.incident-priority-medium {
+  border-left-color: var(--bs-warning) !important;
+}
+
+.incident-priority-low {
+  border-left-color: var(--bs-info) !important;
+}
+
+/* Team Management Styling */
+.team-member-card {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border: 1px solid #dee2e6;
+  border-radius: 0;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.team-role-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+}
+
+/* Compliance Dashboard */
+.compliance-meter {
+  position: relative;
+  height: 8px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.compliance-meter-fill {
+  height: 100%;
+  transition: width 0.6s ease;
+}
+
+.compliance-excellent { background-color: var(--bs-success); }
+.compliance-good { background-color: #28a745; }
+.compliance-warning { background-color: var(--bs-warning); }
+.compliance-critical { background-color: var(--bs-danger); }
+
+/* Form Enhancements for OSH */
+.form-label.required::after {
+  content: " *";
+  color: var(--bs-danger);
+}
+
+.osh-form-section {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 0;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.osh-form-section h5 {
+  color: var(--bs-primary);
+  border-bottom: 2px solid var(--bs-primary);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Risk Assessment Matrix */
+.risk-matrix {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  background-color: #dee2e6;
+  border-radius: 0;
+  padding: 2px;
+}
+
+.risk-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: white;
+  border-radius: 0;
+}
+
+.risk-low { background-color: var(--bs-success); }
+.risk-medium { background-color: var(--bs-warning); }
+.risk-high { background-color: var(--bs-danger); }
+
+/* Action Items */
+.action-item {
+  border-left: 4px solid #dee2e6;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  background: white;
+  border-radius: 0;
+}
+
+.action-pending { border-left-color: var(--bs-info); }
+.action-in-progress { border-left-color: var(--bs-warning); }
+.action-completed { border-left-color: var(--bs-success); }
+.action-overdue { border-left-color: var(--bs-danger); }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .osh-card {
+    margin-bottom: 1rem;
+  }
+  
+  .team-member-card {
+    padding: 0.75rem;
+  }
+  
+  .risk-matrix {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+/* Sidebar Customization - Main Menu Only */
+.main-sidebar-header {
+    background-color: #324721 !important;
+}
+.app-sidebar {
+    background-color: #324721 !important;
+}
+
+.main-sidebar {
+    background-color: #324721 !important;
+}
+
+/* Main Menu Styling Only */
+ul.main-menu {
+    background-color: #324721 !important;
+}
+
+    ul.main-menu .slide-menu.child1.double-menu-active {
+        height: 100vh !important;
+        border-right: 1px solid #dee2e6;
+    }
+    /* Main Menu Icons */
+    ul.main-menu .side-menu__icon {
+        color: white !important;
+        fill: white !important;
+    }
+
+    /* Main Menu Items */
+    ul.main-menu .side-menu__item {
+        color: black !important;
+        transition: all 0.3s ease;
+    }
+        ul.main-menu .side-menu__item:hover {
+            background-color: rgba(255, 175, 0, 0.1) !important;
+            color: #ffaf00 !important;
+        }
+
+            ul.main-menu .side-menu__item:hover .side-menu__icon {
+                color: #ffaf00 !important;
+                fill: #ffaf00 !important;
+            }
+/* Active Main Menu Items */
+ul.main-menu .side-menu__item.active,
+ul.main-menu .slide.active > .side-menu__item,
+ul.main-menu .slide.open > .side-menu__item {
+    background-color: rgba(255, 175, 0, 0.2) !important;
+    color: #ffaf00 !important;
+}
+    ul.main-menu .side-menu__item.active .side-menu__icon,
+    ul.main-menu .slide.active > .side-menu__item .side-menu__icon,
+    ul.main-menu .slide.open > .side-menu__item .side-menu__icon {
+        color: #ffaf00 !important;
+        fill: #ffaf00 !important;
+    }
+
+
+
+
+/* Print Styles for Reports */
+@media print {
+  .sidebar, .navbar, .btn, .no-print {
+    display: none !important;
+  }
+  
+  .main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .osh-card, .action-item {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+}

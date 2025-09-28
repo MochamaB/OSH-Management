@@ -12,6 +12,8 @@
 @{
     await Html.RenderPartialAsync("styles");
 }
+
+@RenderSection("Styles", required: false)
 </head>
 <body>
     <div class="progress-top-bar"></div>
@@ -35,18 +37,15 @@
     }
 
     <!-- Start::app-content -->
-    <div class="main-content">
-        <div class="page-content">
-            <div class="container-fluid">
-                @{
-                    await Html.RenderPartialAsync("_Breadcrumb");
-                }
+    <div class="main-content app-content">
+        <div class="container-fluid page-container main-body-container pt-0">
+            @{
+                await Html.RenderPartialAsync("_Breadcrumb");
+            }
 
-                @RenderBody()
-            </div>
-            <!-- container-fluid -->
+            @RenderBody()
         </div>
-        <!-- End Page-content -->
+        <!-- container-fluid -->
 
         @{
             await Html.RenderPartialAsync("_Footer");
@@ -62,5 +61,7 @@
 @{
     await Html.RenderPartialAsync("_Scripts");
 }
+
+@RenderSection("Scripts", required: false)
 </body>
 </html>

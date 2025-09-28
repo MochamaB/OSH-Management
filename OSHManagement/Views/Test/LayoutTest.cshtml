@@ -1,0 +1,369 @@
+@{
+    ViewData["Title"] = "Layout Test";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+            border-radius: 0.375rem;
+            background-color: #f8f9fa;
+        }
+        .test-section h4 {
+            color: #495057;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 0.5rem;
+        }
+        .component-demo {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            margin-top: 1rem;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">KTDA OSH Management System - Layout Test</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">This page tests all layout components and UI elements to ensure proper integration of the Velzon theme.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Theme Components Test -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="test-section">
+            <h4><i class="ri-palette-line"></i> Theme & Colors</h4>
+            <div class="component-demo">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="alert alert-primary" role="alert">
+                            <strong>Primary Alert</strong> - Theme primary color test
+                        </div>
+                        <div class="alert alert-success" role="alert">
+                            <strong>Success Alert</strong> - OSH compliance achieved
+                        </div>
+                        <div class="alert alert-warning" role="alert">
+                            <strong>Warning Alert</strong> - Safety review required
+                        </div>
+                        <div class="alert alert-danger" role="alert">
+                            <strong>Danger Alert</strong> - Critical safety issue
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-primary me-2 mb-2">Primary</button>
+                        <button type="button" class="btn btn-secondary me-2 mb-2">Secondary</button>
+                        <button type="button" class="btn btn-success me-2 mb-2">Success</button>
+                        <button type="button" class="btn btn-warning me-2 mb-2">Warning</button>
+                        <button type="button" class="btn btn-danger me-2 mb-2">Danger</button>
+                        <button type="button" class="btn btn-info me-2 mb-2">Info</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="test-section">
+            <h4><i class="ri-layout-grid-line"></i> Cards & Layout</h4>
+            <div class="component-demo">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card card-height-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm flex-shrink-0">
+                                        <span class="avatar-title bg-light text-primary rounded-circle fs-3">
+                                            <i class="ri-shield-check-line"></i>
+                                        </span>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <p class="text-uppercase fw-semibold fs-12 text-muted mb-1">Safety Score</p>
+                                        <h4 class="mb-0">95.2%</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card card-height-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm flex-shrink-0">
+                                        <span class="avatar-title bg-light text-success rounded-circle fs-3">
+                                            <i class="ri-user-heart-line"></i>
+                                        </span>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <p class="text-uppercase fw-semibold fs-12 text-muted mb-1">Health Index</p>
+                                        <h4 class="mb-0">8.7/10</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forms & Inputs Test -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="test-section">
+            <h4><i class="ri-file-edit-line"></i> Forms & Input Elements</h4>
+            <div class="component-demo">
+                <form>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="testInput" class="form-label">Text Input</label>
+                                <input type="text" class="form-control" id="testInput" placeholder="Enter text">
+                            </div>
+                            <div class="mb-3">
+                                <label for="testSelect" class="form-label">Select Dropdown</label>
+                                <select class="form-select" id="testSelect">
+                                    <option selected>Choose factory...</option>
+                                    <option value="1">Kericho Factory</option>
+                                    <option value="2">Nandi Factory</option>
+                                    <option value="3">Bomet Factory</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="testDate" class="form-label">Date Picker</label>
+                                <input type="date" class="form-control" id="testDate">
+                            </div>
+                            <div class="mb-3">
+                                <label for="testTextarea" class="form-label">Textarea</label>
+                                <textarea class="form-control" id="testTextarea" rows="3" placeholder="Enter safety notes..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="testCheck">
+                                <label class="form-check-label" for="testCheck">
+                                    I confirm all safety protocols have been followed
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="test-section">
+            <h4><i class="ri-notification-3-line"></i> Notifications</h4>
+            <div class="component-demo">
+                <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        <i class="ri-shield-check-line text-success me-2"></i>
+                        <strong class="me-auto">OSH Alert</strong>
+                        <small>2 mins ago</small>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">
+                        Safety inspection completed successfully for Factory A.
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="badge bg-primary me-2">Primary Badge</div>
+                    <div class="badge bg-success me-2">Compliant</div>
+                    <div class="badge bg-warning me-2">Review</div>
+                    <div class="badge bg-danger">Critical</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tables & Data Display -->
+<div class="row">
+    <div class="col-12">
+        <div class="test-section">
+            <h4><i class="ri-table-line"></i> Data Tables</h4>
+            <div class="component-demo">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Factory</th>
+                                <th scope="col">Safety Officer</th>
+                                <th scope="col">Last Inspection</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">1</th>
+                                <td>Kericho Tea Factory</td>
+                                <td>John Kipchoge</td>
+                                <td>2024-01-15</td>
+                                <td><span class="badge bg-success">Compliant</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">View</button>
+                                    <button class="btn btn-sm btn-outline-secondary">Edit</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">2</th>
+                                <td>Nandi Tea Factory</td>
+                                <td>Mary Chepkemoi</td>
+                                <td>2024-01-10</td>
+                                <td><span class="badge bg-warning">Review</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">View</button>
+                                    <button class="btn btn-sm btn-outline-secondary">Edit</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">3</th>
+                                <td>Bomet Tea Factory</td>
+                                <td>Peter Langat</td>
+                                <td>2024-01-05</td>
+                                <td><span class="badge bg-danger">Critical</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">View</button>
+                                    <button class="btn btn-sm btn-outline-secondary">Edit</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation & UI Elements Test -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="test-section">
+            <h4><i class="ri-navigation-line"></i> Navigation Elements</h4>
+            <div class="component-demo">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="#">Safety</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Inspections</li>
+                    </ol>
+                </nav>
+                
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">Overview</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab">Details</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab">Reports</button>
+                    </li>
+                </ul>
+                <div class="tab-content mt-3" id="myTabContent">
+                    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                        <p>Overview content for OSH management system.</p>
+                    </div>
+                    <div class="tab-pane fade" id="details" role="tabpanel">
+                        <p>Detailed safety information and compliance data.</p>
+                    </div>
+                    <div class="tab-pane fade" id="reports" role="tabpanel">
+                        <p>Safety reports and analytics dashboard.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="test-section">
+            <h4><i class="ri-tools-line"></i> Interactive Elements</h4>
+            <div class="component-demo">
+                <div class="mb-3">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#testModal">
+                        Launch Test Modal
+                    </button>
+                </div>
+                
+                <div class="progress mb-3">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">75%</div>
+                </div>
+                
+                <div class="accordion" id="testAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingOne">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                Safety Protocols
+                            </button>
+                        </h2>
+                        <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#testAccordion">
+                            <div class="accordion-body">
+                                Standard safety protocols for tea factory operations.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Modal -->
+<div class="modal fade" id="testModal" tabindex="-1" aria-labelledby="testModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testModalLabel">OSH Management Test Modal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>This modal tests the Bootstrap JavaScript functionality and theme integration.</p>
+                <div class="alert alert-info">
+                    <i class="ri-information-line me-2"></i>
+                    All JavaScript components are working correctly!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Test JavaScript functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('KTDA OSH Management System - Layout Test Loaded');
+            
+            // Test theme switcher if available
+            if (typeof window.themeSwitch !== 'undefined') {
+                console.log('Theme switcher is available');
+            }
+            
+            // Test any custom OSH functions
+            console.log('All layout components loaded successfully');
+        });
+    </script>
+}
