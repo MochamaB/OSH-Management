@@ -25,9 +25,9 @@
     </div>
 </div>
 
-<form asp-action="Logout" method="post" class="row gy-3 mt-4">
+<form asp-action="Logout" asp-controller="Account" method="post" class="row gy-3 mt-4">
     <div class="col-xl-6 d-grid">
-        <a asp-controller="Home" asp-action="Index" class="btn btn-lg btn-light">
+        <a asp-controller="Dashboard" asp-action="Index" class="btn btn-lg btn-light">
             <i class="ri-arrow-left-line me-2"></i>Cancel
         </a>
     </div>

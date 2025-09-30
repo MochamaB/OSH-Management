@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using OSHManagement.Data;
 using OSHManagement.Models;
 using OSHManagement.Models.ViewModels;
+using OSHManagement.Services;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -10,11 +14,16 @@ namespace OSHManagement.Controllers
 {
     public class AccountController : Controller
     {
+        private readonly Services.IAuthenticationService _authenticationService;
         private readonly OshDbContext _context;
         private readonly ILogger<AccountController> _logger;
 
-        public AccountController(OshDbContext context, ILogger<AccountController> logger)
+        public AccountController(
+            Services.IAuthenticationService authenticationService,
+            OshDbContext context,
+            ILogger<AccountController> logger)
         {
+            _authenticationService = authenticationService;
             _context = context;
             _logger = logger;
         }
@@ -22,6 +31,8 @@ namespace OSHManagement.Controllers
         [HttpGet]
         public async Task<IActionResult> Login()
         {
+            Console.WriteLine("===== LOGIN GET ACTION CALLED =====");
+            _logger.LogInformation("Login GET action called");
             return View();
         }
 
@@ -29,55 +40,78 @@ namespace OSHManagement.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
+            Console.WriteLine("===== LOGIN POST ACTION CALLED =====");
+            Console.WriteLine($"PayrollNo: {model?.PayrollNo ?? "NULL"}");
+            Console.WriteLine($"Password: {(string.IsNullOrEmpty(model?.Password) ? "EMPTY" : "PROVIDED")}");
+            Console.WriteLine($"ModelState.IsValid: {ModelState.IsValid}");
+
+            _logger.LogInformation($"Login POST action called for PayrollNo: {model?.PayrollNo}");
+
             if (!ModelState.IsValid)
             {
+                Console.WriteLine("===== MODEL STATE INVALID =====");
+                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    Console.WriteLine($"Error: {error.ErrorMessage}");
+                }
                 return View(model);
             }
 
             try
             {
-                var employee = await _context.Employees
-                    .Include(e => e.EmployeeRoles)
-                    .ThenInclude(er => er.Role)
-                    .FirstOrDefaultAsync(e => e.PayrollNo == model.PayrollNo);
+                Console.WriteLine("===== CALLING AUTHENTICATION SERVICE =====");
+                var authResult = await _authenticationService.AuthenticateAsync(
+                    model.PayrollNo,
+                    model.Password);
 
-                if (employee == null)
+                Console.WriteLine($"Authentication Result: {authResult.Success}");
+
+                if (!authResult.Success)
                 {
+                    Console.WriteLine("===== AUTHENTICATION FAILED =====");
                     ModelState.AddModelError(string.Empty, "Invalid payroll number or password.");
                     return View(model);
                 }
 
-                // Verify password (you'll need to implement proper password hashing)
-                bool passwordValid = VerifyPassword(model.Password, employee.PasswordHash, employee.LegacyPassword);
-
-                if (!passwordValid)
+                Console.WriteLine("===== AUTHENTICATION SUCCESS - CREATING CLAIMS =====");
+                // Create claims principal and sign in
+                var claimsIdentity = new ClaimsIdentity(authResult.Claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var authProperties = new AuthenticationProperties
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid payroll number or password.");
-                    return View(model);
-                }
+                    IsPersistent = model.RememberMe,
+                    ExpiresUtc = model.RememberMe
+                        ? DateTimeOffset.UtcNow.AddDays(30)
+                        : DateTimeOffset.UtcNow.AddHours(8)
+                };
 
-                // TODO: Implement proper authentication with ASP.NET Core Identity or Cookie Authentication
-                // For now, store user info in session
-                HttpContext.Session.SetString("PayrollNo", employee.PayrollNo);
-                HttpContext.Session.SetString("FullName", $"{employee.FirstName} {employee.LastName}");
-                HttpContext.Session.SetInt32("EmployeeId", employee.EmployeeId);
+                Console.WriteLine("===== SIGNING IN USER =====");
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    authProperties);
 
-                _logger.LogInformation($"User {employee.PayrollNo} logged in successfully");
+                Console.WriteLine("===== USER SIGNED IN - REDIRECTING TO DASHBOARD =====");
+                _logger.LogInformation($"User {model.PayrollNo} logged in successfully");
 
                 return RedirectToAction("Index", "Dashboard");
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"===== EXCEPTION OCCURRED =====");
+                Console.WriteLine($"Exception: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
                 _logger.LogError(ex, "Error during login");
                 ModelState.AddModelError(string.Empty, "An error occurred during login. Please try again.");
                 return View(model);
             }
         }
 
-        [HttpGet]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            HttpContext.Session.Clear();
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            _logger.LogInformation("User logged out successfully");
             return RedirectToAction("Login");
         }
 
@@ -159,108 +193,9 @@ namespace OSHManagement.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> ChangePassword()
-        {
-            // TODO: Check if user is authenticated
-            var payrollNo = HttpContext.Session.GetString("PayrollNo");
-            if (string.IsNullOrEmpty(payrollNo))
-            {
-                return RedirectToAction("Login");
-            }
-
-            return View();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            try
-            {
-                var payrollNo = HttpContext.Session.GetString("PayrollNo");
-                if (string.IsNullOrEmpty(payrollNo))
-                {
-                    return RedirectToAction("Login");
-                }
-
-                var employee = await _context.Employees
-                    .FirstOrDefaultAsync(e => e.PayrollNo == payrollNo);
-
-                if (employee == null)
-                {
-                    return RedirectToAction("Login");
-                }
-
-                // Verify current password
-                if (!VerifyPassword(model.CurrentPassword, employee.PasswordHash, employee.LegacyPassword))
-                {
-                    ModelState.AddModelError(string.Empty, "Current password is incorrect.");
-                    return View(model);
-                }
-
-                // Hash and update new password
-                employee.PasswordHash = HashPassword(model.NewPassword);
-                employee.LegacyPassword = null; // Clear legacy password after update
-                employee.UpdatedAt = DateTime.UtcNow;
-
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation($"Password changed for {employee.PayrollNo}");
-
-                ViewBag.Message = "Your password has been changed successfully.";
-                return View();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during change password");
-                ModelState.AddModelError(string.Empty, "An error occurred. Please try again.");
-                return View(model);
-            }
-        }
-
-        [HttpGet]
         public IActionResult AccessDenied()
         {
             return View();
         }
-
-        #region Helper Methods
-
-        private bool VerifyPassword(string password, string? passwordHash, string? legacyPassword)
-        {
-            // Check modern hash first
-            if (!string.IsNullOrEmpty(passwordHash))
-            {
-                var computedHash = HashPassword(password);
-                if (computedHash == passwordHash)
-                {
-                    return true;
-                }
-            }
-
-            // Fall back to legacy password (plain text comparison for migration)
-            if (!string.IsNullOrEmpty(legacyPassword))
-            {
-                return password == legacyPassword;
-            }
-
-            return false;
-        }
-
-        private string HashPassword(string password)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(hashedBytes);
-            }
-        }
-
-        #endregion
     }
 }

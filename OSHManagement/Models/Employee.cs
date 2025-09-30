@@ -66,6 +66,8 @@ namespace OSHManagement.Models
         public DateTime? UpdatedAt { get; set; }
 
         // Navigation properties
+        public Station? Station { get; set; }
+        public Department? Department { get; set; }
         public ICollection<EmployeeRole> EmployeeRoles { get; set; } = new List<EmployeeRole>();
     }
 }

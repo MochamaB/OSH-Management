@@ -5,10 +5,10 @@
 -- =============================================
 
 -- Insert default OrgCategory (required for stations)
-IF NOT EXISTS (SELECT 1 FROM OrgCategories WHERE CategoryName = 'Tea Factory')
+IF NOT EXISTS (SELECT 1 FROM OrgCategories WHERE CategoryName = 'Factory')
 BEGIN
     INSERT INTO OrgCategories (CategoryName, Description, IsActive, CreatedAt)
-    VALUES ('Tea Factory', 'KTDA Tea Processing Factories', 1, GETUTCDATE())
+    VALUES ('Factory', 'KTDA Tea Processing Factories', 1, GETUTCDATE())
 END
 
 -- Insert default permissions

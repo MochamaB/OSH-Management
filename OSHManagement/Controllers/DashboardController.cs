@@ -1,20 +1,15 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace OSHManagement.Controllers
 {
+    [Authorize]
     public class DashboardController : Controller
     {
         public IActionResult Index()
         {
-            // TODO: Check if user is authenticated
-          //  var payrollNo = HttpContext.Session.GetString("PayrollNo");
-          //  if (string.IsNullOrEmpty(payrollNo))
-         //   {
-         //       return RedirectToAction("Login", "Account");
-        //    }
-
-         //   ViewData["PayrollNo"] = payrollNo;
-         //   ViewData["FullName"] = HttpContext.Session.GetString("FullName");
+            ViewData["PayrollNo"] = User.FindFirst("PayrollNo")?.Value;
+            ViewData["FullName"] = User.FindFirst("FullName")?.Value;
 
             return View();
         }
