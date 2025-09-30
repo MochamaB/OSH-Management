@@ -31,6 +31,7 @@
     @{
         await Html.RenderPartialAsync("_Navbar");
     }
+       
 
     @{
         await Html.RenderPartialAsync("_Sidebar");
@@ -38,10 +39,14 @@
 
     <!-- Start::app-content -->
     <div class="main-content app-content">
-        <div class="container-fluid page-container main-body-container pt-0">
+           
             @{
-                await Html.RenderPartialAsync("_Breadcrumb");
+                await Html.RenderPartialAsync("_Alerts");
             }
+        <div class="container-fluid page-container main-body-container pt-2">
+                @{
+                    await Html.RenderPartialAsync("_Breadcrumb");
+                }
 
             @RenderBody()
         </div>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-nav-layout="vertical" data-vertical-style="overlay" data-theme-mode="light" data-header-styles="light" data-menu-styles="light" data-toggled="close">
+
+<head>
+    <!-- Meta Data -->
+    <meta charset="UTF-8">
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>@ViewData["Title"] - OSH Management System</title>
+    <meta name="Description" content="KTDA OSH Management System">
+    <meta name="Author" content="KTDA">
+
+    <!-- Favicon -->
+    <link rel="icon" href="~/assets/images/brand-logos/favicon.ico" type="image/x-icon">
+
+    <!-- Main Theme Js -->
+    <script src="~/assets/js/authentication-main.js"></script>
+
+    <!-- Bootstrap Css -->
+    <link id="style" href="~/assets/libs/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Style Css -->
+    <link href="~/assets/css/styles.css" rel="stylesheet">
+
+    <!-- Icons Css -->
+    <link href="~/assets/css/icons.css" rel="stylesheet">
+
+    <!-- Custom Theme Css -->
+    <link href="~/assets/css/custom-theme.css" rel="stylesheet">
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+
+<body class="bg-white">
+
+    <div class="row authentication authentication-cover-main mx-0">
+        <!-- Authentication Cover (Left Side) -->
+        <div class="col-xxl-8 col-xl-8 col-lg-12 d-xl-block d-none px-0">
+            <div class="authentication-cover overflow-hidden bg-white">
+                
+                <div class="authentication-cover-content">
+                    <div class="p-5">
+                        <h3 class="fw-semibold lh-base text-primary">OSH Management System</h3>
+                        <p class="mb-0 text-secondary fw-medium">
+                            Comprehensive Occupational Safety & Health management system for all KTDA Stations.
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <img src="~/assets/images/vectors/loginvector.png" alt="Login Icon" class="img-fluid" style="max-height: 400px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content (Right Side) -->
+        <div class="col-xxl-4 col-xl-4">
+            <div class="d-flex justify-content-center align-items-center h-100">
+                <div class="w-100" style="max-width: 400px;border-left: 2px solid #18181914;">
+                    <div class="card custom-card border-0 shadow-none my-4">
+                        <div class="card-body p-5">
+                            @RenderBody()
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="~/assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Show Password JS -->
+    <script src="~/assets/js/show-password.js"></script>
+
+    <!-- jQuery Validation -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

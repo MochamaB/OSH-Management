@@ -1,0 +1,60 @@
+@model OSHManagement.Models.ViewModels.LoginViewModel
+@{
+    Layout = "_AuthenticationLayout";
+    ViewData["Title"] = "Login";
+}
+
+<div class="text-center mb-4">
+    <img src="~/assets/images/brand-logos/logo.gif" alt="KTDA Logo" class="mb-3" style="height: 60px;">
+    <h4 class="mb-1 fw-semibold">Welcome to OSH Management</h4>
+    <p class="mb-4 text-muted fw-normal">Please enter your credentials to continue</p>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger" role="alert">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@error.ErrorMessage</div>
+        }
+    </div>
+}
+
+<form asp-action="Login" method="post">
+    <div class="row gy-3">
+        <div class="col-xl-12">
+            <label asp-for="PayrollNo" class="form-label text-default">Payroll Number</label>
+            <input asp-for="PayrollNo" type="text" class="form-control" placeholder="Enter your payroll number" autocomplete="username">
+            <span asp-validation-for="PayrollNo" class="text-danger"></span>
+        </div>
+        <div class="col-xl-12 mb-2">
+            <label asp-for="Password" class="form-label text-default d-block">Password</label>
+            <div class="position-relative">
+                <input asp-for="Password" type="password" class="form-control" placeholder="Enter your password" autocomplete="current-password">
+                <a href="javascript:void(0);" class="show-password-button text-muted" onclick="createpassword('Password',this)" id="button-addon2">
+                    <i class="ri-eye-off-line align-middle"></i>
+                </a>
+            </div>
+            <span asp-validation-for="Password" class="text-danger"></span>
+            <div class="mt-2">
+                <div class="form-check">
+                    <input asp-for="RememberMe" class="form-check-input" type="checkbox">
+                    <label asp-for="RememberMe" class="form-check-label">
+                        Remember me
+                    </label>
+                    <a asp-controller="Account" asp-action="ForgotPassword" class="float-end link-danger fw-medium fs-12">Forget password ?</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="d-grid mt-3">
+        <button type="submit" class="btn btn-primary">Sign In</button>
+    </div>
+</form>
+
+<div class="text-center mt-4">
+    <p class="text-muted fs-12">
+        <i class="ri-shield-check-line me-1"></i>
+        Secure login for KTDA employees only
+    </p>
+</div>

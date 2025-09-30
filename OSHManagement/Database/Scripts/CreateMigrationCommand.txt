@@ -1,0 +1,7 @@
+-- Command to create EF Core migration for role entities
+-- Run this in Package Manager Console or terminal:
+
+dotnet ef migrations add AddRolePermissionSystem --project OSHManagement --startup-project OSHManagement
+
+-- Then update the database:
+dotnet ef database update --project OSHManagement --startup-project OSHManagement

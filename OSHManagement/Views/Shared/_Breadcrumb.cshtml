@@ -1,22 +1,53 @@
-<!-- start page title -->
-<div class="row">
-    <div class="col-12">
-        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-            <h4 class="mb-sm-0">@ViewData["Title"]</h4>
-            <div class="page-title-right">
-                <ol class="breadcrumb m-0">
-                    @if (ViewData["Breadcrumb"] != null)
-                    {
-                        @Html.Raw(ViewData["Breadcrumb"])
-                    }
-                    else
-                    {
-                        <li class="breadcrumb-item"><a href="~/">Dashboard</a></li>
-                        <li class="breadcrumb-item active">@ViewData["Title"]</li>
-                    }
-                </ol>
-            </div>
-        </div>
+
+@{
+    var controller = ViewContext.RouteData.Values["Controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["Action"]?.ToString();
+    var currentPath = ViewContext.HttpContext.Request.Path.Value;
+    
+    // Split the path into segments and clean them up
+    var pathSegments = currentPath?.Split('/', StringSplitOptions.RemoveEmptyEntries) ?? new string[0];
+    
+    // Build breadcrumb items dynamically from URL
+    var breadcrumbItems = new List<(string Text, string Url, bool IsActive)>();
+    
+    // Start with empty breadcrumb items (no Home)
+    
+    // Build cumulative path for each segment
+    var cumulativePath = "";
+    for (int i = 0; i < pathSegments.Length; i++)
+    {
+        cumulativePath += "/" + pathSegments[i];
+        var isLast = i == pathSegments.Length - 1;
+        var displayText = pathSegments[i];
+        
+        // Capitalize first letter and handle common patterns
+        displayText = char.ToUpper(displayText[0]) + displayText.Substring(1);
+        
+        breadcrumbItems.Add((displayText, cumulativePath, isLast));
+    }
+    
+    // Use ViewData["Title"] for the page title if available, otherwise use the last segment
+    var pageTitle = ViewData["Title"]?.ToString() ?? (pathSegments.Length > 0 ? breadcrumbItems.Last().Text : "Dashboard");
+}
+
+<div class="page-header-breadcrumb mb-3">
+    <div class="d-flex align-items-center justify-content-between flex-wrap">
+        <h1 class="page-title fw-medium fs-18 mb-0 text-primary">@pageTitle</h1>
+        <ol class="breadcrumb mb-0">
+            @for (int i = 0; i < breadcrumbItems.Count; i++)
+            {
+                var item = breadcrumbItems[i];
+                if (item.IsActive)
+                {
+                    <li class="breadcrumb-item active text-secondary" aria-current="page">@item.Text</li>
+                }
+                else
+                {
+                    <li class="breadcrumb-item">
+                        <a href="@item.Url" class="text-primary text-decoration-none">@item.Text</a>
+                    </li>
+                }
+            }
+        </ol>
     </div>
 </div>
-<!-- end page title -->

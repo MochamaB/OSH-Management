@@ -1,0 +1,46 @@
+@{
+    ViewData["Title"] = "Access Denied";
+    Layout = "_AuthenticationLayout";
+}
+
+<div class="text-center mb-4">
+    <div class="mb-4">
+        <i class="ri-shield-cross-line text-danger" style="font-size: 4rem;"></i>
+    </div>
+    <h4 class="mb-1 fw-semibold text-danger">Access Denied</h4>
+    <p class="mb-4 text-muted fw-normal">You don't have permission to access this resource</p>
+</div>
+
+<div class="text-center">
+    <div class="alert alert-danger-transparent" role="alert">
+        <div class="d-flex align-items-start">
+            <div class="me-2">
+                <i class="ri-error-warning-line fs-18"></i>
+            </div>
+            <div class="flex-fill">
+                <h6 class="fw-semibold mb-1">Insufficient Privileges</h6>
+                <p class="mb-0">Your current role does not have the necessary permissions to view this page. Please contact your system administrator if you believe this is an error.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row gy-3 mt-4">
+    <div class="col-xl-6 d-grid">
+        <a href="javascript:history.back()" class="btn btn-lg btn-light">
+            <i class="ri-arrow-left-line me-2"></i>Go Back
+        </a>
+    </div>
+    <div class="col-xl-6 d-grid">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-lg btn-primary">
+            <i class="ri-home-line me-2"></i>Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="text-center mt-4">
+    <p class="fs-12 text-muted mb-0">
+        Need help? Contact your system administrator or 
+        <a class="text-primary" asp-action="Logout">logout</a> and try a different account.
+    </p>
+</div>

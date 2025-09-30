@@ -1,0 +1,45 @@
+@{
+    ViewData["Title"] = "Logout";
+    Layout = "_AuthenticationLayout";
+}
+
+<div class="text-center mb-4">
+    <div class="mb-4">
+        <i class="ri-logout-circle-line text-warning" style="font-size: 4rem;"></i>
+    </div>
+    <h4 class="mb-1 fw-semibold">Logout Confirmation</h4>
+    <p class="mb-4 text-muted fw-normal">Are you sure you want to sign out of your account?</p>
+</div>
+
+<div class="text-center">
+    <div class="alert alert-warning-transparent" role="alert">
+        <div class="d-flex align-items-start">
+            <div class="me-2">
+                <i class="ri-information-line fs-18"></i>
+            </div>
+            <div class="flex-fill">
+                <h6 class="fw-semibold mb-1">Session Information</h6>
+                <p class="mb-0">You will be signed out of the OSH Management System. Any unsaved changes will be lost.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form asp-action="Logout" method="post" class="row gy-3 mt-4">
+    <div class="col-xl-6 d-grid">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-lg btn-light">
+            <i class="ri-arrow-left-line me-2"></i>Cancel
+        </a>
+    </div>
+    <div class="col-xl-6 d-grid">
+        <button type="submit" class="btn btn-lg btn-danger">
+            <i class="ri-logout-circle-line me-2"></i>Sign Out
+        </button>
+    </div>
+</form>
+
+<div class="text-center mt-4">
+    <p class="fs-12 text-muted mb-0">
+        Your session will be securely terminated and you'll be redirected to the login page.
+    </p>
+</div>

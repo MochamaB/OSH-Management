@@ -1,0 +1,95 @@
+@* Alert Messages Section *@
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="ri-check-line me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="ri-error-warning-line me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["Warning"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="ri-alert-line me-2"></i>@TempData["Warning"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["Info"] != null)
+{
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="ri-information-line me-2"></i>@TempData["Info"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@* ViewBag Alert Messages *@
+@if (ViewBag.SuccessMessage != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="ri-check-line me-2"></i>@ViewBag.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="ri-error-warning-line me-2"></i>@ViewBag.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (ViewBag.WarningMessage != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="ri-alert-line me-2"></i>@ViewBag.WarningMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (ViewBag.InfoMessage != null)
+{
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="ri-information-line me-2"></i>@ViewBag.InfoMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@* Model State Errors *@
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="ri-error-warning-line me-2"></i>
+        <strong>Please correct the following errors:</strong>
+        <ul class="mb-0 mt-2">
+            @foreach (var modelError in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@modelError.ErrorMessage</li>
+            }
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide alerts after 5 seconds
+    setTimeout(() => {
+        document.querySelectorAll('.alert:not(.alert-permanent)').forEach(alert => {
+            if (bootstrap && bootstrap.Alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        });
+    }, 5000);
+});
+</script>
