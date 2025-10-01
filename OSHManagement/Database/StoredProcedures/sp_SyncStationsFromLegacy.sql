@@ -25,52 +25,52 @@ BEGIN
             EmployeeCount INT
         )
         
-        -- Build dynamic SQL to fetch from legacy database
+        -- Build dynamic SQL to fetch from legacy database using MSOLEDBSQL
         SET @SQL = '
         INSERT INTO #LegacyStations (Station_Name, StationCode, EmployeeCount)
-        SELECT DISTINCT 
-            COALESCE(s.Station_Name, e.Station) as Station_Name,
-            e.Station as StationCode,
-            COUNT(*) as EmployeeCount
-        FROM OPENROWSET(''SQLNCLI'', ''' + @LegacyConnectionString + ''', 
+        SELECT
+            s.Station_Name,
+            CAST(s.StationID AS NVARCHAR(20)) as StationCode,
+            COUNT(DISTINCT e.Station) as EmployeeCount
+        FROM OPENROWSET(''MSOLEDBSQL'', ''' + @LegacyConnectionString + ''',
+            ''SELECT StationID, Station_Name FROM Station'') s
+        LEFT JOIN OPENROWSET(''MSOLEDBSQL'', ''' + @LegacyConnectionString + ''',
             ''SELECT Station FROM Employee_bkp WHERE EmpisCurrActive = 1 AND Station IS NOT NULL'') e
-        LEFT JOIN OPENROWSET(''SQLNCLI'', ''' + @LegacyConnectionString + ''', 
-            ''SELECT StationID, Station_Name FROM Station'') s 
-            ON e.Station = s.Station_Name OR e.Station = CAST(s.StationID AS VARCHAR(10))
-        WHERE e.Station IS NOT NULL AND e.Station != ''''
-        GROUP BY COALESCE(s.Station_Name, e.Station), e.Station'
-        
+            ON e.Station = s.Station_Name
+            OR e.Station = CAST(s.StationID AS VARCHAR(10))
+            OR e.Station = UPPER(s.Station_Name)
+        WHERE s.StationID IS NOT NULL
+        GROUP BY s.StationID, s.Station_Name'
+
         EXEC sp_executesql @SQL
         
         -- Insert/Update stations in OSH database
         MERGE Stations AS target
         USING (
-            SELECT 
+            SELECT
                 StationCode,
-                CASE 
-                    WHEN Station_Name IS NOT NULL AND Station_Name != StationCode 
-                    THEN Station_Name 
-                    ELSE 
-                        CASE StationCode
-                            WHEN 'HQ' THEN 'Head Office'
-                            WHEN '005' THEN 'Station 005'
-                            WHEN '011' THEN 'Station 011'
-                            WHEN '367' THEN 'Kapsara Factory'
-                            WHEN '711' THEN 'Station 711'
-                            ELSE 'Station ' + StationCode
-                        END
-                END as StationName,
-                1 as OrgCategoryId, -- Default to first category
+                Station_Name as StationName,
+                CASE
+                    WHEN UPPER(RTRIM(LTRIM(Station_Name))) LIKE 'HEAD OFFICE%' THEN 2 -- Head Office category
+                    WHEN UPPER(RTRIM(LTRIM(Station_Name))) LIKE 'ZONAL OFFICE%' THEN 3 -- Regional Office category (if exists)
+                    WHEN UPPER(RTRIM(LTRIM(Station_Name))) LIKE 'REGION%' THEN 3 -- Regional Office category (if exists)
+                    WHEN UPPER(RTRIM(LTRIM(Station_Name))) IN ('KTDA_POWER','GREENLAND_FEDHA','KETEPA','TEA MACHINERY & ENGINEERING SERVICES','CHAI LOGISTICS CENTER') THEN 4 -- Subsidiary category
+                    WHEN UPPER(RTRIM(LTRIM(Station_Name))) IN ('KTDA_HOLDINGS','KTDA MS','EXTERNAL','KIGALI RWANDA OFFICE','SHANGASHA','MULINDI','KIGALI') THEN 5 -- Other category
+                    ELSE 1 -- Factory category
+                END as OrgCategoryId,
                 StationCode as LegacyStationMapping
             FROM #LegacyStations
         ) AS source ON target.LegacyStationMapping = source.StationCode
-        
+            OR (target.StationCode = 'HQ' AND source.StationCode = '55') -- Map seeded HQ to Station 55
+
         WHEN MATCHED THEN
-            UPDATE SET 
+            UPDATE SET
                 StationName = source.StationName,
+                OrgCategoryId = source.OrgCategoryId,
+                LegacyStationMapping = source.LegacyStationMapping,
                 UpdatedAt = GETUTCDATE()
-                
-        WHEN NOT MATCHED THEN
+
+        WHEN NOT MATCHED BY TARGET THEN
             INSERT (StationCode, StationName, OrgCategoryId, LegacyStationMapping, IsActive, CreatedAt)
             VALUES (source.StationCode, source.StationName, source.OrgCategoryId, source.LegacyStationMapping, 1, GETUTCDATE());
         

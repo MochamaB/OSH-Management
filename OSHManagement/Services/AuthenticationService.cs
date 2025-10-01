@@ -61,7 +61,7 @@ namespace OSHManagement.Services
                 _logger.LogInformation($"SHA256 verification for {username}: {isPasswordValid}");
             }
             // Step 2: Try LegacyPassword verification (pwdcompare)
-            else if (!string.IsNullOrEmpty(employee.LegacyPassword))
+            else if (employee.LegacyPassword != null && employee.LegacyPassword.Length > 0)
             {
                 isPasswordValid = await _legacyPasswordService.VerifyLegacyPasswordAsync(
                     employee.PayrollNo,

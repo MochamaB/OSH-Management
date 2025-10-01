@@ -11,12 +11,12 @@ namespace OSHManagement.Services
 
     public class LegacyPasswordService : ILegacyPasswordService
     {
-        private readonly OshDbContext _context;
+        private readonly IConfiguration _configuration;
         private readonly ILogger<LegacyPasswordService> _logger;
 
-        public LegacyPasswordService(OshDbContext context, ILogger<LegacyPasswordService> logger)
+        public LegacyPasswordService(IConfiguration configuration, ILogger<LegacyPasswordService> logger)
         {
-            _context = context;
+            _configuration = configuration;
             _logger = logger;
         }
 
@@ -24,22 +24,32 @@ namespace OSHManagement.Services
         {
             try
             {
-                var sql = @"
-                    SELECT CAST(PWDCOMPARE(@password, LegacyPassword) AS BIT) AS IsValid
-                    FROM Employees
-                    WHERE PayrollNo = @payrollNo AND LegacyPassword IS NOT NULL";
+                var legacyConnectionString = _configuration.GetConnectionString("KTDALeaveContext");
 
-                var parameters = new[]
+                using (var connection = new SqlConnection(legacyConnectionString))
                 {
-                    new SqlParameter("@password", password),
-                    new SqlParameter("@payrollNo", payrollNo)
-                };
+                    await connection.OpenAsync();
 
-                var result = await _context.Database
-                    .SqlQueryRaw<bool>(sql, parameters)
-                    .FirstOrDefaultAsync();
+                    using (var command = new SqlCommand("Pro_password", connection))
+                    {
+                        command.CommandType = System.Data.CommandType.StoredProcedure;
+                        command.Parameters.AddWithValue("@username", payrollNo);
+                        command.Parameters.AddWithValue("@pass_word", password);
 
-                return result;
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                var passer = reader["passer"]?.ToString();
+                                // If passer equals the password, authentication successful
+                                // If passer equals "Fail", authentication failed
+                                return passer == password;
+                            }
+                        }
+                    }
+                }
+
+                return false;
             }
             catch (Exception ex)
             {

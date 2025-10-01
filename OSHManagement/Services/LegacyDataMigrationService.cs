@@ -15,9 +15,22 @@ namespace OSHManagement.Services
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new ArgumentNullException("DefaultConnection is not configured");
-            _legacyConnectionString = configuration.GetConnectionString("KTDALeaveContext")
+
+            var adoConnectionString = configuration.GetConnectionString("KTDALeaveContext")
                 ?? throw new ArgumentNullException("KTDALeaveContext is not configured");
+
+            // Convert ADO.NET connection string to OPENROWSET format
+            _legacyConnectionString = ConvertToOpenRowsetFormat(adoConnectionString);
             _logger = logger;
+        }
+
+        private string ConvertToOpenRowsetFormat(string adoConnectionString)
+        {
+            // Parse ADO.NET connection string
+            var builder = new SqlConnectionStringBuilder(adoConnectionString);
+
+            // Build OPENROWSET format: Server=.;Database=KTDALeave;UID=sa;PWD=password
+            return $"Server={builder.DataSource};Database={builder.InitialCatalog};UID={builder.UserID};PWD={builder.Password}";
         }
 
         public async Task<(bool Success, string Message)> SyncAllDataAsync()

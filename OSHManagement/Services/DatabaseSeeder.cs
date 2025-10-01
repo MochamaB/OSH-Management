@@ -40,7 +40,9 @@ namespace OSHManagement.Services
             {
                 new OrgCategory { CategoryName = "Factory", Description = "Tea processing factories", IsActive = true },
                 new OrgCategory { CategoryName = "Head Office", Description = "Corporate headquarters and central offices", IsActive = true },
-                new OrgCategory { CategoryName = "Regional Office", Description = "Regional administrative offices", IsActive = true }
+                new OrgCategory { CategoryName = "Regional Office", Description = "Regional administrative offices", IsActive = true },
+                new OrgCategory { CategoryName = "Subsidiary", Description = "Subsidiary administrative offices", IsActive = true },
+                new OrgCategory { CategoryName = "Others", Description = "Other group buildings or offices", IsActive = true }
             };
 
             foreach (var category in categoriesToSeed)
@@ -63,14 +65,16 @@ namespace OSHManagement.Services
         {
             if (!await _context.Stations.AnyAsync())
             {
-                var defaultCategory = await _context.OrgCategories.FirstOrDefaultAsync();
-                if (defaultCategory != null)
+                var headOfficeCategory = await _context.OrgCategories
+                    .FirstOrDefaultAsync(c => c.CategoryName == "Head Office");
+
+                if (headOfficeCategory != null)
                 {
                     var defaultStation = new Station
                     {
                         StationCode = "HQ",
                         StationName = "Head Office",
-                        OrgCategoryId = defaultCategory.OrgCategoryId,
+                        OrgCategoryId = headOfficeCategory.OrgCategoryId,
                         IsActive = true,
                         CreatedAt = DateTime.UtcNow
                     };

@@ -39,7 +39,7 @@ namespace OSHManagement.Models
         public string? PasswordHash { get; set; }
 
         [MaxLength(100)]
-        public string? LegacyPassword { get; set; }
+        public byte[]? LegacyPassword { get; set; }
 
         [MaxLength(20)]
         public string? EmploymentStatus { get; set; }

@@ -36,7 +36,7 @@ BEGIN
             contractEnd DATETIME,
             Service_years INT,
             username NVARCHAR(50),
-            password_p NVARCHAR(50)
+            pass VARBINARY(50)
         )
         
         -- Build dynamic SQL to fetch from legacy database
@@ -45,14 +45,16 @@ BEGIN
         SELECT
             PayrollNo, RollNo, SurName, OtherNames, Email_address, Station, Department,
             Designation, Hod, supervisor, Role, EmpisCurrActive, hire_date, contractEnd,
-            Service_years, username, password_p
-        FROM OPENROWSET(''SQLNCLI'', ''' + @LegacyConnectionString + ''',
+            Service_years, username, pass
+        FROM OPENROWSET(''MSOLEDBSQL'', ''' + @LegacyConnectionString + ''',
             ''SELECT PayrollNo, RollNo, SurName, OtherNames, Email_address, Station, Department,
-              Designation, Hod, supervisor, Role, EmpisCurrActive, hire_date, contractEnd,
-              Service_years, username, password_p
-              FROM Employee_bkp
-              WHERE PayrollNo IS NOT NULL AND PayrollNo != '''''''')'
-        
+                    Designation, Hod, supervisor, Role, EmpisCurrActive, hire_date, contractEnd,
+                    Service_years, username, pass
+                    FROM Employee_bkp
+                    WHERE PayrollNo IS NOT NULL AND PayrollNo != ''''''''
+                    AND (EmpisCurrActive = 0 OR EmpisCurrActive = 1)
+            '')'
+
         EXEC sp_executesql @SQL
         
         -- Insert/Update employees in OSH database
@@ -65,15 +67,16 @@ BEGIN
                 COALESCE(le.SurName, 'Employee') as LastName,
                 le.Email_address as EmailAddress,
                 le.username as Username,
-                le.password_p as LegacyPassword,
+                le.pass as LegacyPassword,
                 COALESCE(s.StationId, 1) as StationId,
                 d.DepartmentId,
                 le.Designation,
                 le.supervisor as SupervisorPayroll,
                 le.Hod as HodPayroll,
-                CASE le.EmpisCurrActive 
-                    WHEN 1 THEN 'Active' 
-                    ELSE 'Inactive' 
+                CASE le.EmpisCurrActive
+                    WHEN 0 THEN 'Active'
+                    WHEN 1 THEN 'Inactive'
+                    ELSE 'Inactive'
                 END as EmploymentStatus,
                 le.hire_date as HireDate,
                 le.contractEnd as ContractEndDate,

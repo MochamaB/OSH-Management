@@ -1,158 +1,59 @@
-<aside class="app-sidebar sticky sticky-pin" id="sidebar">
+ public async Task<EmployeeBkp> AuthenticateAsync(string payrollNo, string password)
+        {
+            var parameters = new[]
+            {
+            new SqlParameter("@username", payrollNo),
+            new SqlParameter("@pass_word", password)
+        };
 
-    <!-- Start::main-sidebar-header -->
-    <div class="main-sidebar-header">
-        <a href="/" class="header-logo">
-            <img src="/assets/images/brand-logos/desktop-logo.png" alt="KTDA Logo" class="desktop-logo">
-            <img src="/assets/images/brand-logos/toggle-dark.png" alt="KTDA Logo" class="toggle-dark">
-            <img src="/assets/images/brand-logos/desktop-dark.png" alt="KTDA Logo" class="desktop-dark">
-            <img src="/assets/images/brand-logos/toggle-logo.png" alt="KTDA Logo" class="toggle-logo">
-        </a>
-    </div>
-    <!-- End::main-sidebar-header -->
-    <!-- Start::main-sidebar -->
-    <div class="main-sidebar simplebar-scrollable-x" id="sidebar-scroll" data-simplebar="init"><div class="simplebar-wrapper" style="margin: -8px 0px -240px;"><div class="simplebar-height-auto-observer-wrapper"><div class="simplebar-height-auto-observer"></div></div><div class="simplebar-mask"><div class="simplebar-offset" style="right: 0px; bottom: 0px;"><div class="simplebar-content-wrapper" tabindex="0" role="region" aria-label="scrollable content" style="height: 100%; overflow: scroll hidden;"><div class="simplebar-content" style="padding: 8px 0px 240px;">
+            var result = await _context.PasswordCheckResults
+                .FromSqlRaw("EXEC Pro_password @username, @pass_word", parameters)
+                .ToListAsync();
 
-        <!-- Start::nav -->
-        <nav class="main-menu-container nav nav-pills flex-column sub-open">
-            <div class="slide-left d-none" id="slide-left">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24" viewBox="0 0 24 24"> <path d="M13.293 6.293 7.586 12l5.707 5.707 1.414-1.414L10.414 12l4.293-4.293z"></path> </svg>
-            </div>
-            <ul class="main-menu">
-                    <!-- Start::slide__category -->
-                    <li class="slide__category"><span class="category-name">Dashboard</span></li>
-                    <!-- End::slide__category -->
-                        <!-- Start::slide -->
-                        <li class="slide has-sub active open">
-                            <a href="javascript:void(0);" class="side-menu__item active open">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><path d="M133.66,34.34a8,8,0,0,0-11.32,0L40,116.69V216h64V152h48v64h64V116.69Z" opacity="0.2"></path><line x1="16" y1="216" x2="240" y2="216" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line><polyline points="152 216 152 152 104 152 104 216" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></polyline><line x1="40" y1="116.69" x2="40" y2="216" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line><line x1="216" y1="216" x2="216" y2="116.69" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line><path d="M24,132.69l98.34-98.35a8,8,0,0,1,11.32,0L232,132.69" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></path></svg>
-                                <span class="side-menu__label">Dashboard</span>
-                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                            </a>
-                                <ul class="slide-menu child1 double-menu-active" data-popper-reference-hidden="" data-popper-escaped="" data-popper-placement="bottom" style="position: relative; left: 0px; top: 0px; margin: 0px; display: block; transform: translate3d(0.8px, 144px, 0px);">
-                                    <li class="slide side-menu__label1">
-                                        <a href="javascript:void(0)">Dashboard</a>
-                                    </li>
-                                        <li class="slide active open">
-                                            <a href="/Dashboard/OSHOverview" class="side-menu__item active">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><circle cx="128" cy="128" r="96" opacity="0.2"></circle><circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></circle><polyline points="128 80 128 128 176 128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></polyline></svg>
-                                                OSH Overview
-                                            </a>
-                                        </li>
-                                        <li class="slide ">
-                                            <a href="/Dashboard/SafetyAnalytics" class="side-menu__item ">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><polyline points="224 208 32 208 32 48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></polyline><polyline points="32 160 76 116 132 172 224 80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></polyline></svg>
-                                                Safety Analytics
-                                            </a>
-                                        </li>
-                                        <li class="slide ">
-                                            <a href="/Dashboard/Compliance" class="side-menu__item ">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><path d="M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34Z"></path></svg>
-                                                Compliance Dashboard
-                                            </a>
-                                        </li>
-                                </ul>
-                        </li>
-                        <!-- End::slide -->
-                    <!-- Start::slide__category -->
-                    <li class="slide__category"><span class="category-name">OSH Management</span></li>
-                    <!-- End::slide__category -->
-                        <!-- Start::slide -->
-                        <li class="slide has-sub ">
-                            <a href="javascript:void(0);" class="side-menu__item ">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Z" opacity="0.2"></path><circle cx="128" cy="128" r="104" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></circle><line x1="128" y1="80" x2="128" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line><circle cx="128" cy="172" r="12"></circle></svg>
-                                <span class="side-menu__label">Incident Management</span>
-                                    <i class="ri-arrow-right-s-line side-menu__angle"></i>
-                            </a>
-                                <ul class="slide-menu child1 double-menu-active" data-popper-reference-hidden="" data-popper-escaped="" data-popper-placement="bottom" style="position: relative; left: 0px; top: 0px; margin: 0px; transform: translate3d(0.8px, 232px, 0px);">
-                                    <li class="slide side-menu__label1">
-                                        <a href="javascript:void(0)">Incident Management</a>
-                                    </li>
-                                        <li class="slide ">
-                                            <a href="/Incident/Create" class="side-menu__item ">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><line x1="128" y1="40" x2="128" y2="216" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line><line x1="40" y1="128" x2="216" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line></svg>
-                                                Report Incident
-                                            </a>
-                                        </li>
-                                        <li class="slide ">
-                                            <a href="/Incident/Index" class="side-menu__item ">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu-doublemenu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><path d="M128,56C48,56,16,128,16,128s32,72,112,72,112-72,112-72S208,56,128,56Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></path><circle cx="128" cy="128" r="40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></circle></svg>
-                                                View Incidents
-                                            </a>
-                                        </li>
-                                </ul>
-                        </li>
-                        <!-- End::slide -->
-                        <!-- Start::slide -->
-                        <li class="slide has-sub ">
-                            <a href="/RiskAssessment/Index" class="side-menu__item " data-popper-reference-hidden="" data-popper-escaped="" data-popper-placement="top" style="position: relative; left: 0px; top: 0px; margin: 0px; transform: translate3d(8px, 184px, 0px);">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><path d="M128,24,94.11,124.09,24,128l70.11,3.91L128,232l33.89-100.09L232,128l-70.11-3.91Z" opacity="0.2"></path><path d="M128,24,94.11,124.09,24,128l70.11,3.91L128,232l33.89-100.09L232,128l-70.11-3.91Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></path></svg>
-                                <span class="side-menu__label">Risk Assessment</span>
-                            </a>
-                        </li>
-                        <!-- End::slide -->
-                        <!-- Start::slide -->
-                        <li class="slide has-sub ">
-                            <a href="/Training/Index" class="side-menu__item " data-popper-reference-hidden="" data-popper-escaped="" data-popper-placement="top" style="position: relative; left: 0px; top: 0px; margin: 0px; transform: translate3d(8px, 232px, 0px);">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><path d="M32,64H224a0,0,0,0,1,0,0V192a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V64A0,0,0,0,1,32,64Z" opacity="0.2"></path><polyline points="224 64 128 128 32 64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></polyline><path d="m220.57,133.15,3.43,58.85a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V64a8,8,0,0,1,8-8H216a8,8,0,0,1,8,8v69.15" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></path></svg>
-                                <span class="side-menu__label">Training Management</span>
-                            </a>
-                        </li>
-                        <!-- End::slide -->
-                    <!-- Start::slide__category -->
-                    <li class="slide__category"><span class="category-name">Team Management</span></li>
-                    <!-- End::slide__category -->
-                        <!-- Start::slide -->
-                        <li class="slide has-sub ">
-                            <a href="/Team/Index" class="side-menu__item " data-popper-reference-hidden="" data-popper-escaped="" data-popper-placement="top" style="position: relative; left: 0px; top: 0px; margin: 0px; transform: translate3d(8px, 312px, 0px);">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><path d="M20,200a8,8,0,0,1,8-8H228a8,8,0,0,1,8,8,24,24,0,0,1-24,24H44A24,24,0,0,1,20,200Z" opacity="0.2"></path><circle cx="128" cy="120" r="40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></circle><rect x="20" y="192" width="216" height="32" rx="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></rect><path d="m92,192a44,44,0,0,1,72,0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></path></svg>
-                                <span class="side-menu__label">Team Members</span>
-                            </a>
-                        </li>
-                        <!-- End::slide -->
-                        <!-- Start::slide -->
-                        <li class="slide has-sub ">
-                            <a href="/Team/Roles" class="side-menu__item " data-popper-reference-hidden="" data-popper-escaped="" data-popper-placement="top" style="position: relative; left: 0px; top: 0px; margin: 0px; transform: translate3d(8px, 360px, 0px);">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><rect x="40" y="88" width="176" height="128" rx="8" opacity="0.2"></rect><rect x="40" y="88" width="176" height="128" rx="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></rect><path d="M92,88V52a36,36,0,0,1,72,0V88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></path><circle cx="128" cy="140" r="12"></circle><line x1="128" y1="152" x2="128" y2="176" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line></svg>
-                                <span class="side-menu__label">Roles &amp; Permissions</span>
-                            </a>
-                        </li>
-                        <!-- End::slide -->
-            </ul>
+            if (result.Count > 0 && result.First().Passer == password)
+            {
+                // Return employee data in the same connection context
+                return await _context.EmployeeBkps.SingleOrDefaultAsync(e => e.PayrollNo == payrollNo);
+            }
 
-            <!-- Bottom menu items -->
-                <ul class="doublemenu_bottom-menu main-menu mb-0 border-top mt-auto">
-                        <!-- Start::slide -->
-                        <li class="slide">
-                            <a href="javascript:void(0);" class="side-menu__item theme-toggle">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><circle cx="128" cy="128" r="70" opacity="0.2"></circle><circle cx="128" cy="128" r="48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></circle><path d="m184,128a56,56,0,0,1-56,56V72A56,56,0,0,1,184,128Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></path></svg>
-                                <span class="side-menu__label">Theme Settings</span>
-                            </a>
-                        </li>
-                        <!-- End::slide -->
-                        <!-- Start::slide -->
-                        <li class="slide">
-                            <a href="/Profile/Settings" class="side-menu__item ">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><circle cx="128" cy="96" r="64" opacity="0.2"></circle><circle cx="128" cy="96" r="64" fill="none" stroke="currentColor" stroke-miterlimit="10" stroke-width="16"></circle><path d="m30.989,215.99064a112.03731,112.03731,0,0,1,194.02311.002" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></path></svg>
-                                <span class="side-menu__label">Profile Settings</span>
-                            </a>
-                        </li>
-                        <!-- End::slide -->
-                        <!-- Start::slide -->
-                        <li class="slide">
-                            <a href="/Account/Logout" class="side-menu__item ">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><polyline points="174 86 216 128 174 170" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></polyline><line x1="104" y1="128" x2="216" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line><path d="M104,216H48a8,8,0,0,1-8-8V48a8,8,0,0,1,8-8h56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></path></svg>
-                                <span class="side-menu__label">Logout</span>
-                            </a>
-                        </li>
-                        <!-- End::slide -->
-                </ul>
+            return null;
+        }
 
-            <div class="slide-right" id="slide-right"><svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24" viewBox="0 0 24 24"> <path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path> </svg></div>
-        </nav>
-        <!-- End::nav -->
+        SP_PRO Password
+        USE [KTDALeave]
+GO
 
-    </div></div></div></div><div class="simplebar-placeholder" style="width: 63px; height: 816px;"></div></div><div class="simplebar-track simplebar-horizontal" style="visibility: visible;"><div class="simplebar-scrollbar" style="width: 25px; transform: translate3d(0px, 0px, 0px); display: block;"></div></div><div class="simplebar-track simplebar-vertical" style="visibility: hidden;"><div class="simplebar-scrollbar" style="height: 0px; display: none;"></div></div></div>
-    <!-- End::main-sidebar -->
+/****** Object:  StoredProcedure [dbo].[Pro_password]    Script Date: 10/1/2025 9:30:40 PM ******/
+SET ANSI_NULLS ON
+GO
 
-</aside>
+SET QUOTED_IDENTIFIER ON
+GO
+
+---sp_helptext   Pro_password_onbehalf 
+---HGD02139
+ALTER  Procedure [dbo].[Pro_password]         
+@username varchar(50),        
+@pass_word varchar(50) as        
+/*        
+Pro_password 'HGD01753','test'       
+Pro_password '3669','4136'        
+ */        
+declare @pass_word2 varbinary(50),@result bit ,@pword varchar(50)        
+select @pass_word2=pass,@pword=payrollno from ktdaleave.dbo.employee_bkp where payrollno=@username   
+--or     right(payrollno,4)=right(@username,4)    
+select @result=pwdcompare(@pass_word,@pass_word2)   
+set @username=@pword       
+if @result=1       
+begin        
+select '0'  as pd,@pass_word  as passer --, @username as test     
+end        
+else        
+begin        
+    --select '0'  as pd,@pass_word  as passer --, @username as test    
+    select @pass_word as pd,'Fail'    as passer    ---, @username as test  
+end  
+  
+  
+  
+GO
