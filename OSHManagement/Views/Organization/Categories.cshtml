@@ -1,0 +1,113 @@
+@using OSHManagement.Extensions
+@model IEnumerable<OSHManagement.Models.ViewModels.OrgCategoryViewModel>
+@{
+    ViewData["Title"] = "Organization Categories";
+
+    // Get current filter values from controller
+    var currentSearch = ViewBag.CurrentSearch as string;
+    var currentStatus = ViewBag.CurrentStatus as string;
+
+    // Configure stat cards - SIMPLE DATA ONLY
+    var statsConfig = new OSHManagement.Models.ViewModels.StatsRowConfig
+    {
+        Titles = new List<string> { "Total Categories", "Active Categories", "Inactive Categories", "Total Stations" },
+        Values = new List<string>
+        {
+            ViewBag.TotalCategories.ToString(),
+            ViewBag.ActiveCategories.ToString(),
+            ViewBag.InactiveCategories.ToString(),
+            ViewBag.TotalStations.ToString()
+        },
+        Icons = new List<string> { "ri-folder-line", "ri-checkbox-circle-line", "ri-close-circle-line", "ri-building-line" },
+        ColorThemes = new List<string> { "primary", "success", "danger", "secondary" },
+        CardType = OSHManagement.Models.ViewModels.CardType.LeftBorderCard,
+        ColumnClass = "col-xxl-3 col-xl-6"
+    };
+
+    // Build stat cards using extension method (ALL LOGIC HERE)
+    var statCards = statsConfig.BuildStatsRow();
+
+    // Simple configuration - NO business logic!
+    var tableConfig = new OSHManagement.Models.ViewModels.TableConfig
+    {
+        TableId = "categoriesTable",
+        ActionUrl = "/Organization/Categories",
+        SearchPlaceholder = "Search categories...",
+        SearchValue = currentSearch,
+        Columns = new List<string> { "Category", "Description", "Stations", "Status", "Created", "Updated", "Actions" },
+        CreateButtonText = "Add Category",
+        CreateButtonUrl = "/Organization/CreateCategory",
+        Filters = new List<OSHManagement.Models.ViewModels.FilterConfig>
+        {
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Status",
+                ParameterName = "status",
+                CurrentValue = currentStatus,
+                Type = OSHManagement.Models.ViewModels.FilterType.Dropdown,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All", Value = "" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Active", Value = "active" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Inactive", Value = "inactive" }
+                }
+            }
+        }
+    };
+
+    // Build the table using extension method
+    var table = tableConfig.BuildTable(
+        tableContent: @<text>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="avatar avatar-sm bg-primary-transparent me-2">
+                                <i class="ri-folder-line fs-16"></i>
+                            </span>
+                            <span class="fw-medium">@item.CategoryName</span>
+                        </div>
+                    </td>
+                    <td><span class="text-muted">@(string.IsNullOrEmpty(item.Description) ? "—" : item.Description)</span></td>
+                    <td><span class="badge bg-info-transparent"><i class="ri-building-line me-1"></i>@item.StationCount</span></td>
+                    <td><span class="badge bg-@(item.StatusClass)-transparent">@item.StatusText</span></td>
+                    <td>@item.FormattedCreatedDate</td>
+                    <td>@item.FormattedUpdatedDate</td>
+                    <td>
+                        @{
+                            var actions = DataTableExtensions.BuildRowActions(item.OrgCategoryId, "/Organization/Category");
+                        }
+                        <partial name="~/Views/Shared/Components/_ActionButtons.cshtml" model="actions" />
+                    </td>
+                </tr>
+            }
+        </text>,
+        currentUrl: Context.Request.Path + Context.Request.QueryString
+    );
+}
+
+<!-- Stat Cards Row -->
+<div class="row">
+    @foreach (var card in statCards)
+    {
+        <partial name="~/Views/Shared/Components/StatisticCards/_LeftBorderCard.cshtml" model="card" />
+    }
+</div>
+
+<!-- Main Content -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/_DataTable.cshtml" model="table" />
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(id, message) {
+            if (confirm(message || 'Are you sure you want to delete this item?')) {
+                window.location.href = '/Organization/DeleteCategory/' + id;
+            }
+        }
+    </script>
+}

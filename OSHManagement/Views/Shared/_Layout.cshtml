@@ -27,38 +27,22 @@
     await Html.RenderPartialAsync("_Loader");
 }
 
-<div class="page">
-    @{
-        await Html.RenderPartialAsync("_Navbar");
-    }
-       
+    <div class="page">
+        @await Html.PartialAsync("_Navbar")
+        @await Html.PartialAsync("_Sidebar")
 
-    @{
-        await Html.RenderPartialAsync("_Sidebar");
-    }
-
-    <!-- Start::app-content -->
-    <div class="main-content app-content">
-           
-            @{
-                await Html.RenderPartialAsync("_Alerts");
-            }
-        <div class="container-fluid page-container main-body-container pt-2">
-                @{
-                    await Html.RenderPartialAsync("_Breadcrumb");
-                }
-
-            @RenderBody()
+        <!-- Main Content -->
+        <div class="main-content app-content">
+            @await Html.PartialAsync("_Alerts")
+            <div class="container-fluid page-container main-body-container pt-2">
+                @await Html.PartialAsync("_Breadcrumb")
+                @RenderBody()
+            </div>
         </div>
-        <!-- container-fluid -->
 
-        @{
-            await Html.RenderPartialAsync("_Footer");
-        }
+        <!-- Footer -->
+        @await Html.PartialAsync("_Footer")
     </div>
-    <!-- End::app-content -->
-</div>
-
 @{
     await Html.RenderPartialAsync("_UIComponents");
 }

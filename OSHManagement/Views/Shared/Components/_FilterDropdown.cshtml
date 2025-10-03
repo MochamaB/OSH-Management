@@ -1,0 +1,22 @@
+@model OSHManagement.Models.ViewModels.FilterDropdownViewModel
+
+@* Simple dropdown filter - navigates to URL with query string *@
+<div class="dropdown">
+    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="ri-filter-line me-1"></i>@Model.Label
+    </button>
+    <ul class="dropdown-menu">
+        @foreach (var option in Model.Options)
+        {
+            <li>
+                <a class="dropdown-item @(option.IsActive ? "active" : "")" href="@option.Url">
+                    @if (option.IsActive)
+                    {
+                        <i class="ri-check-line me-1"></i>
+                    }
+                    @option.Text
+                </a>
+            </li>
+        }
+    </ul>
+</div>

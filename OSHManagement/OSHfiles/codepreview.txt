@@ -1,59 +1,78 @@
- public async Task<EmployeeBkp> AuthenticateAsync(string payrollNo, string password)
-        {
-            var parameters = new[]
-            {
-            new SqlParameter("@username", payrollNo),
-            new SqlParameter("@pass_word", password)
-        };
-
-            var result = await _context.PasswordCheckResults
-                .FromSqlRaw("EXEC Pro_password @username, @pass_word", parameters)
-                .ToListAsync();
-
-            if (result.Count > 0 && result.First().Passer == password)
-            {
-                // Return employee data in the same connection context
-                return await _context.EmployeeBkps.SingleOrDefaultAsync(e => e.PayrollNo == payrollNo);
-            }
-
-            return null;
-        }
-
-        SP_PRO Password
-        USE [KTDALeave]
-GO
-
-/****** Object:  StoredProcedure [dbo].[Pro_password]    Script Date: 10/1/2025 9:30:40 PM ******/
-SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
----sp_helptext   Pro_password_onbehalf 
----HGD02139
-ALTER  Procedure [dbo].[Pro_password]         
-@username varchar(50),        
-@pass_word varchar(50) as        
-/*        
-Pro_password 'HGD01753','test'       
-Pro_password '3669','4136'        
- */        
-declare @pass_word2 varbinary(50),@result bit ,@pword varchar(50)        
-select @pass_word2=pass,@pword=payrollno from ktdaleave.dbo.employee_bkp where payrollno=@username   
---or     right(payrollno,4)=right(@username,4)    
-select @result=pwdcompare(@pass_word,@pass_word2)   
-set @username=@pword       
-if @result=1       
-begin        
-select '0'  as pd,@pass_word  as passer --, @username as test     
-end        
-else        
-begin        
-    --select '0'  as pd,@pass_word  as passer --, @username as test    
-    select @pass_word as pd,'Fail'    as passer    ---, @username as test  
-end  
-  
-  
-  
-GO
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (145ms) [Parameters=[@__category_CategoryName_0='?' (Size = 50)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [o].[OrgCategoryId], [o].[CategoryName], [o].[CreatedAt], [o].[Description], [o].[IsActive], [o].[UpdatedAt]
+      FROM [OrgCategories] AS [o]
+      WHERE [o].[CategoryName] = @__category_CategoryName_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__category_CategoryName_0='?' (Size = 50)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [o].[OrgCategoryId], [o].[CategoryName], [o].[CreatedAt], [o].[Description], [o].[IsActive], [o].[UpdatedAt]
+      FROM [OrgCategories] AS [o]
+      WHERE [o].[CategoryName] = @__category_CategoryName_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[@__category_CategoryName_0='?' (Size = 50)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [o].[OrgCategoryId], [o].[CategoryName], [o].[CreatedAt], [o].[Description], [o].[IsActive], [o].[UpdatedAt]
+      FROM [OrgCategories] AS [o]
+      WHERE [o].[CategoryName] = @__category_CategoryName_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__category_CategoryName_0='?' (Size = 50)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [o].[OrgCategoryId], [o].[CategoryName], [o].[CreatedAt], [o].[Description], [o].[IsActive], [o].[UpdatedAt]
+      FROM [OrgCategories] AS [o]
+      WHERE [o].[CategoryName] = @__category_CategoryName_0
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (0ms) [Parameters=[@__category_CategoryName_0='?' (Size = 50)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [o].[OrgCategoryId], [o].[CategoryName], [o].[CreatedAt], [o].[Description], [o].[IsActive], [o].[UpdatedAt]
+      FROM [OrgCategories] AS [o]
+      WHERE [o].[CategoryName] = @__category_CategoryName_0
+info: OSHManagement.Services.DatabaseSeeder[0]
+      Organization categories seeding completed
+Organization categories seeding completed
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (27ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT CASE
+          WHEN EXISTS (
+              SELECT 1
+              FROM [Stations] AS [s]) THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (13ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [e].[EmployeeId], [e].[ContractEndDate], [e].[CreatedAt], [e].[DepartmentId], [e].[Designation], [e].[EmailAddress], [e].[EmployeeType], [e].[EmploymentStatus], [e].[FirstName], [e].[HireDate], [e].[HodPayroll], [e].[LastName], [e].[LegacyPassword], [e].[PasswordHash], [e].[PayrollNo], [e].[PhoneNo], [e].[RollNo], [e].[ServiceYears], [e].[StationId], [e].[SupervisorPayroll], [e].[UpdatedAt], [e].[Username]
+      FROM [Employees] AS [e]
+      WHERE [e].[PayrollNo] = N'ADMIN001'
+info: OSHManagement.Services.DatabaseSeeder[0]
+      Database seeding completed successfully
+info: Hangfire.SqlServer.SqlServerObjectsInstaller[0]
+      Start installing Hangfire SQL objects...
+info: Hangfire.SqlServer.SqlServerObjectsInstaller[0]
+      Hangfire SQL objects installed.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: https://localhost:7216
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5039
+info: Hangfire.BackgroundJobServer[0]
+      Starting Hangfire Server using job storage: 'SQL Server: .@OSHManagement'
+info: Hangfire.BackgroundJobServer[0]
+      Using the following options for SQL Server job storage: Queue poll interval: 00:00:00.
+info: Hangfire.BackgroundJobServer[0]
+      Using the following options for Hangfire Server:
+          Worker count: 20
+          Listening queues: 'default'
+          Shutdown timeout: 00:00:15
+          Schedule polling interval: 00:00:15
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\KTDA\source\repos\OSHManagement\OSHManagement
+info: Hangfire.Server.BackgroundServerProcess[0]
+      Server bmochama1:6208:ee508da4 successfully announced in 74.5987 ms
+info: Hangfire.Server.BackgroundServerProcess[0]
+      Server bmochama1:6208:ee508da4 is starting the registered dispatchers: ServerWatchdog, ServerJobCancellationWatcher, SqlServerHeartbeatProcess, ExpirationManager, CountersAggregator, Worker, DelayedJobScheduler, RecurringJobScheduler...
+info: Hangfire.Server.BackgroundServerProcess[0]
+      Server bmochama1:6208:ee508da4 all the dispatchers started
+info: Hangfire.Server.ServerWatchdog[0]
+      2 servers were removed due to timeout
+===== LOGIN GET ACTION CALLED =====
+info: OSHManagement.Controllers.AccountController[0]
+      Login GET action called

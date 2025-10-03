@@ -1,0 +1,187 @@
+@model OSHManagement.Models.ViewModels.DataTableViewModel
+
+<div class="card custom-card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap w-100 gap-2">
+            @* Left Side: Search & Filters *@
+            <div class="d-flex gap-2 flex-wrap align-items-center">
+                @* Search Box Component *@
+                @if (Model.SearchBox != null)
+                {
+                    <partial name="~/Views/Shared/Components/_SearchBox.cshtml" model="Model.SearchBox" />
+                }
+
+                @* Filter Dropdown Components (Simple Filters) *@
+                @if (Model.FilterDropdowns != null && Model.FilterDropdowns.Any())
+                {
+                    @foreach (var filterDropdown in Model.FilterDropdowns)
+                    {
+                        <partial name="~/Views/Shared/Components/_FilterDropdown.cshtml" model="filterDropdown" />
+                    }
+                }
+
+                @* Advanced Filters Toggle Button (Collapsible) *@
+                @if (Model.FilterSelects != null && Model.FilterSelects.Any())
+                {
+                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#advancedFilters@(Model.TableId)" aria-expanded="false"
+                            aria-controls="advancedFilters@(Model.TableId)">
+                        <i class="ri-filter-2-line me-1"></i>Advanced Filters
+                    </button>
+                }
+
+                @* Custom Header Actions *@
+                @if (Model.HeaderActions != null && Model.HeaderActions.Any())
+                {
+                    @foreach (var action in Model.HeaderActions)
+                    {
+                        <a href="@action.Url" class="btn btn-@action.ColorClass">
+                            @if (!string.IsNullOrEmpty(action.IconClass))
+                            {
+                                <i class="@action.IconClass me-1"></i>
+                            }
+                            @action.Text
+                        </a>
+                    }
+                }
+            </div>
+
+            @* Right Side: Create Button *@
+            <div class="d-flex gap-2">
+                @if (!string.IsNullOrEmpty(Model.CreateButtonText) && !string.IsNullOrEmpty(Model.CreateButtonUrl))
+                {
+                    <a href="@Model.CreateButtonUrl" class="btn btn-primary">
+                        <i class="ri-add-line me-1"></i>@Model.CreateButtonText
+                    </a>
+                }
+            </div>
+        </div>
+
+        @* Collapsible Advanced Filters Area *@
+        @if (Model.FilterSelects != null && Model.FilterSelects.Any())
+        {
+            <div class="collapse mt-3" id="advancedFilters@(Model.TableId)">
+                <div class="card card-body bg-light">
+                    <div class="row g-3">
+                        @foreach (var filterSelect in Model.FilterSelects)
+                        {
+                            <div class="col-md-4">
+                                <partial name="~/Views/Shared/Components/_FilterSelect.cshtml" model="filterSelect" />
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover text-nowrap mb-0" id="@Model.TableId">
+                <thead style="background-color: #f8f9fa;">
+                    <tr>
+                        @for (int i = 0; i < Model.Columns.Count; i++)
+                        {
+                            var column = Model.Columns[i];
+                            var isLastColumn = i == Model.Columns.Count - 1;
+
+                            @if (isLastColumn)
+                            {
+                                <th scope="col">@column</th>
+                            }
+                            else
+                            {
+                                <th scope="col" class="sortable" style="cursor: pointer;">
+                                    @column <i class="ri-arrow-up-down-fill ms-1 text-muted fs-12"></i>
+                                </th>
+                            }
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @Model.TableContent(null)
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @if (Model.ShowPagination)
+    {
+        <div class="card-footer">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="text-muted">Showing @Model.CurrentPage of @Model.TotalPages pages</span>
+                </div>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination mb-0">
+                        <!-- Pagination will be added here -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            var table = $('#@Model.TableId');
+            var tbody = table.find('tbody');
+            var headers = table.find('thead th.sortable');
+
+            // Add click handler to sortable columns
+            headers.on('click', function() {
+                var th = $(this);
+                var columnIndex = th.index();
+                var rows = tbody.find('tr').toArray();
+                var isAscending = th.hasClass('sort-asc');
+
+                // Remove sorting classes and reset icons for all headers
+                headers.removeClass('sort-asc sort-desc');
+                headers.find('i').attr('class', 'ri-arrow-up-down-fill ms-1 text-muted fs-12');
+
+                // Sort rows based on the column index
+                rows.sort(function(a, b) {
+                    var aValue = $(a).find('td').eq(columnIndex).text().trim();
+                    var bValue = $(b).find('td').eq(columnIndex).text().trim();
+
+                    // Remove common formatting (currency, commas, badges, etc.)
+                    aValue = aValue.replace(/[$,]/g, '');
+                    bValue = bValue.replace(/[$,]/g, '');
+
+                    // Try to parse as numbers
+                    var aNum = parseFloat(aValue);
+                    var bNum = parseFloat(bValue);
+
+                    // If both are valid numbers, compare numerically
+                    if (!isNaN(aNum) && !isNaN(bNum)) {
+                        return isAscending ? (bNum - aNum) : (aNum - bNum);
+                    }
+
+                    // Try to parse as dates
+                    var aDate = new Date(aValue);
+                    var bDate = new Date(bValue);
+
+                    if (!isNaN(aDate.getTime()) && !isNaN(bDate.getTime())) {
+                        return isAscending ? (bDate - aDate) : (aDate - bDate);
+                    }
+
+                    // Default to string comparison
+                    return isAscending
+                        ? bValue.localeCompare(aValue, undefined, { numeric: true, sensitivity: 'base' })
+                        : aValue.localeCompare(bValue, undefined, { numeric: true, sensitivity: 'base' });
+                });
+
+                // Update table with sorted rows
+                tbody.empty().append(rows);
+
+                // Update the clicked header with appropriate icon and class
+                if (isAscending) {
+                    th.addClass('sort-desc');
+                    th.find('i').attr('class', 'ri-arrow-down-fill ms-1 text-primary fs-12');
+                } else {
+                    th.addClass('sort-asc');
+                    th.find('i').attr('class', 'ri-arrow-up-fill ms-1 text-primary fs-12');
+                }
+            });
+        });
+    </script>
+}

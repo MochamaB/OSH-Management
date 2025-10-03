@@ -1,0 +1,139 @@
+@model IEnumerable<OSHManagement.Models.ViewModels.OrgCategoryViewModel>
+@{
+    ViewData["Title"] = "Organization Categories";
+    var currentSearch = ViewBag.CurrentSearch as string;
+    var currentStatus = ViewBag.CurrentStatus as string;
+}
+
+<!-- Main Content -->
+<div class="row">
+    <div class="col-xl-12">
+        @{
+            var tableModel = new OSHManagement.Models.ViewModels.DataTableViewModel
+            {
+                TableId = "categoriesTable",
+
+                // Search Component
+                SearchBox = new OSHManagement.Models.ViewModels.SearchBoxViewModel
+                {
+                    ActionUrl = "/Organization/Categories",
+                    ParameterName = "search",
+                    PlaceholderText = "Search categories...",
+                    CurrentValue = currentSearch ?? "",
+                    ShowButton = true,
+                    PreserveQueryParams = new Dictionary<string, string>
+                    {
+                        { "status", currentStatus ?? "" }
+                    }
+                },
+
+                // Simple Status Filter (Dropdown)
+                FilterDropdowns = new List<OSHManagement.Models.ViewModels.FilterDropdownViewModel>
+                {
+                    new OSHManagement.Models.ViewModels.FilterDropdownViewModel
+                    {
+                        Label = "Status",
+                        Options = new List<OSHManagement.Models.ViewModels.FilterDropdownOption>
+                        {
+                            new OSHManagement.Models.ViewModels.FilterDropdownOption
+                            {
+                                Text = "All Categories",
+                                Url = "/Organization/Categories" + (!string.IsNullOrEmpty(currentSearch) ? $"?search={currentSearch}" : ""),
+                                IsActive = string.IsNullOrEmpty(currentStatus)
+                            },
+                            new OSHManagement.Models.ViewModels.FilterDropdownOption
+                            {
+                                Text = "Active Only",
+                                Url = "/Organization/Categories?status=active" + (!string.IsNullOrEmpty(currentSearch) ? $"&search={currentSearch}" : ""),
+                                IsActive = currentStatus == "active"
+                            },
+                            new OSHManagement.Models.ViewModels.FilterDropdownOption
+                            {
+                                Text = "Inactive Only",
+                                Url = "/Organization/Categories?status=inactive" + (!string.IsNullOrEmpty(currentSearch) ? $"&search={currentSearch}" : ""),
+                                IsActive = currentStatus == "inactive"
+                            }
+                        }
+                    }
+                },
+
+                // Create Button
+                CreateButtonText = "Add Category",
+                CreateButtonUrl = "/Organization/CreateCategory",
+
+                // Table Columns
+                Columns = new List<string> { "Category Name", "Description", "Stations", "Status", "Created Date", "Last Updated", "Actions" },
+
+                // Table Body Content
+                TableContent = @<text>
+                    @foreach (var category in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="avatar avatar-sm bg-primary-transparent me-2">
+                                        <i class="ri-folder-line fs-16"></i>
+                                    </span>
+                                    <span class="fw-medium">@category.CategoryName</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="text-muted">@(string.IsNullOrEmpty(category.Description) ? "No description" : category.Description)</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info-transparent">
+                                    <i class="ri-building-line me-1"></i>@category.StationCount
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-@(category.StatusClass)-transparent">@category.StatusText</span>
+                            </td>
+                            <td>@category.FormattedCreatedDate</td>
+                            <td>@category.FormattedUpdatedDate</td>
+                            <td>
+                                @{
+                                    var actionButtons = new OSHManagement.Models.ViewModels.ActionButtonsViewModel
+                                    {
+                                        ShowView = true,
+                                        ViewUrl = $"/Organization/ViewCategory/{category.OrgCategoryId}",
+                                        ShowEdit = true,
+                                        EditUrl = $"/Organization/EditCategory/{category.OrgCategoryId}",
+                                        ShowDelete = true,
+                                        DeleteJsFunction = $"confirmDelete({category.OrgCategoryId})"
+                                    };
+                                }
+                                <partial name="~/Views/Shared/Components/_ActionButtons.cshtml" model="actionButtons" />
+                            </td>
+                        </tr>
+                    }
+                </text>
+            };
+        }
+        <partial name="~/Views/Shared/Components/_DataTable.cshtml" model="tableModel" />
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Search functionality
+        document.getElementById('categoriesSearch').addEventListener('keyup', function() {
+            const searchValue = this.value.toLowerCase();
+            const table = document.getElementById('categoriesTable');
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchValue) ? '' : 'none';
+            }
+        });
+
+        // Delete confirmation
+        function confirmDelete(categoryId) {
+            if (confirm('Are you sure you want to delete this category?')) {
+                // Add delete logic here
+                window.location.href = '/Organization/DeleteCategory/' + categoryId;
+            }
+        }
+    </script>
+}

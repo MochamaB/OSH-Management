@@ -1,0 +1,26 @@
+@model OSHManagement.Models.ViewModels.FilterSelectViewModel
+
+@* Select dropdown filter with form submission *@
+<form method="get" action="@Model.ActionUrl" id="@Model.FormId" class="filter-select-form">
+    @* Preserve existing query parameters *@
+    @if (Model.PreserveQueryParams != null)
+    {
+        @foreach (var param in Model.PreserveQueryParams)
+        {
+            <input type="hidden" name="@param.Key" value="@param.Value" />
+        }
+    }
+
+    <select name="@Model.ParameterName"
+            class="form-select"
+            style="max-width: 200px;"
+            onchange="this.form.submit()">
+        <option value="">@Model.PlaceholderText</option>
+        @foreach (var option in Model.Options)
+        {
+            <option value="@option.Value" selected="@option.IsSelected">
+                @option.Text
+            </option>
+        }
+    </select>
+</form>

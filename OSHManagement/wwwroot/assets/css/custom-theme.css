@@ -6,31 +6,28 @@
 
 /* KTDA Brand Colors Override */
 :root {
-  /* Primary KTDA Green */
-  --primary-rgb: 50, 71, 33;
-  --bs-primary: #324721;
-  --bs-primary-rgb: 50, 71, 33;
-  
-  /* Secondary Light Green */
-  --secondary-rgb: 255, 175, 0;
---bs-secondary: #ffaf00;
---bs-secondary-rgb: 255, 175, 0;
-  
-  /* Success Green (Safety Compliance) */
-  --success-rgb: 50, 205, 50;
-  --bs-success: #32CD32;
-  
-  /* Warning Orange (Safety Warning) */
-  --warning-rgb: 255, 140, 0;
-  --bs-warning: #FF8C00;
-  
-  /* Danger Red (Safety Critical) */
-  --danger-rgb: 220, 20, 60;
-  --bs-danger: #DC143C;
-  
-  /* Info Blue (Information) */
-  --info-rgb: 70, 130, 180;
-  --bs-info: #4682B4;
+    /* Primary KTDA Green */
+    --primary-rgb: 50, 71, 33;
+    --bs-primary: #324721;
+    --bs-primary-rgb: 50, 71, 33;
+    /* Secondary Light Green */
+    --secondary-rgb: 255, 175, 0;
+    --bs-secondary: #ffaf00;
+    --bs-secondary-rgb: 255, 175, 0;
+    /* Success Green (Safety Compliance) */
+    --success-rgb: 50, 205, 50;
+    --bs-success: #32CD32;
+    /* Warning Orange (Safety Warning) */
+    --warning-rgb: 255, 140, 0;
+    --bs-warning: #FF8C00;
+    /* Danger Red (Safety Critical) */
+    --danger-rgb: 220, 20, 60;
+    --bs-danger: #DC143C;
+    /* Info Blue (Information) */
+    --info-rgb: 70, 130, 180;
+    --bs-info: #4682B4;
+    /* Body background */
+    --body-bg-rgb: 243,243,249;
 }
 
 /* Global Border Radius Override */

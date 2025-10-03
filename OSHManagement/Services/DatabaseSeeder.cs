@@ -21,6 +21,16 @@ namespace OSHManagement.Services
         {
             try
             {
+                // Quick check: if admin exists, assume database is already seeded
+                var isSeeded = await _context.Employees.AnyAsync(e => e.PayrollNo == "ADMIN001");
+                if (isSeeded)
+                {
+                    _logger.LogDebug("Database already seeded, skipping seeding process");
+                    return;
+                }
+
+                _logger.LogInformation("Starting database seeding...");
+
                 await SeedOrgCategoriesAsync();
                 await SeedDefaultStationAsync();
                 await SeedDefaultAdminAsync();

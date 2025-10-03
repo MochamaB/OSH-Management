@@ -1,0 +1,32 @@
+@model OSHManagement.Models.ViewModels.ActionButtonsViewModel
+
+<div class="d-flex gap-2">
+    @if (Model.ShowView)
+    {
+        <a href="@Model.ViewUrl" class="btn btn-sm btn-secondary-light" title="View">
+            <i class="ri-eye-line"></i>
+        </a>
+    }
+    @if (Model.ShowEdit)
+    {
+        <a href="@Model.EditUrl" class="btn btn-sm btn-primary-light" title="Edit">
+            <i class="ri-edit-line"></i>
+        </a>
+    }
+    @if (Model.ShowDelete)
+    {
+        <button type="button" class="btn btn-sm btn-danger-light" title="Delete"
+                onclick="@Model.DeleteJsFunction">
+            <i class="ri-delete-bin-line"></i>
+        </button>
+    }
+    @if (Model.CustomActions != null && Model.CustomActions.Any())
+    {
+        @foreach (var action in Model.CustomActions)
+        {
+            <a href="@action.Url" class="btn btn-sm btn-@(action.ColorClass)-light" title="@action.Title">
+                <i class="@action.IconClass"></i>
+            </a>
+        }
+    }
+</div>
