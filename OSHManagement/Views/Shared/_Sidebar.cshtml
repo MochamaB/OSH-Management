@@ -434,96 +434,82 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Get current URL path
     const currentPath = window.location.pathname.toLowerCase();
-    
-    // Remove existing active classes
+
+    // Remove existing active classes from all elements
     document.querySelectorAll('.side-menu__item').forEach(item => {
-        item.classList.remove('active');
-        const parentSlide = item.closest('.slide');
-        if (parentSlide) {
-            parentSlide.classList.remove('active', 'open');
-        }
-        const parentHasSub = item.closest('.has-sub');
-        if (parentHasSub) {
-            parentHasSub.classList.remove('active', 'open');
-            const parentLink = parentHasSub.querySelector('.side-menu__item');
-            if (parentLink) {
-                parentLink.classList.remove('active', 'open');
-            }
-        }
+        item.classList.remove('active', 'open');
     });
-    
-    // Find and activate current menu item
-    document.querySelectorAll('.side-menu__item').forEach(item => {
+    document.querySelectorAll('.slide').forEach(slide => {
+        slide.classList.remove('active', 'open');
+    });
+    document.querySelectorAll('.has-sub').forEach(hasSub => {
+        hasSub.classList.remove('active', 'open');
+    });
+    document.querySelectorAll('.slide-menu').forEach(menu => {
+        menu.classList.remove('double-menu-active');
+    });
+
+    // Extract controller from current path (e.g., /Organization/CreateCategory -> organization)
+    const pathParts = currentPath.split('/').filter(p => p);
+    const currentController = pathParts.length > 0 ? pathParts[0] : '';
+
+    // Find best matching menu item using longest match algorithm
+    let bestMatch = null;
+    let longestMatchLength = 0;
+
+    document.querySelectorAll('.slide-menu .side-menu__item').forEach(item => {
         const href = item.getAttribute('href');
         if (href && href !== 'javascript:void(0);' && href !== '#') {
             const linkPath = href.toLowerCase();
+            const linkParts = linkPath.split('/').filter(p => p);
+            const linkController = linkParts.length > 0 ? linkParts[0] : '';
 
-            // Check for exact match or if current path starts with the link path
-            if (currentPath === linkPath || (linkPath !== '/' && currentPath.startsWith(linkPath))) {
-                // Add active class to the menu item
-                item.classList.add('active');
-
-                // Add active class to parent slide
-                const parentSlide = item.closest('.slide');
-                if (parentSlide) {
-                    parentSlide.classList.add('active', 'open');
+            // Check for exact match first
+            if (currentPath === linkPath) {
+                bestMatch = item;
+                longestMatchLength = linkPath.length;
+            }
+            // Then check if current path starts with link path
+            else if (linkPath !== '/' && currentPath.startsWith(linkPath)) {
+                if (linkPath.length > longestMatchLength) {
+                    bestMatch = item;
+                    longestMatchLength = linkPath.length;
                 }
-
-                // Add active and open classes to parent has-sub menu
-                const parentHasSub = item.closest('.has-sub');
-                if (parentHasSub) {
-                    parentHasSub.classList.add('active', 'open');
-                    const parentLink = parentHasSub.querySelector('.side-menu__item');
-                    if (parentLink) {
-                        parentLink.classList.add('active', 'open');
-                    }
-
-                    // Open the submenu
-                    const slideMenu = parentHasSub.querySelector('.slide-menu');
-                    if (slideMenu) {
-                        slideMenu.classList.add('double-menu-active');
-                    }
-                }
+            }
+            // Finally, if same controller and no better match, use first link from that controller
+            else if (currentController && linkController === currentController && longestMatchLength === 0) {
+                bestMatch = item;
+                longestMatchLength = 1; // Set to 1 to indicate we have a controller match
             }
         }
     });
 
-    // Special handling for Admin routes
-    if (currentPath.startsWith('/admin')) {
-        const adminParent = document.querySelector('a[href="/Admin/DataSynchronization"]')?.closest('.has-sub');
-        if (adminParent) {
-            adminParent.classList.add('active', 'open');
-            const adminParentLink = adminParent.querySelector('.side-menu__item');
-            if (adminParentLink) {
-                adminParentLink.classList.add('active', 'open');
-            }
-            const adminSlideMenu = adminParent.querySelector('.slide-menu');
-            if (adminSlideMenu) {
-                adminSlideMenu.classList.add('double-menu-active');
-            }
-        }
-    }
+    // Activate the best matching item and its entire hierarchy
+    if (bestMatch) {
+        // 1. Activate the child link itself
+        bestMatch.classList.add('active');
 
-    // Special handling for Hangfire dashboard
-    if (currentPath.startsWith('/hangfire')) {
-        const hangfireLink = document.querySelector('a[href="/hangfire"]');
-        if (hangfireLink) {
-            hangfireLink.classList.add('active');
-            const parentSlide = hangfireLink.closest('.slide');
-            if (parentSlide) {
-                parentSlide.classList.add('active', 'open');
+        // 2. Activate the child <li class="slide">
+        const childSlide = bestMatch.closest('.slide');
+        if (childSlide) {
+            childSlide.classList.add('active', 'open');
+        }
+
+        // 3. Activate the parent <li class="slide has-sub">
+        const parentHasSub = bestMatch.closest('.has-sub');
+        if (parentHasSub) {
+            parentHasSub.classList.add('active', 'open');
+
+            // 4. Activate the parent link (direct child of has-sub)
+            const parentLink = parentHasSub.querySelector(':scope > .side-menu__item');
+            if (parentLink) {
+                parentLink.classList.add('active', 'open');
             }
-            const parentHasSub = hangfireLink.closest('.has-sub');
-            if (parentHasSub) {
-                parentHasSub.classList.add('active', 'open');
-                const parentLink = parentHasSub.querySelector('.side-menu__item');
-                if (parentLink) {
-                    parentLink.classList.add('active', 'open');
-                }
-                const slideMenu = parentHasSub.querySelector('.slide-menu');
-                if (slideMenu) {
-                    slideMenu.classList.add('double-menu-active');
-                }
+
+            // 5. Activate the submenu container
+            const slideMenu = parentHasSub.querySelector('.slide-menu');
+            if (slideMenu) {
+                slideMenu.classList.add('double-menu-active');
             }
         }
     }

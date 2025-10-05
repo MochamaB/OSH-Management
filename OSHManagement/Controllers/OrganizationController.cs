@@ -113,5 +113,111 @@ namespace OSHManagement.Controllers
 
             return View(model);
         }
+
+        // GET: Organization/EditCategory/5
+        public async Task<IActionResult> EditCategory(int id)
+        {
+            var category = await _context.OrgCategories
+                .FirstOrDefaultAsync(c => c.OrgCategoryId == id);
+
+            if (category == null)
+            {
+                TempData["Error"] = "Category not found.";
+                return RedirectToAction(nameof(Categories));
+            }
+
+            var model = new OrgCategoryViewModel
+            {
+                OrgCategoryId = category.OrgCategoryId,
+                CategoryName = category.CategoryName,
+                Description = category.Description ?? "",
+                IsActive = category.IsActive,
+                CreatedAt = category.CreatedAt,
+                UpdatedAt = category.UpdatedAt
+            };
+
+            return View(model);
+        }
+
+        // POST: Organization/EditCategory/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditCategory(int id, OrgCategoryViewModel model)
+        {
+            if (id != model.OrgCategoryId)
+            {
+                TempData["Error"] = "Invalid category ID.";
+                return RedirectToAction(nameof(Categories));
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var category = await _context.OrgCategories.FindAsync(id);
+                    if (category == null)
+                    {
+                        TempData["Error"] = "Category not found.";
+                        return RedirectToAction(nameof(Categories));
+                    }
+
+                    category.CategoryName = model.CategoryName;
+                    category.Description = model.Description;
+                    category.IsActive = model.IsActive;
+                    category.UpdatedAt = DateTime.UtcNow;
+
+                    _context.OrgCategories.Update(category);
+                    await _context.SaveChangesAsync();
+
+                    TempData["Success"] = $"Category '{model.CategoryName}' has been updated successfully.";
+                    return RedirectToAction(nameof(Categories));
+                }
+                catch (Exception ex)
+                {
+                    TempData["Error"] = "An error occurred while updating the category. Please try again.";
+                    // Log the exception here if you have logging configured
+                }
+            }
+
+            return View(model);
+        }
+
+        // POST: Organization/DeleteCategory/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCategory(int id)
+        {
+            try
+            {
+                var category = await _context.OrgCategories
+                    .Include(c => c.Stations)
+                    .FirstOrDefaultAsync(c => c.OrgCategoryId == id);
+
+                if (category == null)
+                {
+                    TempData["Error"] = "Category not found.";
+                    return RedirectToAction(nameof(Categories));
+                }
+
+                // Check if category has stations
+                if (category.Stations.Any())
+                {
+                    TempData["Error"] = $"Cannot delete category '{category.CategoryName}' because it has {category.Stations.Count} station(s) assigned to it.";
+                    return RedirectToAction(nameof(Categories));
+                }
+
+                _context.OrgCategories.Remove(category);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = $"Category '{category.CategoryName}' has been deleted successfully.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "An error occurred while deleting the category. Please try again.";
+                // Log the exception here if you have logging configured
+            }
+
+            return RedirectToAction(nameof(Categories));
+        }
     }
 }

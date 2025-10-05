@@ -76,7 +76,17 @@
                     <td>@item.FormattedUpdatedDate</td>
                     <td>
                         @{
-                            var actions = DataTableExtensions.BuildRowActions(item.OrgCategoryId, "/Organization/Category");
+                            var rowActions = new RowActionConfig
+                            {
+                                EditUrl = $"/Organization/EditCategory/{{id}}",
+                                ViewUrl = $"/Organization/ViewCategory/{{id}}",
+                                DeleteUrl = $"/Organization/DeleteCategory/{{id}}",
+                                DeleteItemName = item.CategoryName,
+                                ShowView = false,
+                                ShowEdit = true,
+                                ShowDelete = true
+                            };
+                            var actions = DataTableExtensions.BuildRowActions(item.OrgCategoryId, "/Organization", rowActions);
                         }
                         <partial name="~/Views/Shared/Components/_ActionButtons.cshtml" model="actions" />
                     </td>

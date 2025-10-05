@@ -1,6 +1,7 @@
 @model OSHManagement.Models.ViewModels.FormViewModel
 
 <form method="@Model.Method" action="@Model.ActionUrl" id="@Model.FormId">
+    @Html.AntiForgeryToken()
     @if (Model.FieldsPerRow > 1)
     {
         <!-- Multi-column layout -->
@@ -66,7 +67,7 @@
                            @(field.Required ? "required" : "")
                            @(field.Disabled ? "disabled" : "")>
                    <label class="form-check-label" for="@field.UniqueId">
-                        @field.Label@(field.Required ? " <span class=\"text-danger\">*</span>" : "")
+                        @field.Label@(field.Required ? Html.Raw("<span class=\"text-danger ms-1\">*</span>") : "")
                     </label>
                     @if (!string.IsNullOrEmpty(field.HelpText))
                     {

@@ -9,6 +9,8 @@ namespace OSHManagement.Models.ViewModels
         public string EditUrl { get; set; } = "";
 
         public bool ShowDelete { get; set; } = true;
+        public string DeleteUrl { get; set; } = "";
+        public string DeleteItemName { get; set; } = "";
         public string DeleteJsFunction { get; set; } = "";
 
         public List<CustomAction> CustomActions { get; set; } = new List<CustomAction>();

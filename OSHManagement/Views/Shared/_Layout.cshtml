@@ -43,6 +43,10 @@
         <!-- Footer -->
         @await Html.PartialAsync("_Footer")
     </div>
+
+    <!-- Global Delete Confirmation Modal -->
+    @await Html.PartialAsync("~/Views/Shared/Components/_DeleteModal.cshtml")
+
 @{
     await Html.RenderPartialAsync("_UIComponents");
 }

@@ -183,7 +183,8 @@ namespace OSHManagement.Extensions
 
             var viewUrl = config.ViewUrl?.Replace("{id}", id.ToString()) ?? $"{baseUrl}/View/{id}";
             var editUrl = config.EditUrl?.Replace("{id}", id.ToString()) ?? $"{baseUrl}/Edit/{id}";
-            var deleteMessage = config.DeleteConfirmMessage ?? "Are you sure you want to delete this item?";
+            var deleteUrl = config.DeleteUrl?.Replace("{id}", id.ToString()) ?? $"{baseUrl}/Delete/{id}";
+            var itemName = config.DeleteItemName ?? "";
 
             return new ActionButtonsViewModel
             {
@@ -192,7 +193,9 @@ namespace OSHManagement.Extensions
                 ShowEdit = config.ShowEdit,
                 EditUrl = editUrl,
                 ShowDelete = config.ShowDelete,
-                DeleteJsFunction = $"confirmDelete({id}, '{deleteMessage}')",
+                DeleteUrl = deleteUrl,
+                DeleteItemName = itemName,
+                DeleteJsFunction = $"showDeleteModal({id}, '{itemName}', '{deleteUrl}')",
                 CustomActions = config.CustomActions.Select(a => new CustomAction
                 {
                     Title = a.Text,

@@ -66,7 +66,8 @@ namespace OSHManagement.Models.ViewModels
         public string? EditUrl { get; set; }
 
         public bool ShowDelete { get; set; } = true;
-        public string? DeleteConfirmMessage { get; set; } = "Are you sure you want to delete this item?";
+        public string? DeleteUrl { get; set; }
+        public string? DeleteItemName { get; set; }
 
         public List<CustomRowAction> CustomActions { get; set; } = new List<CustomRowAction>();
     }
