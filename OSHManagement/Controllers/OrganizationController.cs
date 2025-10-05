@@ -74,5 +74,44 @@ namespace OSHManagement.Controllers
 
             return View(categories);
         }
+
+        // GET: Organization/CreateCategory
+        public IActionResult CreateCategory()
+        {
+            return View();
+        }
+
+        // POST: Organization/CreateCategory
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateCategory(OrgCategoryViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var category = new Models.OrgCategory
+                    {
+                        CategoryName = model.CategoryName,
+                        Description = model.Description,
+                        IsActive = model.IsActive,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.OrgCategories.Add(category);
+                    await _context.SaveChangesAsync();
+
+                    TempData["Success"] = $"Category '{model.CategoryName}' has been created successfully.";
+                    return RedirectToAction(nameof(Categories));
+                }
+                catch (Exception ex)
+                {
+                    TempData["Error"] = "An error occurred while creating the category. Please try again.";
+                    // Log the exception here if you have logging configured
+                }
+            }
+
+            return View(model);
+        }
     }
 }

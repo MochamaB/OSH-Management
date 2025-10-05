@@ -1,0 +1,73 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.OrgCategoryViewModel
+@{
+    ViewData["Title"] = "Create Organization Category";
+
+    // Configure form - SIMPLE DATA ONLY
+    var formConfig = new OSHManagement.Models.ViewModels.FormConfig
+    {
+        FormId = "createCategoryForm",
+        ActionUrl = "/Organization/CreateCategory",
+        Method = "POST",
+        FormType = OSHManagement.Models.ViewModels.FormType.FloatingLabelForm, // Mobile-friendly!
+        CardTitle = "Create New Category",
+
+        // Two fields per row layout
+        FieldsPerRow = 1,
+        FieldColumnClass = "col-md-6",
+
+        Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
+        {
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "CategoryName",
+                PropertyName = nameof(OrgCategoryViewModel.CategoryName),
+                Label = "Category Name",
+                Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                Required = true,
+                Placeholder = "Enter category name",
+                MaxLength = 50,
+                ValidationMessage = "Category name is required"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "Description",
+                PropertyName = nameof(OrgCategoryViewModel.Description),
+                Label = "Description",
+                Type = OSHManagement.Models.ViewModels.FieldType.Textarea,
+                Placeholder = "Enter description (optional)",
+                Rows = 3,
+                MaxLength = 200
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "IsActive",
+                PropertyName = nameof(OrgCategoryViewModel.IsActive),
+                Label = "Active",
+                Type = OSHManagement.Models.ViewModels.FieldType.Checkbox,
+                DefaultValue = "true",
+                HelpText = "Check to make this category active immediately"
+            }
+        },
+
+        SubmitButtonText = "Create Category",
+        SubmitButtonClass = "btn btn-primary",
+        CancelButtonText = "Cancel",
+        CancelUrl = "/Organization/Categories",
+        WrapInCard = true
+    };
+
+    // Build form using extension method (ALL LOGIC HERE)
+    var form = formConfig.BuildForm();
+}
+
+<!-- Render Form -->
+<div class="row">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/Forms/_FloatingLabelForm.cshtml" model="form" />
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

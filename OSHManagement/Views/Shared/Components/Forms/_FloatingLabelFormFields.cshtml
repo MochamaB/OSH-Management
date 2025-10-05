@@ -1,0 +1,105 @@
+@model OSHManagement.Models.ViewModels.FormViewModel
+
+<form method="@Model.Method" action="@Model.ActionUrl" id="@Model.FormId">
+    @if (Model.FieldsPerRow > 1)
+    {
+        <!-- Multi-column layout -->
+        <div class="row">
+            @for (int i = 0; i < Model.Fields.Count; i++)
+            {
+                var field = Model.Fields[i];
+                var columnClass = Model.FieldColumnClasses != null && i < Model.FieldColumnClasses.Count
+                    ? Model.FieldColumnClasses[i]
+                    : Model.FieldColumnClass;
+
+                <div class="@columnClass">
+                    @if (field.Type == OSHManagement.Models.ViewModels.FieldType.Checkbox)
+                    {
+                        <!-- Checkbox doesn't work well with floating labels -->
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="@field.UniqueId"
+                                   name="@field.PropertyName" value="true"
+                                   @(field.DefaultValue == "true" ? "checked" : "")
+                                   @(field.Required ? "required" : "")
+                                   @(field.Disabled ? "disabled" : "")>
+                            <label class="form-check-label" for="@field.UniqueId">
+                                @field.Label@(field.Required ? " *" : "")
+                            </label>
+                            @if (!string.IsNullOrEmpty(field.HelpText))
+                            {
+                                <small class="form-text text-muted d-block">@field.HelpText</small>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="form-floating mb-3">
+                            @await Html.PartialAsync("~/Views/Shared/Components/Forms/_FloatingFormField.cshtml", field)
+                            <label for="@field.UniqueId" class="custom-label">@field.Label@(field.Required ? " *" : "")</label>
+                        </div>
+                        @if (!string.IsNullOrEmpty(field.HelpText))
+                        {
+                            <small class="form-text text-muted">@field.HelpText</small>
+                        }
+                        @if (!string.IsNullOrEmpty(field.ValidationMessage))
+                        {
+                            <span asp-validation-for="@field.PropertyName" class="text-danger"></span>
+                        }
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- Single column layout -->
+        <div class="row justify-content-left">
+            <div class="@Model.FieldColumnClass">
+                @foreach (var field in Model.Fields)
+                {
+            @if (field.Type == OSHManagement.Models.ViewModels.FieldType.Checkbox)
+            {
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="@field.UniqueId"
+                           name="@field.PropertyName" value="true"
+                           @(field.DefaultValue == "true" ? "checked" : "")
+                           @(field.Required ? "required" : "")
+                           @(field.Disabled ? "disabled" : "")>
+                   <label class="form-check-label" for="@field.UniqueId">
+                        @field.Label@(field.Required ? " <span class=\"text-danger\">*</span>" : "")
+                    </label>
+                    @if (!string.IsNullOrEmpty(field.HelpText))
+                    {
+                        <small class="form-text text-muted d-block">@field.HelpText</small>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="form-floating mb-3">
+                    @await Html.PartialAsync("~/Views/Shared/Components/Forms/_FloatingFormField.cshtml", field)
+                    <label for="@field.UniqueId" class="custom-label">@field.Label@(field.Required ? " *" : "")</label>
+                </div>
+                @if (!string.IsNullOrEmpty(field.HelpText))
+                {
+                    <small class="form-text text-muted">@field.HelpText</small>
+                }
+                @if (!string.IsNullOrEmpty(field.ValidationMessage))
+                {
+                    <span asp-validation-for="@field.PropertyName" class="text-danger"></span>
+                }
+            }
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Form Buttons -->
+    <div class="mt-3">
+        <button type="submit" class="@Model.SubmitButtonClass">@Model.SubmitButtonText</button>
+        @if (!string.IsNullOrEmpty(Model.CancelButtonText) && !string.IsNullOrEmpty(Model.CancelUrl))
+        {
+            <a href="@Model.CancelUrl" class="btn btn-secondary ms-2">@Model.CancelButtonText</a>
+        }
+    </div>
+</form>

@@ -457,18 +457,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const href = item.getAttribute('href');
         if (href && href !== 'javascript:void(0);' && href !== '#') {
             const linkPath = href.toLowerCase();
-            
+
             // Check for exact match or if current path starts with the link path
             if (currentPath === linkPath || (linkPath !== '/' && currentPath.startsWith(linkPath))) {
                 // Add active class to the menu item
                 item.classList.add('active');
-                
+
                 // Add active class to parent slide
                 const parentSlide = item.closest('.slide');
                 if (parentSlide) {
                     parentSlide.classList.add('active', 'open');
                 }
-                
+
                 // Add active and open classes to parent has-sub menu
                 const parentHasSub = item.closest('.has-sub');
                 if (parentHasSub) {
@@ -477,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (parentLink) {
                         parentLink.classList.add('active', 'open');
                     }
-                    
+
                     // Open the submenu
                     const slideMenu = parentHasSub.querySelector('.slide-menu');
                     if (slideMenu) {
@@ -487,7 +487,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
+
     // Special handling for Admin routes
     if (currentPath.startsWith('/admin')) {
         const adminParent = document.querySelector('a[href="/Admin/DataSynchronization"]')?.closest('.has-sub');
@@ -503,7 +503,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    
+
     // Special handling for Hangfire dashboard
     if (currentPath.startsWith('/hangfire')) {
         const hangfireLink = document.querySelector('a[href="/hangfire"]');

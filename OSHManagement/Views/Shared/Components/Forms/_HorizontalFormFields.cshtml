@@ -1,0 +1,66 @@
+@model OSHManagement.Models.ViewModels.FormViewModel
+
+<form method="@Model.Method" action="@Model.ActionUrl" id="@Model.FormId">
+    @if (Model.FieldsPerRow > 1)
+    {
+        <!-- Multi-column layout (e.g., 2 fields per row) -->
+        <div class="row">
+            @for (int i = 0; i < Model.Fields.Count; i++)
+            {
+                var field = Model.Fields[i];
+                <div class="@Model.FieldColumnClass">
+                    <div class="row mb-3">
+                        <label for="@field.UniqueId" class="col-sm-@Model.LabelColumnWidth col-form-label">
+                            @field.Label@(field.Required ? " *" : "")
+                        </label>
+                        <div class="col-sm-@Model.InputColumnWidth">
+                            @await Html.PartialAsync("~/Views/Shared/Components/Forms/_FormField.cshtml", field)
+                            @if (!string.IsNullOrEmpty(field.HelpText))
+                            {
+                                <small class="form-text text-muted">@field.HelpText</small>
+                            }
+                            @if (!string.IsNullOrEmpty(field.ValidationMessage))
+                            {
+                                <span asp-validation-for="@field.PropertyName" class="text-danger"></span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- Single column layout -->
+        @foreach (var field in Model.Fields)
+        {
+            <div class="row mb-3">
+                <label for="@field.UniqueId" class="col-sm-@Model.LabelColumnWidth col-form-label">
+                    @field.Label@(field.Required ? " *" : "")
+                </label>
+                <div class="col-sm-@Model.InputColumnWidth">
+                    @await Html.PartialAsync("~/Views/Shared/Components/Forms/_FormField.cshtml", field)
+                    @if (!string.IsNullOrEmpty(field.HelpText))
+                    {
+                        <small class="form-text text-muted">@field.HelpText</small>
+                    }
+                    @if (!string.IsNullOrEmpty(field.ValidationMessage))
+                    {
+                        <span asp-validation-for="@field.PropertyName" class="text-danger"></span>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    <!-- Form Buttons -->
+    <div class="row">
+        <div class="col-sm-@Model.InputColumnWidth offset-sm-@Model.LabelColumnWidth">
+            <button type="submit" class="@Model.SubmitButtonClass">@Model.SubmitButtonText</button>
+            @if (!string.IsNullOrEmpty(Model.CancelButtonText) && !string.IsNullOrEmpty(Model.CancelUrl))
+            {
+                <a href="@Model.CancelUrl" class="btn btn-secondary ms-2">@Model.CancelButtonText</a>
+            }
+        </div>
+    </div>
+</form>

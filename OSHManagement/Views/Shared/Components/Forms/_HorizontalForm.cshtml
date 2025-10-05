@@ -1,0 +1,20 @@
+@model OSHManagement.Models.ViewModels.FormViewModel
+
+@if (Model.WrapInCard)
+{
+    <div class="card custom-card">
+        @if (!string.IsNullOrEmpty(Model.CardTitle))
+        {
+            <div class="card-header">
+                <h6 class="card-title mb-0">@Model.CardTitle</h6>
+            </div>
+        }
+        <div class="card-body">
+            @await Html.PartialAsync("~/Views/Shared/Components/Forms/_HorizontalFormFields.cshtml", Model)
+        </div>
+    </div>
+}
+else
+{
+    @await Html.PartialAsync("~/Views/Shared/Components/Forms/_HorizontalFormFields.cshtml", Model)
+}
