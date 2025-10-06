@@ -1,0 +1,345 @@
+@using OSHManagement.Extensions
+@model List<OSHManagement.Models.ViewModels.EmployeeViewModel>
+@{
+    ViewData["Title"] = "Employee Management";
+
+    // Build stat cards
+    var statConfig = new OSHManagement.Models.ViewModels.StatsRowConfig
+    {
+        Titles = new List<string> { "Total Employees", "Factory", "Outsourced", "Casual" },
+        Values = new List<string> {
+            ViewBag.TotalEmployees.ToString(),
+            ViewBag.FactoryEmployees.ToString(),
+            ViewBag.OutsourcedEmployees.ToString(),
+            ViewBag.CasualEmployees.ToString()
+        },
+        Icons = new List<string> {
+            "ri-user-line",
+            "ri-building-line",
+            "ri-user-shared-line",
+            "ri-user-add-line"
+        },
+        ColorThemes = new List<string> { "primary", "success", "info", "warning" },
+        CardType = OSHManagement.Models.ViewModels.CardType.LeftBorderCard
+    };
+    var statCards = statConfig.BuildStatsRow();
+
+    // Build DataTable configuration
+    var tableConfig = new OSHManagement.Models.ViewModels.TableConfig
+    {
+        TableId = "employeesTable",
+        ActionUrl = "/Employee/Index",
+        Columns = new List<string> {
+            "#",
+            "Employee",
+            "Station",
+            "Department",
+            "Roles",
+            "Type",
+            "HOD",
+            "Supervisor",
+            "Actions"
+        },
+        SearchPlaceholder = "Search employees...",
+        SearchValue = ViewBag.CurrentSearch,
+        CreateButtonText = "Add Employee",
+        CreateButtonUrl = "/Employee/Create",
+        Filters = new List<OSHManagement.Models.ViewModels.FilterConfig>
+        {
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Organization Category",
+                ParameterName = "categoryId",
+                CurrentValue = ViewBag.CurrentCategoryId?.ToString(),
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Categories", Value = "" }
+                }.Concat(
+                    ((IEnumerable<dynamic>)ViewBag.Categories).Select(c =>
+                        new OSHManagement.Models.ViewModels.FilterOptionConfig
+                        {
+                            Text = c.CategoryName,
+                            Value = c.OrgCategoryId.ToString()
+                        }
+                    )
+                ).ToList()
+            },
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Station",
+                ParameterName = "stationId",
+                CurrentValue = ViewBag.CurrentStationId?.ToString(),
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Stations", Value = "" }
+                }.Concat(
+                    ((IEnumerable<dynamic>)ViewBag.Stations).Select(s =>
+                        new OSHManagement.Models.ViewModels.FilterOptionConfig
+                        {
+                            Text = s.StationName,
+                            Value = s.StationId.ToString()
+                        }
+                    )
+                ).ToList()
+            },
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Department",
+                ParameterName = "departmentId",
+                CurrentValue = ViewBag.CurrentDepartmentId?.ToString(),
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Departments", Value = "" }
+                }.Concat(
+                    ((IEnumerable<dynamic>)ViewBag.Departments).Select(d =>
+                        new OSHManagement.Models.ViewModels.FilterOptionConfig
+                        {
+                            Text = d.DepartmentName,
+                            Value = d.DepartmentId.ToString()
+                        }
+                    )
+                ).ToList()
+            },
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Role",
+                ParameterName = "roleId",
+                CurrentValue = ViewBag.CurrentRoleId?.ToString(),
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Roles", Value = "" }
+                }.Concat(
+                    ((IEnumerable<dynamic>)ViewBag.Roles).Select(r =>
+                        new OSHManagement.Models.ViewModels.FilterOptionConfig
+                        {
+                            Text = r.RoleName,
+                            Value = r.RoleId.ToString()
+                        }
+                    )
+                ).ToList()
+            },
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Employee Type",
+                ParameterName = "employeeType",
+                CurrentValue = ViewBag.CurrentEmployeeType,
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Types", Value = "" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Factory", Value = "Factory" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Outsourced", Value = "Outsourced" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Casual", Value = "Casual" }
+                }
+            }
+        }
+    };
+
+    // Calculate row number starting point
+    int startingNumber = ((ViewBag.CurrentPage - 1) * ViewBag.PageSize) + 1;
+
+    // Build table with row data
+    var table = tableConfig.BuildTable(
+        tableContent: @<text>
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                var item = Model[i];
+                var rowNumber = startingNumber + i;
+                <tr>
+                    <td class="text-center">
+                        <span class="text-muted fw-medium">@rowNumber</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            @if (!string.IsNullOrEmpty(item.AvatarUrl))
+                            {
+                                <div class="avatar avatar-md me-2">
+                                    <img src="@item.AvatarUrl" alt="@item.FullName" class="rounded-circle">
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="avatar avatar-md bg-primary-transparent me-2">
+                                    <span class="avatar-initials fs-16">@item.Initials</span>
+                                </div>
+                            }
+                            <div>
+                                <div class="fw-medium">@item.FullName</div>
+                                <small class="text-muted">@item.PayrollNo</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-info-transparent">@item.StationName</span></td>
+                    <td><span class="text-muted">@(item.DepartmentName ?? "—")</span></td>
+                    <td>
+                        @if (item.RoleNames.Any())
+                        {
+                            @foreach (var role in item.RoleNames.Take(2))
+                            {
+                                <span class="badge bg-secondary-transparent me-1">@role</span>
+                            }
+                            @if (item.RoleNames.Count > 2)
+                            {
+                                <span class="badge bg-light text-muted">+@(item.RoleNames.Count - 2)</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(item.EmployeeType))
+                        {
+                            var typeClass = item.EmployeeType == "Factory" ? "primary" : 
+                                           item.EmployeeType == "Outsourced" ? "info" : "warning";
+                            <span class="badge bg-@typeClass-transparent">@item.EmployeeType</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(item.HodPayroll))
+                        {
+                            <div>
+                                <small class="text-muted d-block">
+                                    @if (!string.IsNullOrEmpty(item.HodFullName))
+                                    {
+                                        <span>@item.HodFullName</span>
+                                    }
+                                    <span class="text-muted">(@item.HodPayroll)</span>
+                                </small>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(item.SupervisorPayroll))
+                        {
+                            <div>
+                                <small class="text-muted d-block">
+                                    @if (!string.IsNullOrEmpty(item.SupervisorFullName))
+                                    {
+                                        <span>@item.SupervisorFullName</span>
+                                    }
+                                    <span class="text-muted">(@item.SupervisorPayroll)</span>
+                                </small>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </td>
+                    <td>
+                        @{
+                            var rowActions = new OSHManagement.Models.ViewModels.RowActionConfig
+                            {
+                                EditUrl = $"/Employee/Edit/{{id}}",
+                                ViewUrl = $"/Employee/View/{{id}}",
+                                DeleteUrl = $"/Employee/Delete/{{id}}",
+                                DeleteItemName = item.FullName,
+                                ShowView = true,
+                                ShowEdit = true,
+                                ShowDelete = false
+                            };
+                            var actions = OSHManagement.Extensions.DataTableExtensions.BuildRowActions(item.EmployeeId, "/Employee", rowActions);
+                        }
+                        <partial name="~/Views/Shared/Components/_ActionButtons.cshtml" model="actions" />
+                    </td>
+                </tr>
+            }
+        </text>,
+        currentUrl: Context.Request.Path + Context.Request.QueryString
+    );
+
+    // Enable pagination
+    table.ShowPagination = true;
+    table.CurrentPage = ViewBag.CurrentPage;
+    table.TotalPages = ViewBag.TotalPages;
+    table.TotalRecords = ViewBag.TotalItems;
+    table.PageSize = ViewBag.PageSize;
+}
+
+<!-- Stat Cards Row -->
+<div class="row">
+    @foreach (var card in statCards)
+    {
+        <partial name="~/Views/Shared/Components/StatisticCards/_LeftBorderCard.cshtml" model="card" />
+    }
+</div>
+
+<!-- Main Content -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/_DataTable.cshtml" model="table" />
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Store all stations with their categories
+            var allStations = @Html.Raw(Json.Serialize(ViewBag.Stations));
+            var categorySelect = $('select[name="categoryId"]');
+            var stationSelect = $('select[name="stationId"]');
+            var currentStationId = '@(ViewBag.CurrentStationId?.ToString() ?? "")';
+            
+            // Function to filter stations based on selected category
+            function filterStations() {
+                var selectedCategoryId = categorySelect.val();
+                
+                // Store current selection
+                var currentSelection = stationSelect.val();
+                
+                // Clear all options except the first (placeholder)
+                stationSelect.find('option:not(:first)').remove();
+                
+                // Filter stations
+                var filteredStations = selectedCategoryId 
+                    ? allStations.filter(s => s.orgCategoryId == selectedCategoryId)
+                    : allStations;
+                
+                // Repopulate station dropdown
+                filteredStations.forEach(function(station) {
+                    var option = $('<option></option>')
+                        .val(station.stationId)
+                        .text(station.stationName);
+                    
+                    // Restore selection if it's still valid
+                    if (station.stationId == currentSelection || station.stationId == currentStationId) {
+                        option.prop('selected', true);
+                    }
+                    
+                    stationSelect.append(option);
+                });
+                
+                // If current selection is not in filtered list, clear it
+                if (selectedCategoryId && stationSelect.val() != currentSelection) {
+                    stationSelect.val('');
+                }
+            }
+            
+            // Initialize on page load
+            if (categorySelect.val()) {
+                filterStations();
+            }
+            
+            // Handle category change
+            categorySelect.on('change', function() {
+                filterStations();
+                // Auto-submit the form to apply filter
+                $(this).closest('form').submit();
+            });
+        });
+    </script>
+}

@@ -30,22 +30,31 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization();
 
-// Configure Hangfire
-builder.Services.AddHangfire(configuration => configuration
-    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-    .UseSimpleAssemblyNameTypeSerializer()
-    .UseRecommendedSerializerSettings()
-    .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection"), new SqlServerStorageOptions
-    {
-        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
-        SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
-        QueuePollInterval = TimeSpan.Zero,
-        UseRecommendedIsolationLevel = true,
-        DisableGlobalLocks = true,
-        PrepareSchemaIfNecessary = false // Prevent schema reinstallation on every startup
-    }));
+// Configure Hangfire (Optional - can be disabled via appsettings)
+var enableHangfire = builder.Configuration.GetValue<bool>("HangfireSettings:Enabled", false);
+if (enableHangfire)
+{
+    builder.Services.AddHangfire(configuration => configuration
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection"), new SqlServerStorageOptions
+        {
+            CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+            SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+            QueuePollInterval = TimeSpan.FromMinutes(1), // Changed from Zero to 1 minute
+            UseRecommendedIsolationLevel = true,
+            DisableGlobalLocks = true,
+            PrepareSchemaIfNecessary = false // Prevent schema reinstallation on every startup
+        }));
 
-builder.Services.AddHangfireServer();
+    builder.Services.AddHangfireServer(options =>
+    {
+        options.WorkerCount = 1; // Limit to 1 worker to reduce load
+        options.ServerTimeout = TimeSpan.FromMinutes(5);
+        options.SchedulePollingInterval = TimeSpan.FromMinutes(1);
+    });
+}
 
 // Register services
 builder.Services.AddScoped<IMenuService, MenuService>();
@@ -93,22 +102,33 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Configure Hangfire Dashboard
-app.UseHangfireDashboard("/hangfire", new DashboardOptions
+// Configure Hangfire Dashboard (only if enabled)
+if (enableHangfire)
 {
-    Authorization = new[] { new HangfireAuthorizationFilter() },
-    DashboardTitle = builder.Configuration["HangfireSettings:DashboardTitle"] ?? "OSH Management Jobs"
-});
-
-// Schedule recurring jobs
-RecurringJob.AddOrUpdate<HangfireJobs>(
-    "daily-legacy-sync",
-    job => job.DailySyncJob(),
-    builder.Configuration["HangfireSettings:DailySync:CronExpression"] ?? "0 2 * * *", // 2 AM daily
-    new RecurringJobOptions
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
     {
-        TimeZone = TimeZoneInfo.Local
+        Authorization = new[] { new HangfireAuthorizationFilter() },
+        DashboardTitle = builder.Configuration["HangfireSettings:DashboardTitle"] ?? "OSH Management Jobs"
     });
+
+    // Schedule recurring jobs
+    try
+    {
+        RecurringJob.AddOrUpdate<HangfireJobs>(
+            "daily-legacy-sync",
+            job => job.DailySyncJob(),
+            builder.Configuration["HangfireSettings:DailySync:CronExpression"] ?? "0 2 * * *", // 2 AM daily
+            new RecurringJobOptions
+            {
+                TimeZone = TimeZoneInfo.Local
+            });
+    }
+    catch (Exception ex)
+    {
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogWarning(ex, "Failed to schedule Hangfire jobs. Hangfire will be disabled.");
+    }
+}
 
 app.MapControllerRoute(
     name: "default",
