@@ -13,10 +13,10 @@
 
     case OSHManagement.Models.ViewModels.FieldType.Select:
         var selectClass = $"form-select {Model.CustomCssClass}".Trim();
-        var selectRequired = Model.Required ? "required" : "";
-        var selectDisabled = Model.Disabled ? "disabled" : "";
 
-        <select class="@selectClass" id="@Model.UniqueId" name="@Model.PropertyName" required="@selectRequired" disabled="@selectDisabled">
+        <select class="@selectClass" id="@Model.UniqueId" name="@Model.PropertyName" 
+                @(Model.Required ? "required" : "") 
+                @(Model.Disabled ? "disabled" : "")>
             @if (Model.Options != null)
             {
                 @foreach (var option in Model.Options)

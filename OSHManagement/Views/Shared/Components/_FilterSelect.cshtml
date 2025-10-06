@@ -1,7 +1,7 @@
 @model OSHManagement.Models.ViewModels.FilterSelectViewModel
 
 @* Select dropdown filter with form submission *@
-<form method="get" action="@Model.ActionUrl" id="@Model.FormId" class="filter-select-form">
+<form method="get" action="@Model.ActionUrl" id="@Model.FormId" class="filter-select-form" style="min-width: 180px;">
     @* Preserve existing query parameters *@
     @if (Model.PreserveQueryParams != null)
     {
@@ -13,7 +13,6 @@
 
     <select name="@Model.ParameterName"
             class="form-select"
-            style="max-width: 200px;"
             onchange="this.form.submit()">
         <option value="">@Model.PlaceholderText</option>
         @foreach (var option in Model.Options)

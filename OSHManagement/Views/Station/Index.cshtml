@@ -1,0 +1,141 @@
+@using OSHManagement.Extensions
+@model List<OSHManagement.Models.ViewModels.StationViewModel>
+@{
+    ViewData["Title"] = "Station Management";
+
+    // Build stat cards
+    var statConfig = new OSHManagement.Models.ViewModels.StatsRowConfig
+    {
+        Titles = new List<string> { "Total Stations", "Active Stations", "Inactive Stations", "Total Departments" },
+        Values = new List<string> {
+            ViewBag.TotalStations.ToString(),
+            ViewBag.ActiveStations.ToString(),
+            ViewBag.InactiveStations.ToString(),
+            ViewBag.TotalDepartments.ToString()
+        },
+        Icons = new List<string> {
+            "ri-building-4-line",
+            "ri-checkbox-circle-line",
+            "ri-close-circle-line",
+            "ri-team-line"
+        },
+        ColorThemes = new List<string> { "primary", "success", "danger", "info" },
+        CardType = OSHManagement.Models.ViewModels.CardType.LeftBorderCard
+    };
+    var statCards = statConfig.BuildStatsRow();
+
+    // Build DataTable configuration
+    var tableConfig = new OSHManagement.Models.ViewModels.TableConfig
+    {
+        TableId = "stationsTable",
+        ActionUrl = "/Station/Index",
+        Columns = new List<string> {
+            "Station Name",
+            "Category",
+            "Departments",
+            "Sections",
+            "Teams",
+            "Status",
+            "Created",
+            "Actions"
+        },
+        SearchPlaceholder = "Search stations...",
+        SearchValue = ViewBag.CurrentSearch,
+        CreateButtonText = "Create Station",
+        CreateButtonUrl = "/Station/Create",
+        Filters = new List<OSHManagement.Models.ViewModels.FilterConfig>
+        {
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Status",
+                ParameterName = "status",
+                CurrentValue = ViewBag.CurrentStatus,
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Status", Value = "" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Active", Value = "active" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Inactive", Value = "inactive" }
+                }
+            },
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Category",
+                ParameterName = "categoryId",
+                CurrentValue = ViewBag.CurrentCategoryId?.ToString(),
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Categories", Value = "" }
+                }.Concat(
+                    ((IEnumerable<dynamic>)ViewBag.Categories).Select(c =>
+                        new OSHManagement.Models.ViewModels.FilterOptionConfig
+                        {
+                            Text = c.CategoryName,
+                            Value = c.OrgCategoryId.ToString()
+                        }
+                    )
+                ).ToList()
+            }
+        }
+    };
+
+    // Build table with row data
+    var table = tableConfig.BuildTable(
+        tableContent: @<text>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar avatar-sm bg-primary-transparent me-2">
+                                <i class="ri-building-4-line fs-16"></i>
+                            </div>
+                            <div>
+                                <span class="fw-medium">@item.StationName</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-primary-transparent">@item.CategoryName</span></td>
+                    <td><span class="badge bg-info-transparent"><i class="ri-team-line me-1"></i>@item.DepartmentCount</span></td>
+                    <td><span class="badge bg-secondary-transparent">@item.SectionCount</span></td>
+                    <td><span class="badge bg-warning-transparent">@item.TeamCount</span></td>
+                    <td><span class="badge bg-@(item.StatusClass)-transparent">@item.StatusText</span></td>
+                    <td>@item.FormattedCreatedDate</td>
+                    <td>
+                        @{
+                            var rowActions = new OSHManagement.Models.ViewModels.RowActionConfig
+                            {
+                                EditUrl = $"/Station/Edit/{{id}}",
+                                ViewUrl = $"/Station/View/{{id}}",
+                                DeleteUrl = $"/Station/Delete/{{id}}",
+                                DeleteItemName = item.StationName,
+                                ShowView = false,
+                                ShowEdit = true,
+                                ShowDelete = true
+                            };
+                            var actions = OSHManagement.Extensions.DataTableExtensions.BuildRowActions(item.StationId, "/Station", rowActions);
+                        }
+                        <partial name="~/Views/Shared/Components/_ActionButtons.cshtml" model="actions" />
+                    </td>
+                </tr>
+            }
+        </text>,
+        currentUrl: Context.Request.Path + Context.Request.QueryString
+    );
+}
+
+<!-- Stat Cards Row -->
+<div class="row">
+    @foreach (var card in statCards)
+    {
+        <partial name="~/Views/Shared/Components/StatisticCards/_LeftBorderCard.cshtml" model="card" />
+    }
+</div>
+
+<!-- Main Content -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/_DataTable.cshtml" model="table" />
+    </div>
+</div>

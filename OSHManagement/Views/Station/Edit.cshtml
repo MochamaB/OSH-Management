@@ -1,0 +1,224 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.StationViewModel
+@{
+    ViewData["Title"] = "Edit Station";
+
+    // Build category options from ViewBag
+    var categoryOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>();
+    
+    if (ViewBag.Categories != null)
+    {
+        foreach (var category in (IEnumerable<dynamic>)ViewBag.Categories)
+        {
+            categoryOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
+            {
+                Text = category.CategoryName,
+                Value = category.OrgCategoryId.ToString(),
+                Selected = category.OrgCategoryId == Model.OrgCategoryId
+            });
+        }
+    }
+
+    // Build parent station options from ViewBag
+    var parentStationOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>
+    {
+        new OSHManagement.Models.ViewModels.FormSelectOption { Text = "-- No Parent Station --", Value = "" }
+    };
+    
+    if (ViewBag.ParentStations != null)
+    {
+        foreach (var station in (IEnumerable<dynamic>)ViewBag.ParentStations)
+        {
+            // Don't allow station to be its own parent
+            if (station.StationId != Model.StationId)
+            {
+                parentStationOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
+                {
+                    Text = station.StationName,
+                    Value = station.StationId.ToString(),
+                    Selected = Model.ParentStationId.HasValue && station.StationId == Model.ParentStationId.Value
+                });
+            }
+        }
+    }
+
+    // Configure form - SIMPLE DATA ONLY
+    var formConfig = new OSHManagement.Models.ViewModels.FormConfig
+    {
+        FormId = "editStationForm",
+        ActionUrl = $"/Station/Edit/{Model.StationId}",
+        Method = "POST",
+        FormType = OSHManagement.Models.ViewModels.FormType.FloatingLabelForm,
+        CardTitle = "Edit Station",
+
+        // Single column layout
+        FieldsPerRow = 1,
+        FieldColumnClass = "col-md-7",
+
+        Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
+        {
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "StationId",
+                PropertyName = nameof(StationViewModel.StationId),
+                Type = OSHManagement.Models.ViewModels.FieldType.Hidden,
+                Value = Model.StationId.ToString()
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "StationCode",
+                PropertyName = nameof(StationViewModel.StationCode),
+                Label = "Station Code",
+                Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                Value = Model.StationCode,
+                ReadOnly = true,
+                HelpText = "Station code is auto-generated and cannot be changed"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "StationName",
+                PropertyName = nameof(StationViewModel.StationName),
+                Label = "Station Name",
+                Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                Required = true,
+                Placeholder = "Enter station name",
+                MaxLength = 100,
+                ValidationMessage = "Station name is required",
+                Value = Model.StationName
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "OrgCategoryId",
+                PropertyName = nameof(StationViewModel.OrgCategoryId),
+                Label = "Organization Category",
+                Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                Required = true,
+                Options = categoryOptions,
+                ValidationMessage = "Organization category is required"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "ParentStationId",
+                PropertyName = nameof(StationViewModel.ParentStationId),
+                Label = "Parent Station",
+                Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                Options = parentStationOptions,
+                HelpText = "Optional: Select a parent station if this is a subsidiary"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "IsActive",
+                PropertyName = nameof(StationViewModel.IsActive),
+                Label = "Active",
+                Type = OSHManagement.Models.ViewModels.FieldType.Checkbox,
+                DefaultValue = Model.IsActive.ToString().ToLower(),
+                Value = Model.IsActive.ToString().ToLower(),
+                HelpText = "Check to make this station active"
+            }
+        },
+
+        SubmitButtonText = "Update Station",
+        SubmitButtonClass = "btn btn-primary",
+        CancelButtonText = "Cancel",
+        CancelUrl = "/Station/Index",
+        WrapInCard = true
+    };
+
+    // Build form using extension method
+    var form = formConfig.BuildForm();
+}
+
+<!-- Render Form -->
+<div class="row">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/Forms/_FloatingLabelForm.cshtml" model="form" />
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            var categorySelect = $('#editStationForm_OrgCategoryId');
+            var parentStationSelect = $('#editStationForm_ParentStationId');
+            var currentParentStationId = '@(Model.ParentStationId?.ToString() ?? "")';
+            
+            // Store original parent stations with their category IDs
+            var parentStationsWithCategories = [];
+            
+            // Fetch parent stations with their categories via AJAX
+            $.ajax({
+                url: '/Station/GetStationsWithCategories',
+                type: 'GET',
+                success: function(data) {
+                    // Filter out current station from parent options
+                    parentStationsWithCategories = data.filter(function(station) {
+                        return station.stationId != @Model.StationId;
+                    });
+                    
+                    // Trigger initial filter with current category
+                    filterParentStations();
+                },
+                error: function() {
+                    console.error('Failed to load parent stations with categories');
+                }
+            });
+            
+            // Filter parent stations when category changes
+            categorySelect.on('change', function() {
+                filterParentStations();
+            });
+            
+            function filterParentStations() {
+                var selectedCategoryId = categorySelect.val();
+                
+                // Clear current options except the first (placeholder)
+                parentStationSelect.find('option:not(:first)').remove();
+                
+                if (!selectedCategoryId) {
+                    // If no category selected, show all parent stations
+                    parentStationsWithCategories.forEach(function(station) {
+                        var option = $('<option></option>')
+                            .val(station.stationId)
+                            .text(station.stationName);
+                        
+                        if (station.stationId == currentParentStationId) {
+                            option.prop('selected', true);
+                        }
+                        
+                        parentStationSelect.append(option);
+                    });
+                } else {
+                    // Filter by selected category
+                    var filteredStations = parentStationsWithCategories.filter(function(station) {
+                        return station.orgCategoryId == selectedCategoryId;
+                    });
+                    
+                    if (filteredStations.length === 0) {
+                        // No stations in this category
+                        parentStationSelect.append(
+                            $('<option></option>')
+                                .val('')
+                                .text('-- No stations in this category --')
+                                .prop('disabled', true)
+                        );
+                    } else {
+                        // Add filtered stations
+                        filteredStations.forEach(function(station) {
+                            var option = $('<option></option>')
+                                .val(station.stationId)
+                                .text(station.stationName);
+                            
+                            if (station.stationId == currentParentStationId) {
+                                option.prop('selected', true);
+                            }
+                            
+                            parentStationSelect.append(option);
+                        });
+                    }
+                }
+            }
+        });
+    </script>
+}

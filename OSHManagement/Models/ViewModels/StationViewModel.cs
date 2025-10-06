@@ -6,7 +6,6 @@ namespace OSHManagement.Models.ViewModels
     {
         public int StationId { get; set; }
 
-        [Required(ErrorMessage = "Station code is required")]
         [StringLength(20, ErrorMessage = "Station code cannot exceed 20 characters")]
         [Display(Name = "Station Code")]
         public string StationCode { get; set; } = string.Empty;

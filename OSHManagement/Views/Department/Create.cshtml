@@ -1,0 +1,196 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.DepartmentViewModel
+@{
+    ViewData["Title"] = "Create Department";
+
+    // Build station options from ViewBag
+    var stationOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>
+    {
+        new OSHManagement.Models.ViewModels.FormSelectOption { Text = "-- Select Station --", Value = "", Selected = true }
+    };
+    
+    if (ViewBag.Stations != null)
+    {
+        foreach (var station in (IEnumerable<dynamic>)ViewBag.Stations)
+        {
+            stationOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
+            {
+                Text = station.StationName,
+                Value = station.StationId.ToString()
+            });
+        }
+    }
+
+    // Build parent department options from ViewBag
+    var parentDepartmentOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>
+    {
+        new OSHManagement.Models.ViewModels.FormSelectOption { Text = "-- No Parent Department --", Value = "", Selected = true }
+    };
+    
+    if (ViewBag.ParentDepartments != null)
+    {
+        foreach (var department in (IEnumerable<dynamic>)ViewBag.ParentDepartments)
+        {
+            parentDepartmentOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
+            {
+                Text = department.DepartmentName,
+                Value = department.DepartmentId.ToString()
+            });
+        }
+    }
+
+    // Configure form
+    var formConfig = new OSHManagement.Models.ViewModels.FormConfig
+    {
+        FormId = "createDepartmentForm",
+        ActionUrl = "/Department/Create",
+        Method = "POST",
+        FormType = OSHManagement.Models.ViewModels.FormType.FloatingLabelForm,
+        CardTitle = "Create New Department",
+
+        FieldsPerRow = 1,
+        FieldColumnClass = "col-md-7",
+
+        Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
+        {
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "DepartmentName",
+                PropertyName = nameof(DepartmentViewModel.DepartmentName),
+                Label = "Department Name",
+                Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                Required = true,
+                Placeholder = "Enter department name",
+                MaxLength = 100,
+                ValidationMessage = "Department name is required"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "StationId",
+                PropertyName = nameof(DepartmentViewModel.StationId),
+                Label = "Station",
+                Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                Required = true,
+                Options = stationOptions,
+                ValidationMessage = "Station is required"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "ParentDepartmentId",
+                PropertyName = nameof(DepartmentViewModel.ParentDepartmentId),
+                Label = "Parent Department",
+                Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                Options = parentDepartmentOptions,
+                HelpText = "Optional: Select a parent department if this is a sub-department"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "DepartmentHeadPayroll",
+                PropertyName = nameof(DepartmentViewModel.DepartmentHeadPayroll),
+                Label = "Department Head Payroll",
+                Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                Placeholder = "Enter payroll number (optional)",
+                MaxLength = 20,
+                HelpText = "Optional: Payroll number of the department head"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "IsActive",
+                PropertyName = nameof(DepartmentViewModel.IsActive),
+                Label = "Active",
+                Type = OSHManagement.Models.ViewModels.FieldType.Checkbox,
+                DefaultValue = "true",
+                HelpText = "Check to make this department active immediately"
+            }
+        },
+
+        SubmitButtonText = "Create Department",
+        SubmitButtonClass = "btn btn-primary",
+        CancelButtonText = "Cancel",
+        CancelUrl = "/Department/Index",
+        WrapInCard = true
+    };
+
+    var form = formConfig.BuildForm();
+}
+
+<!-- Render Form -->
+<div class="row">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/Forms/_FloatingLabelForm.cshtml" model="form" />
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            var stationSelect = $('#createDepartmentForm_StationId');
+            var parentDepartmentSelect = $('#createDepartmentForm_ParentDepartmentId');
+            
+            var parentDepartmentsWithStations = [];
+            
+            // Fetch parent departments with their stations via AJAX
+            $.ajax({
+                url: '/Department/GetDepartmentsWithStations',
+                type: 'GET',
+                success: function(data) {
+                    parentDepartmentsWithStations = data;
+                    
+                    if (stationSelect.val()) {
+                        filterParentDepartments();
+                    }
+                },
+                error: function() {
+                    console.error('Failed to load parent departments with stations');
+                }
+            });
+            
+            // Filter parent departments when station changes
+            stationSelect.on('change', function() {
+                filterParentDepartments();
+            });
+            
+            function filterParentDepartments() {
+                var selectedStationId = stationSelect.val();
+                
+                // Clear current options except the first (placeholder)
+                parentDepartmentSelect.find('option:not(:first)').remove();
+                
+                if (!selectedStationId) {
+                    // If no station selected, show all parent departments
+                    parentDepartmentsWithStations.forEach(function(department) {
+                        parentDepartmentSelect.append(
+                            $('<option></option>')
+                                .val(department.departmentId)
+                                .text(department.departmentName)
+                        );
+                    });
+                } else {
+                    // Filter by selected station
+                    var filteredDepartments = parentDepartmentsWithStations.filter(function(department) {
+                        return department.stationId == selectedStationId;
+                    });
+                    
+                    if (filteredDepartments.length === 0) {
+                        parentDepartmentSelect.append(
+                            $('<option></option>')
+                                .val('')
+                                .text('-- No departments in this station --')
+                                .prop('disabled', true)
+                        );
+                    } else {
+                        filteredDepartments.forEach(function(department) {
+                            parentDepartmentSelect.append(
+                                $('<option></option>')
+                                    .val(department.departmentId)
+                                    .text(department.departmentName)
+                            );
+                        });
+                    }
+                }
+            }
+        });
+    </script>
+}
