@@ -1,0 +1,163 @@
+@model OSHManagement.Models.ViewModels.BulkAddViewModel
+
+@if (Model.WrapInCard)
+{
+    <div class="card custom-card">
+        <div class="card-header">
+            <div class="card-title">
+                @if (!string.IsNullOrEmpty(Model.Icon))
+                {
+                    <i class="@Model.Icon me-2"></i>
+                }
+                @Model.Title
+            </div>
+        </div>
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <p class="text-muted mb-4">@Model.Description</p>
+            }
+            
+            <form method="@Model.Method" action="@Model.ActionUrl" id="@Model.ComponentId">
+                @Html.AntiForgeryToken()
+                
+                @* Parent Selectors (if configured) - Side by side layout *@
+                @if (Model.ParentSelector != null || Model.ParentSelectors != null)
+                {
+                    <div class="row mb-4">
+                        @if (Model.ParentSelectors != null && Model.ParentSelectors.Any())
+                        {
+                            @foreach (var selector in Model.ParentSelectors)
+                            {
+                                <div class="@selector.ColumnClass">
+                                    <partial name="~/Views/Shared/Components/BulkActions/_ParentSelector.cshtml" model="selector" />
+                                </div>
+                            }
+                        }
+                        else if (Model.ParentSelector != null)
+                        {
+                            <div class="col-12">
+                                <partial name="~/Views/Shared/Components/BulkActions/_ParentSelector.cshtml" model="Model.ParentSelector" />
+                            </div>
+                        }
+                    </div>
+                }
+                
+                @* Dynamic Rows Container *@
+                <div id="@(Model.ComponentId)_rowsContainer" class="mb-4">
+                    <!-- Rows will be added here by JavaScript -->
+                </div>
+                
+                @* Add Row Button *@
+                <div class="mb-4">
+                    <button type="button" class="btn btn-light" id="@(Model.ComponentId)_addRow">
+                        <i class="ri-add-line me-1"></i>Add Another @Model.EntityName
+                    </button>
+                    <span class="text-muted ms-2" id="@(Model.ComponentId)_rowCount">
+                        <span id="@(Model.ComponentId)_currentCount">@Model.InitialRows</span> @Model.EntityNamePlural
+                    </span>
+                </div>
+                
+                @* Action Buttons *@
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary" id="@(Model.ComponentId)_submit">
+                        <i class="ri-save-line me-1"></i>
+                        <span id="@(Model.ComponentId)_submitText">@Model.SubmitButtonText</span>
+                    </button>
+                    @if (!string.IsNullOrEmpty(Model.CancelUrl))
+                    {
+                        <a href="@Model.CancelUrl" class="btn btn-secondary">Cancel</a>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+}
+else
+{
+    @* Without card wrapper *@
+    @if (!string.IsNullOrEmpty(Model.Description))
+    {
+        <p class="text-muted mb-4">@Model.Description</p>
+    }
+    
+    <form method="@Model.Method" action="@Model.ActionUrl" id="@Model.ComponentId">
+        @Html.AntiForgeryToken()
+        
+        @if (Model.ParentSelector != null)
+        {
+            <partial name="~/Views/Shared/Components/BulkActions/_ParentSelector.cshtml" model="Model.ParentSelector" />
+        }
+        
+        <div id="@(Model.ComponentId)_rowsContainer" class="mb-4"></div>
+        
+        <div class="mb-4">
+            <button type="button" class="btn btn-light" id="@(Model.ComponentId)_addRow">
+                <i class="ri-add-line me-1"></i>Add Another @Model.EntityName
+            </button>
+            <span class="text-muted ms-2" id="@(Model.ComponentId)_rowCount">
+                <span id="@(Model.ComponentId)_currentCount">@Model.InitialRows</span> @Model.EntityNamePlural
+            </span>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary" id="@(Model.ComponentId)_submit">
+                <i class="ri-save-line me-1"></i>
+                <span id="@(Model.ComponentId)_submitText">@Model.SubmitButtonText</span>
+            </button>
+            @if (!string.IsNullOrEmpty(Model.CancelUrl))
+            {
+                <a href="@Model.CancelUrl" class="btn btn-secondary">Cancel</a>
+            }
+        </div>
+    </form>
+}
+
+@* Row Template (hidden, cloned by JavaScript) *@
+<template id="@(Model.ComponentId)_rowTemplate">
+    <div class="bulk-add-row card mb-3" data-row-index="{{index}}">
+        <div class="card-body">
+            <div class="row align-items-center g-3">
+                <div class="col-auto">
+                    <span class="row-number badge bg-primary fs-14">{{number}}</span>
+                </div>
+                <div class="col">
+                    <div class="row g-3">
+                        @foreach (var field in Model.Fields)
+                        {
+                            <div class="@field.ColumnClass">
+                                <partial name="~/Views/Shared/Components/BulkActions/_BulkAddField.cshtml" model="field" />
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-sm btn-icon btn-danger remove-row" title="Remove @Model.EntityName">
+                        <i class="ri-delete-bin-line"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+@* Pass config to JavaScript *@
+<script>
+    window['@(Model.ComponentId)_config'] = {
+        componentId: '@Model.ComponentId',
+        initialRows: @Model.InitialRows,
+        minRows: @Model.MinRows,
+        maxRows: @Model.MaxRows,
+        entityName: '@Model.EntityName',
+        entityNamePlural: '@Model.EntityNamePlural',
+        parentSelector: @Html.Raw((Model.ParentSelector != null || (Model.ParentSelectors != null && Model.ParentSelectors.Any())) ? "true" : "false"),
+        parentParameterName: '@(Model.ParentSelector?.ParameterName ?? (Model.ParentSelectors?.LastOrDefault()?.ParameterName ?? ""))',
+        filtersRowFields: @Html.Raw(Model.ParentSelector?.FiltersRowFields.ToString().ToLower() ?? (Model.ParentSelectors?.Any(s => s.FiltersRowFields) == true ? "true" : "false")),
+        fields: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Fields.Select(f => new {
+            name = f.Name,
+            filterByParent = f.FilterByParent,
+            filterPropertyName = f.FilterPropertyName,
+            hasOptions = f.Options != null && f.Options.Any()
+        })))
+    };
+</script>

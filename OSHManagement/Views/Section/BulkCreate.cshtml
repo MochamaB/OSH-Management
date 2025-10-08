@@ -1,0 +1,140 @@
+@using OSHManagement.Extensions
+@{
+    ViewData["Title"] = "Bulk Create Sections";
+    
+    // Build category options
+    var categoryOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>();
+    if (ViewBag.Categories != null)
+    {
+        foreach (var category in (IEnumerable<dynamic>)ViewBag.Categories)
+        {
+            categoryOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
+            {
+                Text = category.CategoryName,
+                Value = category.OrgCategoryId.ToString()
+            });
+        }
+    }
+    
+    // Build station options for parent selector
+    var stationOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>();
+    if (ViewBag.Stations != null)
+    {
+        foreach (var station in (IEnumerable<dynamic>)ViewBag.Stations)
+        {
+            stationOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
+            {
+                Text = station.StationName,
+                Value = station.StationId.ToString()
+            });
+        }
+    }
+    
+    // Build employee options for supervisor dropdown
+    var employeeOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>
+    {
+        new OSHManagement.Models.ViewModels.FormSelectOption { Text = "-- None --", Value = "" }
+    };
+    
+    if (ViewBag.Employees != null)
+    {
+        foreach (var emp in (IEnumerable<dynamic>)ViewBag.Employees)
+        {
+            employeeOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
+            {
+                Text = $"{emp.FullName} ({emp.PayrollNo})",
+                Value = emp.PayrollNo
+            });
+        }
+    }
+    
+    // Configure BulkAdd component
+    var config = new OSHManagement.Models.ViewModels.BulkAddConfig
+    {
+        ComponentId = "bulkAddSections",
+        Title = "Bulk Create Sections",
+        Description = "Add multiple sections to a station at once.",
+        Icon = "ri-layout-grid-line",
+        EntityName = "Section",
+        EntityNamePlural = "Sections",
+        InitialRows = 3,
+        MinRows = 1,
+        MaxRows = 20,
+        
+        ParentSelectors = new List<OSHManagement.Models.ViewModels.ParentSelectorConfig>
+        {
+            new OSHManagement.Models.ViewModels.ParentSelectorConfig
+            {
+                Label = "Organization Category",
+                ParameterName = "categoryId",
+                Required = false,
+                Placeholder = "-- All Categories --",
+                Options = categoryOptions,
+                HelpText = "Optional: Filter stations by category",
+                ColumnClass = "col-md-6",
+                FiltersOtherSelector = true,
+                FilterTargetParameter = "stationId"
+            },
+            new OSHManagement.Models.ViewModels.ParentSelectorConfig
+            {
+                Label = "Station",
+                ParameterName = "stationId",
+                Required = true,
+                Placeholder = "-- Select Station --",
+                Options = stationOptions,
+                HelpText = "All sections will be created in this station",
+                ColumnClass = "col-md-6",
+                FiltersRowFields = false
+            }
+        },
+        
+        Fields = new List<OSHManagement.Models.ViewModels.BulkAddFieldConfig>
+        {
+            new OSHManagement.Models.ViewModels.BulkAddFieldConfig
+            {
+                Name = "SectionName",
+                Label = "Section Name",
+                Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                Required = true,
+                Placeholder = "Enter section name",
+                MaxLength = 100,
+                ValidationMessage = "Section name is required",
+                ColumnClass = "col-md-7",
+                DisplayOrder = 1
+            },
+            new OSHManagement.Models.ViewModels.BulkAddFieldConfig
+            {
+                Name = "SupervisorPayroll",
+                Label = "Supervisor",
+                Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                Required = false,
+                Options = employeeOptions,
+                FilterByParent = false,
+                ColumnClass = "col-md-5",
+                DisplayOrder = 2
+            }
+        },
+        
+        ActionUrl = "/Section/BulkCreate",
+        CancelUrl = "/Section/Index",
+        SubmitButtonText = "Save All Sections",
+        WrapInCard = true
+    };
+    
+    var bulkAdd = config.BuildBulkAdd();
+}
+
+<!-- Render BulkAdd Component -->
+<div class="row">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/BulkActions/_BulkAddComponent.cshtml" model="bulkAdd" />
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Pass stations data to JavaScript for cascading filter
+        window.bulkAddSections_stationsData = @Html.Raw(Json.Serialize(ViewBag.Stations));
+    </script>
+}
+

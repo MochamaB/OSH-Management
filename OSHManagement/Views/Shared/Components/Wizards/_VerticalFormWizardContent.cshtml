@@ -1,0 +1,408 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.FormWizardViewModel
+
+@{
+    var progressPercentage = Model.GetProgressPercentage();
+}
+
+<form id="@Model.WizardId"
+      action="@Model.ActionUrl"
+      method="@Model.Method"
+      class="wizard-form wizard-vertical"
+      data-validate-on-step-change="@Model.ValidateOnStepChange.ToString().ToLower()"
+      data-show-progress-bar="@Model.ShowProgressBar.ToString().ToLower()"
+      data-total-steps="@Model.TotalSteps"
+      data-wizard-type="vertical">
+
+    <div class="row">
+        <!-- Left Side: Wizard Steps Navigation -->
+        <div class="col-xl-3 col-lg-4">
+            <div class="wizard-steps-vertical">
+                @* Step Progress Summary *@
+                <div class="wizard-progress-summary mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted fw-medium">Step <span class="wizard-current-step">1</span> of @Model.TotalSteps</span>
+                        <span class="badge bg-light text-dark"><span class="wizard-completed-count">0</span>/@Model.TotalSteps Completed</span>
+                    </div>
+                </div>
+
+                @* Vertical Steps List *@
+                <div class="wizard-navigation-vertical">
+                    <ul class="list-unstyled wizard-steps-list">
+                        @foreach (var step in Model.Steps)
+                        {
+                            <li class="wizard-step-item @(step.IsActive ? "active" : "")" data-step="@step.StepNumber">
+                                <a href="#@step.TabId"
+                                   class="wizard-nav-link-vertical @(step.IsActive ? "active" : "")"
+                                   data-step="@step.StepNumber"
+                                   data-step-id="@step.StepId">
+                                    <div class="wizard-step-indicator">
+                                        <span class="wizard-step-number">@step.StepNumber</span>
+                                        <span class="wizard-step-check"><i class="ri-check-line"></i></span>
+                                    </div>
+                                    <div class="wizard-step-info">
+                                        @if (!string.IsNullOrEmpty(step.Icon))
+                                        {
+                                            <i class="@step.Icon wizard-step-icon"></i>
+                                        }
+                                        <div>
+                                            <div class="wizard-step-title">@step.Title</div>
+                                            @if (!string.IsNullOrEmpty(step.Description))
+                                            {
+                                                <small class="wizard-step-subtitle text-muted d-none d-lg-block">@step.Description</small>
+                                            }
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Wizard Content -->
+        <div class="col-xl-9 col-lg-8">
+            <div class="wizard-content-vertical">
+                @foreach (var step in Model.Steps)
+                {
+                    <div class="wizard-step @(step.IsActive ? "active" : "")"
+                         id="@step.TabId"
+                         data-step="@step.StepNumber"
+                         data-step-id="@step.StepId"
+                         style="@(step.IsActive ? "" : "display: none;")">
+
+                        @* Step Header *@
+                        <div class="wizard-step-header mb-4">
+                            <div class="d-flex align-items-center">
+                                @if (!string.IsNullOrEmpty(step.Icon))
+                                {
+                                    <div class="avatar avatar-lg bg-primary-transparent me-3">
+                                        <i class="@step.Icon fs-18"></i>
+                                    </div>
+                                }
+                                <div>
+                                    <h5 class="mb-1">@step.Title</h5>
+                                    @if (!string.IsNullOrEmpty(step.Description))
+                                    {
+                                        <p class="text-muted mb-0">@step.Description</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        @* Step Fields *@
+                        <div class="wizard-step-body">
+                            <div class="row gy-3">
+                                @foreach (var field in step.Fields)
+                                {
+                                    <div class="@step.FieldColumnClass">
+                                        @* Reuse existing FormField partial *@
+                                        <partial name="~/Views/Shared/Components/Forms/_FormField.cshtml" model="field" />
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @* Wizard Navigation Buttons *@
+            <div class="wizard-buttons-vertical d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
+                <div>
+                    @if (!string.IsNullOrEmpty(Model.CancelUrl))
+                    {
+                        <a href="@Model.CancelUrl" class="btn btn-light">
+                            <i class="ri-close-line me-1"></i>@Model.CancelButtonText
+                        </a>
+                    }
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-secondary wizard-prev" style="display: none;">
+                        <i class="ri-arrow-left-line me-1"></i>@Model.PreviousButtonText
+                    </button>
+
+                    <button type="button" class="btn btn-primary wizard-next">
+                        @Model.NextButtonText<i class="ri-arrow-right-line ms-1"></i>
+                    </button>
+
+                    <button type="submit" class="btn btn-success wizard-submit" style="display: none;">
+                        <i class="ri-check-line me-1"></i>@Model.SubmitButtonText
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<style>
+    /* ============================================
+       Vertical Wizard Styles
+       ============================================ */
+
+    .wizard-vertical {
+        /* Container styles */
+    }
+
+    /* Left Side: Steps Navigation */
+    .wizard-steps-vertical {
+        position: sticky;
+        top: 20px;
+    }
+
+    .wizard-steps-list {
+        margin: 0;
+        padding: 0;
+    }
+
+    .wizard-step-item {
+        position: relative;
+        margin-bottom: 0.5rem;
+    }
+
+    .wizard-step-item:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: 31px;
+        top: 48px;
+        bottom: -21px;
+        width: 4px;
+        background: var(--bs-border-color);
+        z-index: 0;
+    }
+
+    .wizard-step-item.active::before,
+    .wizard-step-item.completed::before {
+        background: var(--bs-primary);
+    }
+
+    .wizard-nav-link-vertical {
+        display: flex;
+        align-items: flex-start;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        color: var(--bs-body-color);
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 1;
+    }
+
+    .wizard-nav-link-vertical:hover {
+        background-color: var(--bs-light);
+        text-decoration: none;
+    }
+
+    .wizard-nav-link-vertical.active {
+        background-color: var(--bs-primary-bg-subtle);
+        color: var(--bs-primary);
+    }
+
+    /* Step Indicator Circle */
+    .wizard-step-indicator {
+        position: relative;
+        min-width: 40px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--bs-light);
+        border: 2px solid var(--bs-border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    /* Pending Step (not started) */
+    .wizard-step-item .wizard-step-indicator {
+        background: var(--bs-light);
+        border-color: var(--bs-border-color);
+    }
+
+    .wizard-step-item .wizard-step-number {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--bs-secondary);
+    }
+
+    .wizard-step-item .wizard-step-title {
+        color: var(--bs-secondary);
+    }
+
+    /* Active Step (current) */
+    .wizard-step-item.active .wizard-step-indicator {
+        background: var(--bs-primary);
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.15);
+    }
+
+    .wizard-step-item.active .wizard-step-number {
+        color: white;
+    }
+
+    .wizard-step-item.active .wizard-step-title {
+        color: var(--bs-primary);
+        font-weight: 600;
+    }
+
+    .wizard-step-item.active .wizard-step-icon {
+        color: var(--bs-primary);
+    }
+
+    /* Completed Step (done) */
+    .wizard-step-item.completed .wizard-step-indicator {
+        background: var(--bs-success);
+        border-color: var(--bs-success);
+    }
+
+    .wizard-step-item.completed .wizard-step-title {
+        color: var(--bs-success);
+    }
+
+    .wizard-step-item.completed .wizard-step-icon {
+        color: var(--bs-success);
+    }
+
+    .wizard-step-check {
+        display: none;
+        color: white;
+        font-size: 1.1rem;
+    }
+
+    .wizard-step-item.completed .wizard-step-check {
+        display: block;
+    }
+
+    .wizard-step-item.completed .wizard-step-number {
+        display: none;
+    }
+
+    /* Hover Effects */
+    .wizard-nav-link-vertical:hover .wizard-step-indicator {
+        transform: scale(1.05);
+    }
+
+    .wizard-step-item.completed:hover .wizard-step-indicator {
+        background: var(--bs-success);
+        box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.15);
+    }
+
+    .wizard-step-item:not(.active):not(.completed):hover .wizard-step-indicator {
+        border-color: var(--bs-primary);
+    }
+
+    /* Step Info */
+    .wizard-step-info {
+        display: flex;
+        align-items: flex-start;
+        flex: 1;
+    }
+
+    .wizard-step-icon {
+        font-size: 1.2rem;
+        margin-right: 0.5rem;
+        color: var(--bs-secondary);
+    }
+
+    .wizard-nav-link-vertical.active .wizard-step-icon {
+        color: var(--bs-primary);
+    }
+
+    .wizard-step-title {
+        font-weight: 500;
+        font-size: 0.95rem;
+        line-height: 1.4;
+    }
+
+    .wizard-step-subtitle {
+        font-size: 0.8rem;
+        line-height: 1.3;
+        margin-top: 0.25rem;
+        display: block;
+    }
+
+    /* Right Side: Content */
+    .wizard-content-vertical {
+        min-height: 400px;
+    }
+
+    .wizard-step-header {
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .wizard-step-body {
+        /* Content area styles */
+    }
+
+    /* Animation */
+    .wizard-step {
+        animation: fadeInUp 0.4s ease-out;
+    }
+
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive */
+    @@media (max-width: 991.98px) {
+        .wizard-steps-vertical {
+            position: relative;
+            top: 0;
+            margin-bottom: 2rem;
+        }
+
+        .wizard-step-item:not(:last-child)::before {
+            display: none;
+        }
+
+        .wizard-steps-list {
+            display: flex;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .wizard-step-item {
+            margin-bottom: 0;
+            margin-right: 0.5rem;
+            min-width: 200px;
+        }
+
+        .wizard-nav-link-vertical {
+            padding: 0.5rem;
+        }
+
+        .wizard-step-indicator {
+            min-width: 36px;
+            width: 36px;
+            height: 36px;
+        }
+
+        .wizard-step-subtitle {
+            display: none !important;
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .wizard-step-item {
+            min-width: auto;
+        }
+
+        .wizard-step-info {
+            flex-direction: column;
+        }
+
+        .wizard-step-title {
+            font-size: 0.85rem;
+        }
+    }
+</style>

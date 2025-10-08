@@ -1,0 +1,61 @@
+@model OSHManagement.Models.ViewModels.BulkAddFieldViewModel
+
+@{
+    var fieldId = Model.UniqueIdTemplate.Replace("{{index}}", "{{index}}");
+    var fieldName = $"Items[{{{{index}}}}].{Model.Name}";
+}
+
+<div class="form-floating">
+    @switch (Model.Type)
+    {
+        case OSHManagement.Models.ViewModels.FieldType.Select:
+            <select name="@fieldName" 
+                    id="@fieldId" 
+                    class="form-select bulk-add-field @(Model.FilterByParent ? "filter-by-parent" : "")"
+                    data-filter-property="@Model.FilterPropertyName"
+                    @(Model.Required ? "required" : "")>
+                <option value="">-- Select --</option>
+                @if (Model.Options != null)
+                {
+                    foreach (var option in Model.Options)
+                    {
+                        <option value="@option.Value" data-filter-value="@option.Value">@option.Text</option>
+                    }
+                }
+            </select>
+            break;
+            
+        case OSHManagement.Models.ViewModels.FieldType.Textarea:
+            <textarea name="@fieldName" 
+                      id="@fieldId" 
+                      class="form-control bulk-add-field"
+                      placeholder="@Model.Placeholder"
+                      rows="3"
+                      @(Model.MaxLength.HasValue ? $"maxlength=\"{Model.MaxLength}\"" : "")
+                      @(Model.Required ? "required" : "")></textarea>
+            break;
+            
+        default: // Text, Email, Number, etc.
+            <input type="@Model.Type.ToString().ToLower()" 
+                   name="@fieldName" 
+                   id="@fieldId" 
+                   class="form-control bulk-add-field"
+                   placeholder="@Model.Placeholder"
+                   @(Model.MaxLength.HasValue ? $"maxlength=\"{Model.MaxLength}\"" : "")
+                   @(Model.Required ? "required" : "") />
+            break;
+    }
+    
+    <label for="@fieldId">
+        @Model.Label @(Model.Required ? "*" : "")
+    </label>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.HelpText))
+{
+    <div class="form-text">@Model.HelpText</div>
+}
+@if (Model.Required && !string.IsNullOrEmpty(Model.ValidationMessage))
+{
+    <div class="invalid-feedback">@Model.ValidationMessage</div>
+}

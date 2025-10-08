@@ -41,21 +41,48 @@
         function showStep(stepNumber) {
             if (stepNumber < 1 || stepNumber > totalSteps) return;
 
+            var isVertical = wizard.hasClass('wizard-vertical');
+
             // Hide all steps
             wizard.find('.wizard-step').removeClass('active').hide();
-            wizard.find('.wizard-nav-link').removeClass('active');
+
+            // Handle both horizontal and vertical nav links
+            if (isVertical) {
+                wizard.find('.wizard-nav-link-vertical').removeClass('active');
+                wizard.find('.wizard-step-item').removeClass('active');
+
+                // Mark completed steps
+                wizard.find('.wizard-step-item').each(function() {
+                    var itemStep = parseInt($(this).data('step'));
+                    if (itemStep < stepNumber) {
+                        $(this).addClass('completed');
+                    } else {
+                        $(this).removeClass('completed');
+                    }
+                });
+            } else {
+                wizard.find('.wizard-nav-link').removeClass('active');
+            }
 
             // Show target step
             wizard.find('.wizard-step[data-step="' + stepNumber + '"]').addClass('active').fadeIn(300);
-            wizard.find('.wizard-nav-link[data-step="' + stepNumber + '"]').addClass('active');
+
+            if (isVertical) {
+                wizard.find('.wizard-nav-link-vertical[data-step="' + stepNumber + '"]').addClass('active');
+                wizard.find('.wizard-step-item[data-step="' + stepNumber + '"]').addClass('active');
+            } else {
+                wizard.find('.wizard-nav-link[data-step="' + stepNumber + '"]').addClass('active');
+            }
 
             // Update UI
             updateButtons(stepNumber);
             updateProgress(stepNumber);
             currentStep = stepNumber;
 
-            // Scroll to wizard
-            wizard.get(0).scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Scroll to wizard (different behavior for vertical)
+            if (!isVertical) {
+                wizard.get(0).scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
 
             // Callback
             if (typeof settings.onStepChange === 'function') {
@@ -77,27 +104,40 @@
         }
 
         /**
-         * Update progress bar
+         * Update progress bar and step counters
          */
         function updateProgress(stepNumber) {
-            if (!settings.showProgressBar) return;
+            var isVertical = wizard.hasClass('wizard-vertical');
 
-            var percentage = Math.round((stepNumber / totalSteps) * 100);
-            var progressBar = wizard.find('.wizard-progress-bar');
-            var progressText = wizard.find('.wizard-progress-text');
+            // Update horizontal progress bar
+            if (settings.showProgressBar && !isVertical) {
+                var percentage = Math.round((stepNumber / totalSteps) * 100);
+                var progressBar = wizard.find('.wizard-progress-bar');
+                var progressText = wizard.find('.wizard-progress-text');
 
-            if (progressBar.length > 0) {
-                progressBar.css('width', percentage + '%').attr('aria-valuenow', percentage);
+                if (progressBar.length > 0) {
+                    progressBar.css('width', percentage + '%').attr('aria-valuenow', percentage);
+                }
+
+                if (progressText.length > 0) {
+                    progressText.text('Step ' + stepNumber + ' of ' + totalSteps);
+                }
+
+                // Update percentage display if exists
+                var progressPercentage = wizard.find('.wizard-progress-percentage');
+                if (progressPercentage.length > 0) {
+                    progressPercentage.text(percentage + '%');
+                }
             }
 
-            if (progressText.length > 0) {
-                progressText.text('Step ' + stepNumber + ' of ' + totalSteps);
-            }
+            // Update vertical progress summary
+            if (isVertical) {
+                // Update current step number
+                wizard.find('.wizard-current-step').text(stepNumber);
 
-            // Update percentage display if exists
-            var progressPercentage = wizard.find('.wizard-progress-percentage');
-            if (progressPercentage.length > 0) {
-                progressPercentage.text(percentage + '%');
+                // Count completed steps
+                var completedCount = wizard.find('.wizard-step-item.completed').length;
+                wizard.find('.wizard-completed-count').text(completedCount);
             }
         }
 
@@ -118,6 +158,49 @@
             // Clear previous validation
             stepElement.find('.is-invalid').removeClass('is-invalid');
             stepElement.find('.invalid-feedback').hide();
+
+            // If jQuery Validation is available, use it for validation including Remote validation
+            var form = wizard.closest('form');
+            if (form.length > 0 && typeof $.fn.validate !== 'undefined') {
+                var validator = form.validate();
+
+                // Validate all fields in current step
+                stepElement.find('input, select, textarea').each(function () {
+                    var field = $(this);
+
+                    // Trigger validation for this field
+                    if (!validator.element(field)) {
+                        // Field is invalid
+                        field.addClass('is-invalid');
+
+                        // Show error message
+                        var errorMessage = field.data('val-remote') ||
+                                         field.data('val-required') ||
+                                         field.data('val-email') ||
+                                         'Invalid value';
+
+                        var errorSpan = field.next('.field-validation-error, .invalid-feedback');
+                        if (errorSpan.length > 0) {
+                            errorSpan.show();
+                        }
+
+                        if (!firstInvalidField) firstInvalidField = field;
+                        isValid = false;
+                    } else {
+                        // Field is valid
+                        field.removeClass('is-invalid');
+                    }
+                });
+
+                // If validation failed, focus first invalid field
+                if (!isValid && firstInvalidField) {
+                    firstInvalidField.focus();
+                }
+
+                return isValid;
+            }
+
+            // Fallback: Manual validation if jQuery Validation not available
 
             // Validate required fields
             stepElement.find('input[required], select[required], textarea[required]').each(function () {
@@ -219,8 +302,8 @@
             showStep(currentStep - 1);
         });
 
-        // Tab navigation
-        wizard.find('.wizard-nav-link').on('click', function (e) {
+        // Tab navigation (handles both horizontal and vertical)
+        wizard.find('.wizard-nav-link, .wizard-nav-link-vertical').on('click', function (e) {
             e.preventDefault();
             var targetStep = parseInt($(this).data('step'));
 

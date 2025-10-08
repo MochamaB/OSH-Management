@@ -1,0 +1,129 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.TabsViewModel
+
+<div class="row">
+    <!-- Left: Navigation Pills -->
+    <div class="@Model.NavColumnClass">
+        <div class="nav flex-column nav-pills me-3 tab-style-7" id="@Model.TabsId" role="tablist" aria-orientation="vertical">
+            @foreach (var tab in Model.Tabs)
+            {
+                <button class="nav-link text-start @(tab.IsActive ? "active" : "") @(tab.IsDisabled ? "disabled" : "")"
+                        id="@tab.NavId"
+                        data-bs-toggle="pill"
+                        data-bs-target="#@tab.PanelId"
+                        type="button"
+                        role="tab"
+                        aria-controls="@tab.PanelId"
+                        aria-selected="@tab.AriaSelected"
+                        tabindex="@tab.TabIndexAttr"
+                        @(tab.IsDisabled ? "disabled" : "")>
+                    @if (!string.IsNullOrEmpty(tab.Icon))
+                    {
+                        <i class="@tab.Icon me-1 align-middle d-inline-block"></i>
+                    }
+                    @tab.Title
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Right: Tab Content -->
+    <div class="@Model.ContentColumnClass">
+        <div class="tab-content" id="@(Model.TabsId)-content">
+            @foreach (var tab in Model.Tabs)
+            {
+                <div class="tab-pane fade @(tab.IsActive ? "show active" : "")"
+                     id="@tab.PanelId"
+                     role="tabpanel"
+                     aria-labelledby="@tab.NavId"
+                     tabindex="0">
+                    @if (tab.Content != null)
+                    {
+                        @tab.Content(null)
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Vertical Tabs Style-1 (Vyzor tab-style-7) */
+    .tab-style-7 .nav-link {
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.5rem;
+        color: var(--bs-body-color);
+        border: 1px solid transparent;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .tab-style-7 .nav-link:hover {
+        background-color: var(--bs-light);
+        border-color: var(--bs-border-color);
+    }
+
+    .tab-style-7 .nav-link.active {
+        background-color: var(--bs-primary);
+        color: white;
+        border-color: var(--bs-primary);
+        box-shadow: 0 2px 6px rgba(13, 110, 253, 0.3);
+    }
+
+    .tab-style-7 .nav-link.active i {
+        color: white;
+    }
+
+    .tab-style-7 .nav-link i {
+        font-size: 1.1rem;
+        vertical-align: middle;
+        color: var(--bs-secondary);
+        transition: color 0.3s ease;
+    }
+
+    .tab-style-7 .nav-link:hover i {
+        color: var(--bs-primary);
+    }
+
+    .tab-style-7 .nav-link.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Tab Content Styling */
+    .tab-content {
+        min-height: 200px;
+    }
+
+    .tab-pane {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive */
+    @@media (max-width: 767.98px) {
+        .tab-style-7 {
+            flex-direction: row !important;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+
+        .tab-style-7 .nav-link {
+            white-space: nowrap;
+            margin-right: 0.5rem;
+            margin-bottom: 0;
+        }
+    }
+</style>

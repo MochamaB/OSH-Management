@@ -224,23 +224,12 @@ namespace OSHManagement.Controllers
         // POST: Employee/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(EmployeeViewModel model)
+        public async Task<IActionResult> Create(EmployeeViewModel model, List<int>? SelectedRoles)
         {
             if (ModelState.IsValid)
             {
                 try
                 {
-                    // Check if payroll number already exists
-                    var existingEmployee = await _context.Employees
-                        .FirstOrDefaultAsync(e => e.PayrollNo == model.PayrollNo);
-
-                    if (existingEmployee != null)
-                    {
-                        ModelState.AddModelError("PayrollNo", "An employee with this payroll number already exists.");
-                        await PopulateDropdowns();
-                        return View(model);
-                    }
-
                     // Create new employee
                     var employee = new Models.Employee
                     {
@@ -256,8 +245,8 @@ namespace OSHManagement.Controllers
                         EmploymentStatus = model.EmploymentStatus ?? "Active",
                         EmployeeType = model.EmployeeType,
                         Designation = model.Designation,
-                        HireDate = model.HireDate,
-                        ServiceYears = model.ServiceYears,
+                        HireDate = DateTime.UtcNow, // Auto-set to current date
+                        ServiceYears = null, // Will be calculated later
                         ContractEndDate = model.ContractEndDate,
                         HodPayroll = model.HodPayroll,
                         SupervisorPayroll = model.SupervisorPayroll,
@@ -266,6 +255,25 @@ namespace OSHManagement.Controllers
 
                     _context.Employees.Add(employee);
                     await _context.SaveChangesAsync();
+
+                    // Assign roles if selected
+                    if (SelectedRoles != null && SelectedRoles.Any())
+                    {
+                        foreach (var roleId in SelectedRoles)
+                        {
+                            var employeeRole = new Models.EmployeeRole
+                            {
+                                EmployeeId = employee.EmployeeId,
+                                RoleId = roleId,
+                                IsActive = true,
+                                AssignedAt = DateTime.UtcNow
+                            };
+
+                            _context.EmployeeRoles.Add(employeeRole);
+                        }
+
+                        await _context.SaveChangesAsync();
+                    }
 
                     TempData["Success"] = $"Employee '{model.FirstName} {model.LastName}' has been created successfully with payroll number {model.PayrollNo}.";
                     return RedirectToAction(nameof(Index));
@@ -281,13 +289,251 @@ namespace OSHManagement.Controllers
             return View(model);
         }
 
+        // GET: Employee/Edit/5
+        public async Task<IActionResult> Edit(int id)
+        {
+            var employee = await _context.Employees
+                .Include(e => e.Station)
+                    .ThenInclude(s => s.OrgCategory)
+                .Include(e => e.Department)
+                .Include(e => e.EmployeeRoles.Where(er => er.IsActive))
+                    .ThenInclude(er => er.Role)
+                .FirstOrDefaultAsync(e => e.EmployeeId == id);
+
+            if (employee == null)
+            {
+                TempData["Error"] = "Employee not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var model = new EmployeeViewModel
+            {
+                EmployeeId = employee.EmployeeId,
+                PayrollNo = employee.PayrollNo,
+                RollNo = employee.RollNo,
+                FirstName = employee.FirstName,
+                LastName = employee.LastName,
+                EmailAddress = employee.EmailAddress,
+                PhoneNo = employee.PhoneNo,
+                StationId = employee.StationId,
+                StationName = employee.Station?.StationName ?? "",
+                DepartmentId = employee.DepartmentId,
+                DepartmentName = employee.Department?.DepartmentName,
+                Username = employee.Username,
+                EmploymentStatus = employee.EmploymentStatus,
+                EmployeeType = employee.EmployeeType,
+                Designation = employee.Designation,
+                HireDate = employee.HireDate,
+                ServiceYears = employee.ServiceYears,
+                ContractEndDate = employee.ContractEndDate,
+                HodPayroll = employee.HodPayroll,
+                SupervisorPayroll = employee.SupervisorPayroll,
+                RoleNames = employee.EmployeeRoles.Where(er => er.IsActive).Select(er => er.Role.RoleName).ToList(),
+                CreatedAt = employee.CreatedAt,
+                UpdatedAt = employee.UpdatedAt
+            };
+
+            // Get HOD and Supervisor names
+            if (!string.IsNullOrEmpty(employee.HodPayroll))
+            {
+                var hod = await _context.Employees
+                    .FirstOrDefaultAsync(e => e.PayrollNo == employee.HodPayroll);
+                if (hod != null)
+                {
+                    model.HodFullName = $"{hod.FirstName} {hod.LastName}";
+                }
+            }
+
+            if (!string.IsNullOrEmpty(employee.SupervisorPayroll))
+            {
+                var supervisor = await _context.Employees
+                    .FirstOrDefaultAsync(e => e.PayrollNo == employee.SupervisorPayroll);
+                if (supervisor != null)
+                {
+                    model.SupervisorFullName = $"{supervisor.FirstName} {supervisor.LastName}";
+                }
+            }
+
+            await PopulateDropdowns();
+            return View(model);
+        }
+
+        // POST: Employee/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, EmployeeViewModel model, List<int>? SelectedRoles)
+        {
+            if (id != model.EmployeeId)
+            {
+                TempData["Error"] = "Invalid employee ID.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var employee = await _context.Employees
+                        .Include(e => e.EmployeeRoles)
+                        .FirstOrDefaultAsync(e => e.EmployeeId == id);
+
+                    if (employee == null)
+                    {
+                        TempData["Error"] = "Employee not found.";
+                        return RedirectToAction(nameof(Index));
+                    }
+
+                    // Update employee properties
+                    employee.PayrollNo = model.PayrollNo;
+                    employee.RollNo = model.RollNo;
+                    employee.FirstName = model.FirstName;
+                    employee.LastName = model.LastName;
+                    employee.EmailAddress = model.EmailAddress;
+                    employee.PhoneNo = model.PhoneNo;
+                    employee.StationId = model.StationId;
+                    employee.DepartmentId = model.DepartmentId;
+                    employee.Username = model.Username;
+                    employee.EmploymentStatus = model.EmploymentStatus ?? "Active";
+                    employee.EmployeeType = model.EmployeeType;
+                    employee.Designation = model.Designation;
+                    employee.ContractEndDate = model.ContractEndDate;
+                    employee.HodPayroll = model.HodPayroll;
+                    employee.SupervisorPayroll = model.SupervisorPayroll;
+                    employee.UpdatedAt = DateTime.UtcNow;
+
+                    // Update roles
+                    // Deactivate all existing roles
+                    foreach (var existingRole in employee.EmployeeRoles.Where(er => er.IsActive))
+                    {
+                        existingRole.IsActive = false;
+                        existingRole.AssignedAt = DateTime.UtcNow;
+                    }
+
+                    // Add/activate selected roles
+                    if (SelectedRoles != null && SelectedRoles.Any())
+                    {
+                        foreach (var roleId in SelectedRoles)
+                        {
+                            var existingEmployeeRole = employee.EmployeeRoles
+                                .FirstOrDefault(er => er.RoleId == roleId);
+
+                            if (existingEmployeeRole != null)
+                            {
+                                // Reactivate existing role
+                                existingEmployeeRole.IsActive = true;
+                                existingEmployeeRole.AssignedAt = DateTime.UtcNow;
+                            }
+                            else
+                            {
+                                // Create new role assignment
+                                var employeeRole = new Models.EmployeeRole
+                                {
+                                    EmployeeId = employee.EmployeeId,
+                                    RoleId = roleId,
+                                    IsActive = true,
+                                    AssignedAt = DateTime.UtcNow
+                                };
+
+                                _context.EmployeeRoles.Add(employeeRole);
+                            }
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+
+                    TempData["Success"] = $"Employee '{model.FirstName} {model.LastName}' has been updated successfully.";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!await EmployeeExists(model.EmployeeId))
+                    {
+                        TempData["Error"] = "Employee not found.";
+                        return RedirectToAction(nameof(Index));
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    TempData["Error"] = "An error occurred while updating the employee. Please try again.";
+                    // Log the exception here if you have logging configured
+                }
+            }
+
+            await PopulateDropdowns();
+            return View(model);
+        }
+
+        private async Task<bool> EmployeeExists(int id)
+        {
+            return await _context.Employees.AnyAsync(e => e.EmployeeId == id);
+        }
+
+        // AJAX validation methods (lightweight checks on blur)
+        [HttpGet]
+        public async Task<IActionResult> CheckPayrollNoUnique(string payrollNo, int employeeId = 0)
+        {
+            if (string.IsNullOrWhiteSpace(payrollNo))
+                return Json(new { isUnique = true });
+
+            var exists = await _context.Employees
+                .AnyAsync(e => e.PayrollNo == payrollNo && e.EmployeeId != employeeId);
+
+            return Json(new { isUnique = !exists });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CheckRollNoUnique(string? rollNo, int employeeId = 0)
+        {
+            if (string.IsNullOrWhiteSpace(rollNo))
+                return Json(new { isUnique = true });
+
+            var exists = await _context.Employees
+                .AnyAsync(e => e.RollNo == rollNo && e.EmployeeId != employeeId);
+
+            return Json(new { isUnique = !exists });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CheckEmailUnique(string? emailAddress, int employeeId = 0)
+        {
+            if (string.IsNullOrWhiteSpace(emailAddress))
+                return Json(new { isUnique = true });
+
+            var exists = await _context.Employees
+                .AnyAsync(e => e.EmailAddress == emailAddress && e.EmployeeId != employeeId);
+
+            return Json(new { isUnique = !exists });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CheckPhoneUnique(string? phoneNo, int employeeId = 0)
+        {
+            if (string.IsNullOrWhiteSpace(phoneNo))
+                return Json(new { isUnique = true });
+
+            var exists = await _context.Employees
+                .AnyAsync(e => e.PhoneNo == phoneNo && e.EmployeeId != employeeId);
+
+            return Json(new { isUnique = !exists });
+        }
+
         // Helper method to populate dropdowns
         private async Task PopulateDropdowns()
         {
+            var categories = await _context.OrgCategories
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.CategoryName)
+                .Select(c => new { c.OrgCategoryId, c.CategoryName })
+                .ToListAsync();
+
             var stations = await _context.Stations
                 .Where(s => s.IsActive)
                 .OrderBy(s => s.StationName)
-                .Select(s => new { s.StationId, s.StationName })
+                .Select(s => new { s.StationId, s.StationName, s.OrgCategoryId })
                 .ToListAsync();
 
             var departments = await _context.Departments
@@ -299,16 +545,26 @@ namespace OSHManagement.Controllers
             var employees = await _context.Employees
                 .Where(e => e.EmploymentStatus == "Active")
                 .OrderBy(e => e.LastName).ThenBy(e => e.FirstName)
-                .Select(e => new { 
-                    e.EmployeeId, 
-                    e.PayrollNo, 
-                    FullName = e.FirstName + " " + e.LastName 
+                .Select(e => new {
+                    e.EmployeeId,
+                    e.PayrollNo,
+                    FullName = e.FirstName + " " + e.LastName,
+                    e.StationId,
+                    e.DepartmentId
                 })
                 .ToListAsync();
 
+            var roles = await _context.Roles
+                .Where(r => r.IsActive)
+                .OrderBy(r => r.RoleName)
+                .Select(r => new { r.RoleId, r.RoleName })
+                .ToListAsync();
+
+            ViewBag.OrgCategories = categories;
             ViewBag.Stations = stations;
             ViewBag.Departments = departments;
             ViewBag.Employees = employees;
+            ViewBag.Roles = roles;
         }
     }
 }

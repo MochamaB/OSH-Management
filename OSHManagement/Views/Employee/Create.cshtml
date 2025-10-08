@@ -3,6 +3,24 @@
 @{
     ViewData["Title"] = "Create Employee";
 
+    // Build OrgCategory options
+    var categoryOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>
+    {
+        new OSHManagement.Models.ViewModels.FormSelectOption { Text = "-- Select Category --", Value = "", Selected = true }
+    };
+
+    if (ViewBag.OrgCategories != null)
+    {
+        foreach (var category in (IEnumerable<dynamic>)ViewBag.OrgCategories)
+        {
+            categoryOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
+            {
+                Text = category.CategoryName,
+                Value = category.OrgCategoryId.ToString()
+            });
+        }
+    }
+
     // Build station options
     var stationOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>
     {
@@ -57,12 +75,13 @@
         }
     }
 
-    // Configure Form Wizard with 4 Steps
+    // Configure Form Wizard with 3 Steps (Employment Details removed)
     var wizardConfig = new OSHManagement.Models.ViewModels.FormWizardConfig
     {
         WizardId = "createEmployeeWizard",
         ActionUrl = "/Employee/Create",
         Method = "POST",
+        Type = OSHManagement.Models.ViewModels.WizardType.Horizontal,
         CardTitle = "Create New Employee",
         CardSubtitle = "Complete all steps to add a new employee to the system",
         ValidateOnStepChange = true,
@@ -162,6 +181,15 @@
                 {
                     new OSHManagement.Models.ViewModels.FormFieldConfig
                     {
+                        Name = "OrgCategoryId",
+                        PropertyName = "OrgCategoryId",
+                        Label = "Organization Category",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                        Options = categoryOptions,
+                        HelpText = "Filter stations by category"
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
                         Name = "StationId",
                         PropertyName = nameof(EmployeeViewModel.StationId),
                         Label = "Station",
@@ -199,8 +227,17 @@
                             new OSHManagement.Models.ViewModels.FormSelectOption { Text = "-- Select Type --", Value = "" },
                             new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Factory", Value = "Factory" },
                             new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Outsourced", Value = "Outsourced" },
-                            new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Casual", Value = "Casual" }
+                            new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Casual", Value = "Casual" },
+                            new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Contract", Value = "Contract" }
                         }
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "ContractEndDate",
+                        PropertyName = nameof(EmployeeViewModel.ContractEndDate),
+                        Label = "Contract End Date",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Date,
+                        HelpText = "Required only for Contract employees"
                     },
                     new OSHManagement.Models.ViewModels.FormFieldConfig
                     {
@@ -211,8 +248,7 @@
                         Options = new List<OSHManagement.Models.ViewModels.FormSelectOption>
                         {
                             new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Active", Value = "Active", Selected = true },
-                            new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Inactive", Value = "Inactive" },
-                            new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Contract", Value = "Contract" }
+                            new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Inactive", Value = "Inactive" }
                         }
                     },
                     new OSHManagement.Models.ViewModels.FormFieldConfig
@@ -228,52 +264,13 @@
                 }
             },
 
-            // ========== STEP 3: Employment Details ==========
-            new OSHManagement.Models.ViewModels.WizardStepConfig
-            {
-                StepId = "employmentDetails",
-                Title = "Employment Details",
-                Icon = "ri-calendar-line",
-                Description = "Specify employment dates and service information",
-                FieldsPerRow = 2,
-                FieldColumnClass = "col-md-6",
-                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
-                {
-                    new OSHManagement.Models.ViewModels.FormFieldConfig
-                    {
-                        Name = "HireDate",
-                        PropertyName = nameof(EmployeeViewModel.HireDate),
-                        Label = "Hire Date",
-                        Type = OSHManagement.Models.ViewModels.FieldType.Date,
-                        HelpText = "Date when employee was hired"
-                    },
-                    new OSHManagement.Models.ViewModels.FormFieldConfig
-                    {
-                        Name = "ServiceYears",
-                        PropertyName = nameof(EmployeeViewModel.ServiceYears),
-                        Label = "Years of Service",
-                        Type = OSHManagement.Models.ViewModels.FieldType.Number,
-                        Placeholder = "Enter years of service",
-                        HelpText = "Total years of service (calculated or manual entry)"
-                    },
-                    new OSHManagement.Models.ViewModels.FormFieldConfig
-                    {
-                        Name = "ContractEndDate",
-                        PropertyName = nameof(EmployeeViewModel.ContractEndDate),
-                        Label = "Contract End Date",
-                        Type = OSHManagement.Models.ViewModels.FieldType.Date,
-                        HelpText = "For contract employees: Contract expiration date"
-                    }
-                }
-            },
-
-            // ========== STEP 4: Reporting Structure ==========
+            // ========== STEP 3: Reporting Structure & Roles ==========
             new OSHManagement.Models.ViewModels.WizardStepConfig
             {
                 StepId = "reportingStructure",
-                Title = "Reporting Structure",
+                Title = "Reporting & Roles",
                 Icon = "ri-team-line",
-                Description = "Define reporting hierarchy and supervisory relationships",
+                Description = "Define reporting hierarchy and assign roles",
                 FieldsPerRow = 2,
                 FieldColumnClass = "col-md-6",
                 Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
@@ -311,30 +308,88 @@
     </div>
 </div>
 
+<!-- Roles Selection (outside wizard field system for custom layout) -->
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 
     <script>
         $(document).ready(function() {
-            // ============================================
-            // Cascading Dropdowns (Station → Department)
-            // ============================================
+            var allStations = @Html.Raw(Json.Serialize(ViewBag.Stations));
             var allDepartments = @Html.Raw(Json.Serialize(ViewBag.Departments));
+            var allEmployees = @Html.Raw(Json.Serialize(ViewBag.Employees));
+            var allRoles = @Html.Raw(Json.Serialize(ViewBag.Roles));
+
+            var categorySelect = $('#createEmployeeWizard_workAssignment_OrgCategoryId');
             var stationSelect = $('#createEmployeeWizard_workAssignment_StationId');
             var departmentSelect = $('#createEmployeeWizard_workAssignment_DepartmentId');
+            var employeeTypeSelect = $('#createEmployeeWizard_workAssignment_EmployeeType');
+            var contractEndDateField = $('#createEmployeeWizard_workAssignment_ContractEndDate').closest('.mb-3');
+            var hodSelect = $('#createEmployeeWizard_reportingStructure_HodPayroll');
+            var supervisorSelect = $('#createEmployeeWizard_reportingStructure_SupervisorPayroll');
 
-            // Function to filter departments based on selected station
+            // ============================================
+            // Category → Station Filtering
+            // ============================================
+            function filterStations() {
+                var selectedCategoryId = categorySelect.val();
+                var currentSelection = stationSelect.val();
+
+                stationSelect.find('option:not(:first)').remove();
+
+                if (!selectedCategoryId) {
+                    // Show all stations
+                    allStations.forEach(function(station) {
+                        stationSelect.append(
+                            $('<option></option>')
+                                .val(station.stationId)
+                                .text(station.stationName)
+                        );
+                    });
+                } else {
+                    // Filter by category
+                    var filteredStations = allStations.filter(function(station) {
+                        return station.orgCategoryId == selectedCategoryId;
+                    });
+
+                    if (filteredStations.length === 0) {
+                        stationSelect.append(
+                            $('<option></option>')
+                                .val('')
+                                .text('-- No stations in this category --')
+                                .prop('disabled', true)
+                        );
+                    } else {
+                        filteredStations.forEach(function(station) {
+                            var option = $('<option></option>')
+                                .val(station.stationId)
+                                .text(station.stationName);
+
+                            if (station.stationId == currentSelection) {
+                                option.prop('selected', true);
+                            }
+
+                            stationSelect.append(option);
+                        });
+                    }
+                }
+
+                // Cascade to departments
+                filterDepartments();
+            }
+
+            categorySelect.on('change', filterStations);
+
+            // ============================================
+            // Station → Department Filtering
+            // ============================================
             function filterDepartments() {
                 var selectedStationId = stationSelect.val();
-
-                // Store current selection
                 var currentSelection = departmentSelect.val();
 
-                // Clear all options except the first (placeholder)
                 departmentSelect.find('option:not(:first)').remove();
 
                 if (!selectedStationId) {
-                    // If no station selected, show all departments
+                    // Show all departments
                     allDepartments.forEach(function(department) {
                         departmentSelect.append(
                             $('<option></option>')
@@ -343,7 +398,7 @@
                         );
                     });
                 } else {
-                    // Filter by selected station
+                    // Filter by station
                     var filteredDepartments = allDepartments.filter(function(department) {
                         return department.stationId == selectedStationId;
                     });
@@ -369,15 +424,232 @@
                         });
                     }
                 }
+
+                // Cascade to HOD/Supervisor
+                filterSupervisors();
             }
 
-            // Filter departments when station changes
-            stationSelect.on('change', function() {
-                filterDepartments();
+            stationSelect.on('change', filterDepartments);
+
+            // ============================================
+            // Station/Department → HOD/Supervisor Filtering
+            // ============================================
+            function filterSupervisors() {
+                var selectedStationId = stationSelect.val();
+                var selectedDepartmentId = departmentSelect.val();
+
+                // Filter employees by station or department
+                var filteredEmployees = allEmployees;
+
+                if (selectedDepartmentId) {
+                    filteredEmployees = allEmployees.filter(function(emp) {
+                        return emp.departmentId == selectedDepartmentId;
+                    });
+                } else if (selectedStationId) {
+                    filteredEmployees = allEmployees.filter(function(emp) {
+                        return emp.stationId == selectedStationId;
+                    });
+                }
+
+                // Update HOD dropdown
+                var currentHod = hodSelect.val();
+                hodSelect.find('option:not(:first)').remove();
+
+                filteredEmployees.forEach(function(emp) {
+                    var option = $('<option></option>')
+                        .val(emp.payrollNo)
+                        .text(emp.fullName + ' (' + emp.payrollNo + ')');
+
+                    if (emp.payrollNo == currentHod) {
+                        option.prop('selected', true);
+                    }
+
+                    hodSelect.append(option);
+                });
+
+                // Update Supervisor dropdown
+                var currentSupervisor = supervisorSelect.val();
+                supervisorSelect.find('option:not(:first)').remove();
+
+                filteredEmployees.forEach(function(emp) {
+                    var option = $('<option></option>')
+                        .val(emp.payrollNo)
+                        .text(emp.fullName + ' (' + emp.payrollNo + ')');
+
+                    if (emp.payrollNo == currentSupervisor) {
+                        option.prop('selected', true);
+                    }
+
+                    supervisorSelect.append(option);
+                });
+            }
+
+            departmentSelect.on('change', filterSupervisors);
+
+            // ============================================
+            // EmployeeType → ContractEndDate Visibility
+            // ============================================
+            function toggleContractEndDate() {
+                var employeeType = employeeTypeSelect.val();
+
+                if (employeeType === 'Contract') {
+                    contractEndDateField.show();
+                } else {
+                    contractEndDateField.hide();
+                    $('#createEmployeeWizard_workAssignment_ContractEndDate').val('');
+                }
+            }
+
+            employeeTypeSelect.on('change', toggleContractEndDate);
+
+            // ============================================
+            // Role Checkboxes (Add to Step 3 dynamically)
+            // ============================================
+            function addRoleCheckboxes() {
+                var rolesContainer = $('#createEmployeeWizard_reportingStructure .wizard-step-fields');
+
+                if (allRoles && allRoles.length > 0 && rolesContainer.find('.roles-section').length === 0) {
+                    var rolesHtml = '<div class="col-12 roles-section">' +
+                        '<div class="mb-3">' +
+                        '<label class="form-label fw-semibold">Assign Roles</label>' +
+                        '<div class="form-text mb-2">Select one or more roles for this employee</div>' +
+                        '<div class="row">';
+
+                    allRoles.forEach(function(role) {
+                        rolesHtml += '<div class="col-md-6 mb-2">' +
+                            '<div class="form-check">' +
+                            '<input class="form-check-input employee-role-checkbox" type="checkbox" ' +
+                            'name="SelectedRoles" value="' + role.roleId + '" id="role_' + role.roleId + '">' +
+                            '<label class="form-check-label" for="role_' + role.roleId + '">' +
+                            role.roleName +
+                            '</label>' +
+                            '</div>' +
+                            '</div>';
+                    });
+
+                    rolesHtml += '</div></div></div>';
+
+                    rolesContainer.append(rolesHtml);
+                }
+            }
+
+            // Add roles on step change (listen to wizard step changes)
+            $(document).on('click', '.wizard-navigation button', function() {
+                setTimeout(function() {
+                    var activeStep = $('.wizard-step-container.active');
+                    if (activeStep.attr('id') === 'createEmployeeWizard_reportingStructure') {
+                        addRoleCheckboxes();
+                    }
+                }, 100);
             });
 
-            // Initial filter on page load
-            filterDepartments();
+            // Also add on initial load if we're on step 3
+            setTimeout(function() {
+                var activeStep = $('.wizard-step-container.active');
+                if (activeStep.attr('id') === 'createEmployeeWizard_reportingStructure') {
+                    addRoleCheckboxes();
+                }
+            }, 500);
+
+            // ============================================
+            // AJAX Validation on Blur (Check for Duplicates)
+            // ============================================
+            var employeeId = 0; // For create, always 0
+
+            // Payroll Number
+            $('#createEmployeeWizard_personalInfo_PayrollNo').on('blur', function() {
+                var field = $(this);
+                var value = field.val();
+
+                if (!value) return;
+
+                $.get('/Employee/CheckPayrollNoUnique', { payrollNo: value, employeeId: employeeId }, function(response) {
+                    if (!response.isUnique) {
+                        field.addClass('is-invalid');
+                        field.next('.invalid-feedback').remove();
+                        field.after('<div class="invalid-feedback d-block">Payroll number already exists</div>');
+                    } else {
+                        field.removeClass('is-invalid');
+                        field.next('.invalid-feedback').remove();
+                    }
+                });
+            });
+
+            // Roll Number
+            $('#createEmployeeWizard_personalInfo_RollNo').on('blur', function() {
+                var field = $(this);
+                var value = field.val();
+
+                if (!value) {
+                    field.removeClass('is-invalid');
+                    field.next('.invalid-feedback').remove();
+                    return;
+                }
+
+                $.get('/Employee/CheckRollNoUnique', { rollNo: value, employeeId: employeeId }, function(response) {
+                    if (!response.isUnique) {
+                        field.addClass('is-invalid');
+                        field.next('.invalid-feedback').remove();
+                        field.after('<div class="invalid-feedback d-block">Roll number already exists</div>');
+                    } else {
+                        field.removeClass('is-invalid');
+                        field.next('.invalid-feedback').remove();
+                    }
+                });
+            });
+
+            // Email Address
+            $('#createEmployeeWizard_personalInfo_EmailAddress').on('blur', function() {
+                var field = $(this);
+                var value = field.val();
+
+                if (!value) {
+                    field.removeClass('is-invalid');
+                    field.next('.invalid-feedback').remove();
+                    return;
+                }
+
+                $.get('/Employee/CheckEmailUnique', { emailAddress: value, employeeId: employeeId }, function(response) {
+                    if (!response.isUnique) {
+                        field.addClass('is-invalid');
+                        field.next('.invalid-feedback').remove();
+                        field.after('<div class="invalid-feedback d-block">Email address already exists</div>');
+                    } else {
+                        field.removeClass('is-invalid');
+                        field.next('.invalid-feedback').remove();
+                    }
+                });
+            });
+
+            // Phone Number
+            $('#createEmployeeWizard_personalInfo_PhoneNo').on('blur', function() {
+                var field = $(this);
+                var value = field.val();
+
+                if (!value) {
+                    field.removeClass('is-invalid');
+                    field.next('.invalid-feedback').remove();
+                    return;
+                }
+
+                $.get('/Employee/CheckPhoneUnique', { phoneNo: value, employeeId: employeeId }, function(response) {
+                    if (!response.isUnique) {
+                        field.addClass('is-invalid');
+                        field.next('.invalid-feedback').remove();
+                        field.after('<div class="invalid-feedback d-block">Phone number already exists</div>');
+                    } else {
+                        field.removeClass('is-invalid');
+                        field.next('.invalid-feedback').remove();
+                    }
+                });
+            });
+
+            // ============================================
+            // Initial Load
+            // ============================================
+            filterStations();
+            toggleContractEndDate();
+            contractEndDateField.hide(); // Hide by default
         });
     </script>
 }

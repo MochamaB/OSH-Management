@@ -1,0 +1,27 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.FormWizardViewModel
+
+@if (Model.WrapInCard)
+{
+    <div class="card custom-card">
+        @if (!string.IsNullOrEmpty(Model.CardTitle))
+        {
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="ri-file-list-3-line me-2"></i>@Model.CardTitle
+                </div>
+                @if (!string.IsNullOrEmpty(Model.CardSubtitle))
+                {
+                    <p class="text-muted mb-0 mt-1">@Model.CardSubtitle</p>
+                }
+            </div>
+        }
+        <div class="card-body">
+            @await Html.PartialAsync("~/Views/Shared/Components/Wizards/_VerticalFormWizardContent.cshtml", Model)
+        </div>
+    </div>
+}
+else
+{
+    @await Html.PartialAsync("~/Views/Shared/Components/Wizards/_VerticalFormWizardContent.cshtml", Model)
+}

@@ -1,0 +1,23 @@
+@model OSHManagement.Models.ViewModels.ParentSelectorConfig
+
+<div class="form-floating">
+    <select name="@Model.ParameterName" 
+            id="parentSelector_@Model.ParameterName" 
+            class="form-select @(Model.Required ? "required" : "")"
+            data-filters-other="@Model.FiltersOtherSelector.ToString().ToLower()"
+            data-filter-target="@Model.FilterTargetParameter"
+            @(Model.Required ? "required" : "")>
+        <option value="">@(Model.Placeholder ?? $"-- Select {Model.Label} --")</option>
+        @foreach (var option in Model.Options)
+        {
+            <option value="@option.Value" @@(option.Selected ? "selected" : "")>@option.Text</option>
+        }
+    </select>
+    <label for="parentSelector_@Model.ParameterName">
+        @Model.Label @(Model.Required ? "*" : "")
+    </label>
+</div>
+@if (!string.IsNullOrEmpty(Model.HelpText))
+{
+    <div class="form-text mt-1">@Model.HelpText</div>
+}

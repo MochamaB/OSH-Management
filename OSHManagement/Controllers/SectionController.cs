@@ -132,5 +132,117 @@ namespace OSHManagement.Controllers
 
             return View(sections);
         }
+
+        // GET: Section/TestBackgroundCard (For testing BackgroundFillCard component)
+        public IActionResult TestBackgroundCard()
+        {
+            return View();
+        }
+
+        // GET: Section/BulkCreate
+        public async Task<IActionResult> BulkCreate()
+        {
+            // Load categories for filtering
+            var categories = await _context.OrgCategories
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.CategoryName)
+                .Select(c => new { c.OrgCategoryId, c.CategoryName })
+                .ToListAsync();
+            
+            // Load stations for parent selector
+            var stations = await _context.Stations
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.StationName)
+                .Select(s => new { s.StationId, s.StationName, s.OrgCategoryId })
+                .ToListAsync();
+            
+            // Load employees for supervisor dropdown
+            var employees = await _context.Employees
+                .Where(e => e.EmploymentStatus == "Active")
+                .OrderBy(e => e.LastName).ThenBy(e => e.FirstName)
+                .Select(e => new { e.PayrollNo, FullName = e.FirstName + " " + e.LastName, e.StationId })
+                .ToListAsync();
+            
+            ViewBag.Categories = categories;
+            ViewBag.Stations = stations;
+            ViewBag.Employees = employees;
+            
+            return View();
+        }
+
+        // POST: Section/BulkCreate
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> BulkCreate(int stationId, List<SectionBulkItem> Items)
+        {
+            if (ModelState.IsValid && Items != null && Items.Any())
+            {
+                try
+                {
+                    // Validate station exists
+                    var stationExists = await _context.Stations.AnyAsync(s => s.StationId == stationId && s.IsActive);
+                    if (!stationExists)
+                    {
+                        TempData["Error"] = "Invalid station selected.";
+                        return RedirectToAction(nameof(BulkCreate));
+                    }
+
+                    // Create all sections in a transaction
+                    foreach (var item in Items)
+                    {
+                        // Skip empty rows
+                        if (string.IsNullOrWhiteSpace(item.SectionName))
+                            continue;
+
+                        var section = new Models.Section
+                        {
+                            SectionName = item.SectionName.Trim(),
+                            StationId = stationId,
+                            SectionSupervisorPayroll = item.SupervisorPayroll,
+                            IsActive = true,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        
+                        _context.Sections.Add(section);
+                    }
+                    
+                    await _context.SaveChangesAsync();
+                    
+                    var createdCount = Items.Count(i => !string.IsNullOrWhiteSpace(i.SectionName));
+                    TempData["Success"] = $"{createdCount} section(s) created successfully!";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    TempData["Error"] = "An error occurred while creating sections. Please try again.";
+                    // Log the exception here if you have logging configured
+                }
+            }
+            
+            // Reload data on error
+            var stations = await _context.Stations
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.StationName)
+                .Select(s => new { s.StationId, s.StationName })
+                .ToListAsync();
+            
+            var employees = await _context.Employees
+                .Where(e => e.EmploymentStatus == "Active")
+                .OrderBy(e => e.LastName).ThenBy(e => e.FirstName)
+                .Select(e => new { e.PayrollNo, FullName = e.FirstName + " " + e.LastName, e.StationId })
+                .ToListAsync();
+            
+            ViewBag.Stations = stations;
+            ViewBag.Employees = employees;
+            
+            return View();
+        }
+    }
+
+    // Helper class for bulk section creation
+    public class SectionBulkItem
+    {
+        public string SectionName { get; set; } = "";
+        public string? SupervisorPayroll { get; set; }
     }
 }

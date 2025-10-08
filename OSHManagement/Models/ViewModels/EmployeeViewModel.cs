@@ -6,31 +6,21 @@ namespace OSHManagement.Models.ViewModels
     {
         public int EmployeeId { get; set; }
 
-        [Required(ErrorMessage = "Payroll number is required")]
-        [StringLength(20, ErrorMessage = "Payroll number cannot exceed 20 characters")]
         [Display(Name = "Payroll Number")]
         public string PayrollNo { get; set; } = string.Empty;
 
-        [StringLength(20, ErrorMessage = "Roll number cannot exceed 20 characters")]
         [Display(Name = "Roll Number")]
         public string? RollNo { get; set; }
 
-        [Required(ErrorMessage = "First name is required")]
-        [StringLength(50, ErrorMessage = "First name cannot exceed 50 characters")]
         [Display(Name = "First Name")]
         public string FirstName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Last name is required")]
-        [StringLength(50, ErrorMessage = "Last name cannot exceed 50 characters")]
         [Display(Name = "Last Name")]
         public string LastName { get; set; } = string.Empty;
 
-        [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters")]
-        [EmailAddress(ErrorMessage = "Invalid email address")]
         [Display(Name = "Email Address")]
         public string? EmailAddress { get; set; }
 
-        [StringLength(20, ErrorMessage = "Phone number cannot exceed 20 characters")]
         [Display(Name = "Phone Number")]
         public string? PhoneNo { get; set; }
 

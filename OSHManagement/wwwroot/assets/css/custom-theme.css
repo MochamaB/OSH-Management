@@ -284,3 +284,8 @@ ul.main-menu .slide.open > .side-menu__item {
     margin-bottom: 1rem;
   }
 }
+
+.form-text {
+    color: var(--text-muted);
+    font-style: italic;
+}

@@ -1,0 +1,88 @@
+@using OSHManagement.Extensions
+@{
+    ViewData["Title"] = "Test Background Fill Card";
+
+    // Build stat cards with BackgroundFillCard type
+    var statConfig = new OSHManagement.Models.ViewModels.StatsRowConfig
+    {
+        Titles = new List<string> { "Total Sections", "Active Sections", "Inactive Sections", "Team Members" },
+        Values = new List<string> { "643", "16,332", "231", "1,245" },
+        Icons = new List<string> {
+            "ri-layout-grid-line",
+            "ri-checkbox-circle-line",
+            "ri-close-circle-line",
+            "ri-group-line"
+        },
+        ColorThemes = new List<string> { "primary", "success", "info", "danger" },
+        TrendPercentages = new List<string> { "5.32", "2.43", "0.98", "3.21" },
+        TrendDirections = new List<OSHManagement.Models.ViewModels.TrendDirection> {
+            OSHManagement.Models.ViewModels.TrendDirection.Up,
+            OSHManagement.Models.ViewModels.TrendDirection.Up,
+            OSHManagement.Models.ViewModels.TrendDirection.Up,
+            OSHManagement.Models.ViewModels.TrendDirection.Down
+        },
+        CardType = OSHManagement.Models.ViewModels.CardType.BackgroundFillCard, // ← Using BackgroundFillCard
+        ColumnClass = "col-xxl-3 col-xl-6 col-lg-6"
+    };
+    var statCards = statConfig.BuildStatsRow();
+}
+
+<h4 class="mb-4">Background Fill Card Test</h4>
+
+<!-- Stat Cards Row -->
+<div class="row">
+    @foreach (var card in statCards)
+    {
+        <partial name="~/Views/Shared/Components/StatisticCards/_BackgroundFillCard.cshtml" model="card" />
+    }
+</div>
+
+<hr class="my-5" />
+
+<h4 class="mb-4">Comparison: Left Border Card vs Background Fill Card</h4>
+
+<div class="row">
+    <div class="col-12">
+        <h5 class="mb-3">Left Border Card (Original)</h5>
+    </div>
+    @{
+        var leftBorderConfig = new OSHManagement.Models.ViewModels.StatsRowConfig
+        {
+            Titles = new List<string> { "Total Sections", "Active Sections" },
+            Values = new List<string> { "643", "16,332" },
+            Icons = new List<string> { "ri-layout-grid-line", "ri-checkbox-circle-line" },
+            ColorThemes = new List<string> { "primary", "success" },
+            CardType = OSHManagement.Models.ViewModels.CardType.LeftBorderCard,
+            ColumnClass = "col-md-6"
+        };
+        var leftBorderCards = leftBorderConfig.BuildStatsRow();
+        
+        foreach (var card in leftBorderCards)
+        {
+            <partial name="~/Views/Shared/Components/StatisticCards/_LeftBorderCard.cshtml" model="card" />
+        }
+    }
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <h5 class="mb-3">Background Fill Card (New)</h5>
+    </div>
+    @{
+        var backgroundFillConfig = new OSHManagement.Models.ViewModels.StatsRowConfig
+        {
+            Titles = new List<string> { "Total Sections", "Active Sections" },
+            Values = new List<string> { "643", "16,332" },
+            Icons = new List<string> { "ri-layout-grid-line", "ri-checkbox-circle-line" },
+            ColorThemes = new List<string> { "primary", "success" },
+            CardType = OSHManagement.Models.ViewModels.CardType.BackgroundFillCard,
+            ColumnClass = "col-md-6"
+        };
+        var backgroundFillCards = backgroundFillConfig.BuildStatsRow();
+        
+        foreach (var card in backgroundFillCards)
+        {
+            <partial name="~/Views/Shared/Components/StatisticCards/_BackgroundFillCard.cshtml" model="card" />
+        }
+    }
+</div>

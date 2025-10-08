@@ -1,0 +1,570 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.EmployeeViewModel
+@{
+    ViewData["Title"] = "Edit Employee";
+
+    // Get selected role IDs from model
+    var selectedRoleIds = new List<int>();
+    if (ViewBag.Roles != null)
+    {
+        var allRoles = (IEnumerable<dynamic>)ViewBag.Roles;
+        selectedRoleIds = allRoles
+            .Where(r => Model.RoleNames.Contains(r.RoleName))
+            .Select(r => (int)r.RoleId)
+            .ToList();
+    }
+
+    // Configure Vertical Tabs
+    var tabsConfig = new OSHManagement.Models.ViewModels.TabsConfig
+    {
+        TabsId = "editEmployeeTabs",
+        Type = OSHManagement.Models.ViewModels.TabsType.VerticalStyle1,
+        NavColumnClass = "col-md-3",
+        ContentColumnClass = "col-md-9",
+        WrapInCard = true,
+        CardTitle = $"Edit Employee: {Model.FullName}",
+        CardSubtitle = $"Payroll: {Model.PayrollNo} | {Model.StationName}",
+
+        Tabs = new List<OSHManagement.Models.ViewModels.TabConfig>
+        {
+            // ========== TAB 1: Personal Information ==========
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "personalInfo",
+                Title = "Personal Info",
+                Icon = "ri-user-line",
+                IsActive = true,
+                Content = @<text>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PayrollNo" class="form-label"></label>
+                            <input asp-for="PayrollNo" class="form-control" readonly />
+                            <span asp-validation-for="PayrollNo" class="text-danger"></span>
+                            <div class="form-text">Payroll number cannot be changed</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="RollNo" class="form-label"></label>
+                            <input asp-for="RollNo" class="form-control" />
+                            <span asp-validation-for="RollNo" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="FirstName" class="form-label"></label>
+                            <input asp-for="FirstName" class="form-control" required />
+                            <span asp-validation-for="FirstName" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="LastName" class="form-label"></label>
+                            <input asp-for="LastName" class="form-control" required />
+                            <span asp-validation-for="LastName" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="EmailAddress" class="form-label"></label>
+                            <input asp-for="EmailAddress" type="email" class="form-control" />
+                            <span asp-validation-for="EmailAddress" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PhoneNo" class="form-label"></label>
+                            <input asp-for="PhoneNo" type="tel" class="form-control" />
+                            <span asp-validation-for="PhoneNo" class="text-danger"></span>
+                        </div>
+                    </div>
+                </text>
+            },
+
+            // ========== TAB 2: Work Assignment ==========
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "workAssignment",
+                Title = "Work Assignment",
+                Icon = "ri-building-line",
+                Content = @<text>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Organization Category</label>
+                            <select id="edit_OrgCategoryId" class="form-select">
+                                <option value="">-- Select Category --</option>
+                                @if (ViewBag.OrgCategories != null)
+                                {
+                                    foreach (var category in (IEnumerable<dynamic>)ViewBag.OrgCategories)
+                                    {
+                                        <option value="@category.OrgCategoryId">@category.CategoryName</option>
+                                    }
+                                }
+                            </select>
+                            <div class="form-text">Filter stations by category</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="StationId" class="form-label"></label>
+                            <select asp-for="StationId" id="edit_StationId" class="form-select" required>
+                                <option value="">-- Select Station --</option>
+                                @if (ViewBag.Stations != null)
+                                {
+                                    foreach (var station in (IEnumerable<dynamic>)ViewBag.Stations)
+                                    {
+                                        <option value="@station.StationId"
+                                                data-category="@station.OrgCategoryId"
+                                                selected="@(station.StationId == Model.StationId)">
+                                            @station.StationName
+                                        </option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="StationId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="DepartmentId" class="form-label"></label>
+                            <select asp-for="DepartmentId" id="edit_DepartmentId" class="form-select">
+                                <option value="">-- Select Department --</option>
+                                @if (ViewBag.Departments != null)
+                                {
+                                    foreach (var department in (IEnumerable<dynamic>)ViewBag.Departments)
+                                    {
+                                        <option value="@department.DepartmentId"
+                                                data-station="@department.StationId"
+                                                selected="@(department.DepartmentId == Model.DepartmentId)">
+                                            @department.DepartmentName
+                                        </option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="DepartmentId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Designation" class="form-label"></label>
+                            <input asp-for="Designation" class="form-control" placeholder="e.g., Safety Officer, Engineer" />
+                            <span asp-validation-for="Designation" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="EmployeeType" class="form-label"></label>
+                            <select asp-for="EmployeeType" id="edit_EmployeeType" class="form-select">
+                                <option value="">-- Select Type --</option>
+                                <option value="Factory" selected="@(Model.EmployeeType == "Factory")">Factory</option>
+                                <option value="Outsourced" selected="@(Model.EmployeeType == "Outsourced")">Outsourced</option>
+                                <option value="Casual" selected="@(Model.EmployeeType == "Casual")">Casual</option>
+                                <option value="Contract" selected="@(Model.EmployeeType == "Contract")">Contract</option>
+                            </select>
+                            <span asp-validation-for="EmployeeType" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3" id="edit_ContractEndDateField" style="display: none;">
+                            <label asp-for="ContractEndDate" class="form-label"></label>
+                            <input asp-for="ContractEndDate" type="date" class="form-control" />
+                            <span asp-validation-for="ContractEndDate" class="text-danger"></span>
+                            <div class="form-text">Required only for Contract employees</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="EmploymentStatus" class="form-label"></label>
+                            <select asp-for="EmploymentStatus" class="form-select">
+                                <option value="Active" selected="@(Model.EmploymentStatus == "Active")">Active</option>
+                                <option value="Inactive" selected="@(Model.EmploymentStatus == "Inactive")">Inactive</option>
+                            </select>
+                            <span asp-validation-for="EmploymentStatus" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Username" class="form-label"></label>
+                            <input asp-for="Username" class="form-control" placeholder="Username for system access" />
+                            <span asp-validation-for="Username" class="text-danger"></span>
+                            <div class="form-text">Optional: Required only if employee needs system access</div>
+                        </div>
+                    </div>
+                </text>
+            },
+
+            // ========== TAB 3: Employment Details ==========
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "employmentDetails",
+                Title = "Employment Details",
+                Icon = "ri-calendar-line",
+                Content = @<text>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="HireDate" class="form-label"></label>
+                            <input asp-for="HireDate" type="date" class="form-control" readonly />
+                            <span asp-validation-for="HireDate" class="text-danger"></span>
+                            <div class="form-text">Hire date cannot be changed</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ServiceYears" class="form-label"></label>
+                            <input asp-for="ServiceYears" type="number" class="form-control" readonly />
+                            <span asp-validation-for="ServiceYears" class="text-danger"></span>
+                            <div class="form-text">Calculated automatically</div>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <div class="alert alert-info">
+                                <i class="ri-information-line me-2"></i>
+                                <strong>Created:</strong> @Model.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")
+                                @if (Model.UpdatedAt.HasValue)
+                                {
+                                    <br />
+                                    <strong>Last Updated:</strong> @Model.UpdatedAt.Value.ToString("MMM dd, yyyy hh:mm tt")
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </text>
+            },
+
+            // ========== TAB 4: Reporting & Roles ==========
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "reportingRoles",
+                Title = "Reporting & Roles",
+                Icon = "ri-team-line",
+                Content = @<text>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="HodPayroll" class="form-label"></label>
+                            <select asp-for="HodPayroll" id="edit_HodPayroll" class="form-select">
+                                <option value="">-- None --</option>
+                                @if (ViewBag.Employees != null)
+                                {
+                                    foreach (var emp in (IEnumerable<dynamic>)ViewBag.Employees)
+                                    {
+                                        <option value="@emp.PayrollNo"
+                                                data-station="@emp.StationId"
+                                                data-department="@emp.DepartmentId"
+                                                selected="@(emp.PayrollNo == Model.HodPayroll)">
+                                            @emp.FullName (@emp.PayrollNo)
+                                        </option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="HodPayroll" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="SupervisorPayroll" class="form-label"></label>
+                            <select asp-for="SupervisorPayroll" id="edit_SupervisorPayroll" class="form-select">
+                                <option value="">-- None --</option>
+                                @if (ViewBag.Employees != null)
+                                {
+                                    foreach (var emp in (IEnumerable<dynamic>)ViewBag.Employees)
+                                    {
+                                        <option value="@emp.PayrollNo"
+                                                data-station="@emp.StationId"
+                                                data-department="@emp.DepartmentId"
+                                                selected="@(emp.PayrollNo == Model.SupervisorPayroll)">
+                                            @emp.FullName (@emp.PayrollNo)
+                                        </option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="SupervisorPayroll" class="text-danger"></span>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label fw-semibold">Assign Roles</label>
+                            <div class="form-text mb-2">Select one or more roles for this employee</div>
+                            <div class="row">
+                                @if (ViewBag.Roles != null)
+                                {
+                                    foreach (var role in (IEnumerable<dynamic>)ViewBag.Roles)
+                                    {
+                                        var isChecked = selectedRoleIds.Contains(role.RoleId);
+                                        <div class="col-md-6 mb-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                       name="SelectedRoles" value="@role.RoleId"
+                                                       id="role_@role.RoleId"
+                                                       checked="@isChecked" />
+                                                <label class="form-check-label" for="role_@role.RoleId">
+                                                    @role.RoleName
+                                                </label>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </text>
+            }
+        }
+    };
+
+    var tabs = tabsConfig.BuildTabs();
+}
+
+<!-- Form wraps entire tabs component -->
+<form id="editEmployeeForm" method="post" asp-action="Edit" asp-route-id="@Model.EmployeeId">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.EmployeeId)
+
+    <!-- Render Tabs -->
+    <div class="row">
+        <div class="col-xl-12">
+            <partial name="~/Views/Shared/Components/Tabs/VerticalTabs.cshtml" model="tabs" />
+        </div>
+    </div>
+
+    <!-- Form Actions (outside tabs) -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card custom-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="ri-arrow-left-line me-1"></i> Back to List
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ri-save-line me-1"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function() {
+            var allStations = @Html.Raw(Json.Serialize(ViewBag.Stations));
+            var allDepartments = @Html.Raw(Json.Serialize(ViewBag.Departments));
+            var allEmployees = @Html.Raw(Json.Serialize(ViewBag.Employees));
+
+            var categorySelect = $('#edit_OrgCategoryId');
+            var stationSelect = $('#edit_StationId');
+            var departmentSelect = $('#edit_DepartmentId');
+            var employeeTypeSelect = $('#edit_EmployeeType');
+            var contractEndDateField = $('#edit_ContractEndDateField');
+            var hodSelect = $('#edit_HodPayroll');
+            var supervisorSelect = $('#edit_SupervisorPayroll');
+
+            // Set initial category based on selected station
+            var initialStationId = stationSelect.val();
+            if (initialStationId) {
+                var station = allStations.find(s => s.stationId == initialStationId);
+                if (station) {
+                    categorySelect.val(station.orgCategoryId);
+                }
+            }
+
+            // ============================================
+            // Category → Station Filtering
+            // ============================================
+            function filterStations() {
+                var selectedCategoryId = categorySelect.val();
+                var currentSelection = stationSelect.val();
+
+                stationSelect.find('option:not(:first)').remove();
+
+                if (!selectedCategoryId) {
+                    // Show all stations
+                    allStations.forEach(function(station) {
+                        var option = $('<option></option>')
+                            .val(station.stationId)
+                            .text(station.stationName)
+                            .attr('data-category', station.orgCategoryId);
+
+                        if (station.stationId == currentSelection) {
+                            option.prop('selected', true);
+                        }
+
+                        stationSelect.append(option);
+                    });
+                } else {
+                    // Filter by category
+                    var filteredStations = allStations.filter(function(station) {
+                        return station.orgCategoryId == selectedCategoryId;
+                    });
+
+                    filteredStations.forEach(function(station) {
+                        var option = $('<option></option>')
+                            .val(station.stationId)
+                            .text(station.stationName)
+                            .attr('data-category', station.orgCategoryId);
+
+                        if (station.stationId == currentSelection) {
+                            option.prop('selected', true);
+                        }
+
+                        stationSelect.append(option);
+                    });
+                }
+
+                filterDepartments();
+            }
+
+            categorySelect.on('change', filterStations);
+
+            // ============================================
+            // Station → Department Filtering
+            // ============================================
+            function filterDepartments() {
+                var selectedStationId = stationSelect.val();
+                var currentSelection = departmentSelect.val();
+
+                departmentSelect.find('option:not(:first)').remove();
+
+                if (!selectedStationId) {
+                    // Show all departments
+                    allDepartments.forEach(function(department) {
+                        var option = $('<option></option>')
+                            .val(department.departmentId)
+                            .text(department.departmentName)
+                            .attr('data-station', department.stationId);
+
+                        if (department.departmentId == currentSelection) {
+                            option.prop('selected', true);
+                        }
+
+                        departmentSelect.append(option);
+                    });
+                } else {
+                    // Filter by station
+                    var filteredDepartments = allDepartments.filter(function(department) {
+                        return department.stationId == selectedStationId;
+                    });
+
+                    filteredDepartments.forEach(function(department) {
+                        var option = $('<option></option>')
+                            .val(department.departmentId)
+                            .text(department.departmentName)
+                            .attr('data-station', department.stationId);
+
+                        if (department.departmentId == currentSelection) {
+                            option.prop('selected', true);
+                        }
+
+                        departmentSelect.append(option);
+                    });
+                }
+
+                filterSupervisors();
+            }
+
+            stationSelect.on('change', filterDepartments);
+
+            // ============================================
+            // Station/Department → HOD/Supervisor Filtering
+            // ============================================
+            function filterSupervisors() {
+                var selectedStationId = stationSelect.val();
+                var selectedDepartmentId = departmentSelect.val();
+
+                // Filter employees by station or department
+                var filteredEmployees = allEmployees;
+
+                if (selectedDepartmentId) {
+                    filteredEmployees = allEmployees.filter(function(emp) {
+                        return emp.departmentId == selectedDepartmentId;
+                    });
+                } else if (selectedStationId) {
+                    filteredEmployees = allEmployees.filter(function(emp) {
+                        return emp.stationId == selectedStationId;
+                    });
+                }
+
+                // Update HOD dropdown
+                var currentHod = hodSelect.val();
+                hodSelect.find('option:not(:first)').remove();
+
+                filteredEmployees.forEach(function(emp) {
+                    var option = $('<option></option>')
+                        .val(emp.payrollNo)
+                        .text(emp.fullName + ' (' + emp.payrollNo + ')')
+                        .attr('data-station', emp.stationId)
+                        .attr('data-department', emp.departmentId);
+
+                    if (emp.payrollNo == currentHod) {
+                        option.prop('selected', true);
+                    }
+
+                    hodSelect.append(option);
+                });
+
+                // Update Supervisor dropdown
+                var currentSupervisor = supervisorSelect.val();
+                supervisorSelect.find('option:not(:first)').remove();
+
+                filteredEmployees.forEach(function(emp) {
+                    var option = $('<option></option>')
+                        .val(emp.payrollNo)
+                        .text(emp.fullName + ' (' + emp.payrollNo + ')')
+                        .attr('data-station', emp.stationId)
+                        .attr('data-department', emp.departmentId);
+
+                    if (emp.payrollNo == currentSupervisor) {
+                        option.prop('selected', true);
+                    }
+
+                    supervisorSelect.append(option);
+                });
+            }
+
+            departmentSelect.on('change', filterSupervisors);
+
+            // ============================================
+            // EmployeeType → ContractEndDate Visibility
+            // ============================================
+            function toggleContractEndDate() {
+                var employeeType = employeeTypeSelect.val();
+
+                if (employeeType === 'Contract') {
+                    contractEndDateField.show();
+                } else {
+                    contractEndDateField.hide();
+                }
+            }
+
+            employeeTypeSelect.on('change', toggleContractEndDate);
+
+            // ============================================
+            // AJAX Validation on Blur (Check for Duplicates)
+            // ============================================
+            var employeeId = @Model.EmployeeId;
+
+            // Email Address
+            $('#EmailAddress').on('blur', function() {
+                var field = $(this);
+                var value = field.val();
+
+                if (!value) {
+                    field.removeClass('is-invalid');
+                    field.next('.invalid-feedback').remove();
+                    return;
+                }
+
+                $.get('/Employee/CheckEmailUnique', { emailAddress: value, employeeId: employeeId }, function(response) {
+                    if (!response.isUnique) {
+                        field.addClass('is-invalid');
+                        field.next('.invalid-feedback').remove();
+                        field.after('<div class="invalid-feedback d-block">Email address already exists</div>');
+                    } else {
+                        field.removeClass('is-invalid');
+                        field.next('.invalid-feedback').remove();
+                    }
+                });
+            });
+
+            // Phone Number
+            $('#PhoneNo').on('blur', function() {
+                var field = $(this);
+                var value = field.val();
+
+                if (!value) {
+                    field.removeClass('is-invalid');
+                    field.next('.invalid-feedback').remove();
+                    return;
+                }
+
+                $.get('/Employee/CheckPhoneUnique', { phoneNo: value, employeeId: employeeId }, function(response) {
+                    if (!response.isUnique) {
+                        field.addClass('is-invalid');
+                        field.next('.invalid-feedback').remove();
+                        field.after('<div class="invalid-feedback d-block">Phone number already exists</div>');
+                    } else {
+                        field.removeClass('is-invalid');
+                        field.next('.invalid-feedback').remove();
+                    }
+                });
+            });
+
+            // ============================================
+            // Initial Load
+            // ============================================
+            toggleContractEndDate();
+        });
+    </script>
+}

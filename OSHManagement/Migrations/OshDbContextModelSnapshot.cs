@@ -72,7 +72,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("CommitteeActions");
+                    b.ToTable("CommitteeActions", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.CommitteeIssue", b =>
@@ -134,7 +134,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("TeamMemberMemberId");
 
-                    b.ToTable("CommitteeIssues");
+                    b.ToTable("CommitteeIssues", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.CommitteeRecommendation", b =>
@@ -186,7 +186,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("CommitteeRecommendations");
+                    b.ToTable("CommitteeRecommendations", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.ControlAction", b =>
@@ -252,7 +252,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("IncidentId");
 
-                    b.ToTable("ControlActions");
+                    b.ToTable("ControlActions", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Department", b =>
@@ -302,7 +302,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("Departments");
+                    b.ToTable("Departments", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Employee", b =>
@@ -404,7 +404,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("Employees");
+                    b.ToTable("Employees", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.EmployeeRole", b =>
@@ -440,7 +440,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("EmployeeRoles");
+                    b.ToTable("EmployeeRoles", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Hazard", b =>
@@ -512,7 +512,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("Hazards");
+                    b.ToTable("Hazards", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Incident", b =>
@@ -605,7 +605,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("Incidents");
+                    b.ToTable("Incidents", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.IncidentCause", b =>
@@ -666,7 +666,7 @@ namespace OSHManagement.Migrations
                     b.HasIndex("IncidentId")
                         .IsUnique();
 
-                    b.ToTable("IncidentCauses");
+                    b.ToTable("IncidentCauses", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.IncidentInvestigation", b =>
@@ -728,7 +728,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("InvestigationTeamId");
 
-                    b.ToTable("IncidentInvestigations");
+                    b.ToTable("IncidentInvestigations", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.IncidentInvestigationConfig", b =>
@@ -769,7 +769,7 @@ namespace OSHManagement.Migrations
                     b.HasIndex("TeamId")
                         .IsUnique();
 
-                    b.ToTable("IncidentInvestigationConfigs");
+                    b.ToTable("IncidentInvestigationConfigs", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.LessonLearned", b =>
@@ -831,7 +831,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("IncidentId");
 
-                    b.ToTable("LessonsLearned");
+                    b.ToTable("LessonsLearned", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.MediaAccessLog", b =>
@@ -878,7 +878,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("MediaId");
 
-                    b.ToTable("MediaAccessLogs");
+                    b.ToTable("MediaAccessLogs", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.MediaAssociation", b =>
@@ -931,7 +931,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("MediaId");
 
-                    b.ToTable("MediaAssociations");
+                    b.ToTable("MediaAssociations", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.MediaCollection", b =>
@@ -986,7 +986,7 @@ namespace OSHManagement.Migrations
 
                     b.HasKey("CollectionId");
 
-                    b.ToTable("MediaCollections");
+                    b.ToTable("MediaCollections", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.MediaConversionJob", b =>
@@ -1038,7 +1038,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("OutputMediaId");
 
-                    b.ToTable("MediaConversionJobs");
+                    b.ToTable("MediaConversionJobs", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.MediaFile", b =>
@@ -1125,7 +1125,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("ParentMediaId");
 
-                    b.ToTable("MediaFiles");
+                    b.ToTable("MediaFiles", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.OrgCategory", b =>
@@ -1165,7 +1165,7 @@ namespace OSHManagement.Migrations
 
                     b.HasKey("OrgCategoryId");
 
-                    b.ToTable("OrgCategories");
+                    b.ToTable("OrgCategories", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.OrgMetadata", b =>
@@ -1212,7 +1212,7 @@ namespace OSHManagement.Migrations
                     b.HasIndex("StationId")
                         .IsUnique();
 
-                    b.ToTable("OrgMetadata");
+                    b.ToTable("OrgMetadata", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.OshCommitteeConfig", b =>
@@ -1257,7 +1257,7 @@ namespace OSHManagement.Migrations
                     b.HasIndex("TeamId")
                         .IsUnique();
 
-                    b.ToTable("OshCommitteeConfigs");
+                    b.ToTable("OshCommitteeConfigs", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.OshPolicy", b =>
@@ -1320,7 +1320,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("OshPolicies");
+                    b.ToTable("OshPolicies", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Permission", b =>
@@ -1361,7 +1361,7 @@ namespace OSHManagement.Migrations
 
                     b.HasKey("PermissionId");
 
-                    b.ToTable("Permissions");
+                    b.ToTable("Permissions", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.RiskAssessmentConfig", b =>
@@ -1401,7 +1401,7 @@ namespace OSHManagement.Migrations
                     b.HasIndex("TeamId")
                         .IsUnique();
 
-                    b.ToTable("RiskAssessmentConfigs");
+                    b.ToTable("RiskAssessmentConfigs", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.RiskMitigationPlan", b =>
@@ -1452,7 +1452,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("HazardId");
 
-                    b.ToTable("RiskMitigationPlans");
+                    b.ToTable("RiskMitigationPlans", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Role", b =>
@@ -1487,7 +1487,7 @@ namespace OSHManagement.Migrations
 
                     b.HasKey("RoleId");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.RolePermission", b =>
@@ -1513,7 +1513,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("RolePermissions");
+                    b.ToTable("RolePermissions", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Section", b =>
@@ -1549,7 +1549,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("Sections");
+                    b.ToTable("Sections", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Station", b =>
@@ -1604,7 +1604,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("ParentStationId");
 
-                    b.ToTable("Stations");
+                    b.ToTable("Stations", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Team", b =>
@@ -1662,7 +1662,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("Teams");
+                    b.ToTable("Teams", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.TeamMember", b =>
@@ -1721,7 +1721,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("TeamMembers");
+                    b.ToTable("TeamMembers", (string)null);
                 });
 
             modelBuilder.Entity("OSHManagement.Models.CommitteeAction", b =>

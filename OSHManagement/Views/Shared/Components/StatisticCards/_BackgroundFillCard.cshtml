@@ -1,0 +1,49 @@
+@model OSHManagement.Models.ViewModels.StatCardViewModel
+
+<div class="@Model.ColumnClass">
+    <div class="card custom-card bg-@Model.ColorTheme-transparent border-0 shadow-none">
+        <div class="card-body">
+            <div class="d-flex align-items-start gap-3 flex-wrap">
+                <div class="lh-1">
+                    <span class="avatar avatar-lg avatar-rounded bg-@Model.ColorTheme svg-white">
+                        @if (!string.IsNullOrEmpty(Model.CustomSvg))
+                        {
+                            @Html.Raw(Model.CustomSvg)
+                        }
+                        else
+                        {
+                            <i class="@Model.Icon fs-24"></i>
+                        }
+                    </span>
+                </div>
+                <div>
+                    <span class="d-block mb-1">
+                        @Model.Title
+                    </span>
+                    <div class="d-flex align-items-center gap-2">
+                        <h5 class="fw-semibold mb-0">@Model.Value</h5>
+                        @if (!string.IsNullOrEmpty(Model.TrendPercentage))
+                        {
+                            var trendColorClass = Model.TrendDirection == OSHManagement.Models.ViewModels.TrendDirection.Up ? Model.ColorTheme :
+                                                  Model.TrendDirection == OSHManagement.Models.ViewModels.TrendDirection.Down ? "danger" : "secondary";
+                            var trendIcon = Model.TrendDirection == OSHManagement.Models.ViewModels.TrendDirection.Up ? "ri-arrow-up-line" :
+                                           Model.TrendDirection == OSHManagement.Models.ViewModels.TrendDirection.Down ? "ri-arrow-down-line" : "ri-subtract-line";
+
+                            <span class="badge bg-@trendColorClass-transparent rounded-pill">
+                                <i class="@trendIcon me-1"></i>@Model.TrendPercentage%
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.BadgeValue))
+                        {
+                            <span class="badge bg-@Model.BadgeColor-transparent rounded-pill">@Model.BadgeValue</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.LinkUrl))
+        {
+            <a href="@Model.LinkUrl" class="stretched-link"></a>
+        }
+    </div>
+</div>
