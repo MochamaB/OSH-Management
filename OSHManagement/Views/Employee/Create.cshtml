@@ -1,0 +1,383 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.EmployeeViewModel
+@{
+    ViewData["Title"] = "Create Employee";
+
+    // Build station options
+    var stationOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>
+    {
+        new OSHManagement.Models.ViewModels.FormSelectOption { Text = "-- Select Station --", Value = "", Selected = true }
+    };
+
+    if (ViewBag.Stations != null)
+    {
+        foreach (var station in (IEnumerable<dynamic>)ViewBag.Stations)
+        {
+            stationOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
+            {
+                Text = station.StationName,
+                Value = station.StationId.ToString()
+            });
+        }
+    }
+
+    // Build department options
+    var departmentOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>
+    {
+        new OSHManagement.Models.ViewModels.FormSelectOption { Text = "-- Select Department --", Value = "", Selected = true }
+    };
+
+    if (ViewBag.Departments != null)
+    {
+        foreach (var department in (IEnumerable<dynamic>)ViewBag.Departments)
+        {
+            departmentOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
+            {
+                Text = department.DepartmentName,
+                Value = department.DepartmentId.ToString()
+            });
+        }
+    }
+
+    // Build employee options for HOD and Supervisor
+    var employeeOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>
+    {
+        new OSHManagement.Models.ViewModels.FormSelectOption { Text = "-- None --", Value = "", Selected = true }
+    };
+
+    if (ViewBag.Employees != null)
+    {
+        foreach (var emp in (IEnumerable<dynamic>)ViewBag.Employees)
+        {
+            employeeOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
+            {
+                Text = $"{emp.FullName} ({emp.PayrollNo})",
+                Value = emp.PayrollNo
+            });
+        }
+    }
+
+    // Configure Form Wizard with 4 Steps
+    var wizardConfig = new OSHManagement.Models.ViewModels.FormWizardConfig
+    {
+        WizardId = "createEmployeeWizard",
+        ActionUrl = "/Employee/Create",
+        Method = "POST",
+        CardTitle = "Create New Employee",
+        CardSubtitle = "Complete all steps to add a new employee to the system",
+        ValidateOnStepChange = true,
+        ShowStepNumbers = true,
+        ShowProgressBar = true,
+        CancelButtonText = "Cancel",
+        CancelUrl = "/Employee/Index",
+
+        Steps = new List<OSHManagement.Models.ViewModels.WizardStepConfig>
+        {
+            // ========== STEP 1: Personal Information ==========
+            new OSHManagement.Models.ViewModels.WizardStepConfig
+            {
+                StepId = "personalInfo",
+                Title = "Personal Information",
+                Icon = "ri-user-line",
+                Description = "Enter employee's personal details and contact information",
+                FieldsPerRow = 2,
+                FieldColumnClass = "col-md-6",
+                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "PayrollNo",
+                        PropertyName = nameof(EmployeeViewModel.PayrollNo),
+                        Label = "Payroll Number",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                        Required = true,
+                        Placeholder = "Enter payroll number",
+                        MaxLength = 20,
+                        ValidationMessage = "Payroll number is required"
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "RollNo",
+                        PropertyName = nameof(EmployeeViewModel.RollNo),
+                        Label = "Roll Number",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                        Placeholder = "Enter roll number (optional)",
+                        MaxLength = 20
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "FirstName",
+                        PropertyName = nameof(EmployeeViewModel.FirstName),
+                        Label = "First Name",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                        Required = true,
+                        Placeholder = "Enter first name",
+                        MaxLength = 50,
+                        ValidationMessage = "First name is required"
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "LastName",
+                        PropertyName = nameof(EmployeeViewModel.LastName),
+                        Label = "Last Name",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                        Required = true,
+                        Placeholder = "Enter last name",
+                        MaxLength = 50,
+                        ValidationMessage = "Last name is required"
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "EmailAddress",
+                        PropertyName = nameof(EmployeeViewModel.EmailAddress),
+                        Label = "Email Address",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Email,
+                        Placeholder = "Enter email address",
+                        MaxLength = 100,
+                        HelpText = "Optional: Used for system notifications"
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "PhoneNo",
+                        PropertyName = nameof(EmployeeViewModel.PhoneNo),
+                        Label = "Phone Number",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Tel,
+                        Placeholder = "Enter phone number",
+                        MaxLength = 20,
+                        HelpText = "Optional: Contact number"
+                    }
+                }
+            },
+
+            // ========== STEP 2: Work Assignment ==========
+            new OSHManagement.Models.ViewModels.WizardStepConfig
+            {
+                StepId = "workAssignment",
+                Title = "Work Assignment",
+                Icon = "ri-building-line",
+                Description = "Assign employee to station, department, and specify employment details",
+                FieldsPerRow = 2,
+                FieldColumnClass = "col-md-6",
+                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "StationId",
+                        PropertyName = nameof(EmployeeViewModel.StationId),
+                        Label = "Station",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                        Required = true,
+                        Options = stationOptions,
+                        ValidationMessage = "Station is required"
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "DepartmentId",
+                        PropertyName = nameof(EmployeeViewModel.DepartmentId),
+                        Label = "Department",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                        Options = departmentOptions,
+                        HelpText = "Optional: Select department within the station"
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "Designation",
+                        PropertyName = nameof(EmployeeViewModel.Designation),
+                        Label = "Designation / Job Title",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                        Placeholder = "e.g., Safety Officer, Engineer",
+                        MaxLength = 50
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "EmployeeType",
+                        PropertyName = nameof(EmployeeViewModel.EmployeeType),
+                        Label = "Employee Type",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                        Options = new List<OSHManagement.Models.ViewModels.FormSelectOption>
+                        {
+                            new OSHManagement.Models.ViewModels.FormSelectOption { Text = "-- Select Type --", Value = "" },
+                            new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Factory", Value = "Factory" },
+                            new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Outsourced", Value = "Outsourced" },
+                            new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Casual", Value = "Casual" }
+                        }
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "EmploymentStatus",
+                        PropertyName = nameof(EmployeeViewModel.EmploymentStatus),
+                        Label = "Employment Status",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                        Options = new List<OSHManagement.Models.ViewModels.FormSelectOption>
+                        {
+                            new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Active", Value = "Active", Selected = true },
+                            new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Inactive", Value = "Inactive" },
+                            new OSHManagement.Models.ViewModels.FormSelectOption { Text = "Contract", Value = "Contract" }
+                        }
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "Username",
+                        PropertyName = nameof(EmployeeViewModel.Username),
+                        Label = "System Username",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                        Placeholder = "Enter username for system access",
+                        MaxLength = 50,
+                        HelpText = "Optional: Required only if employee needs system access"
+                    }
+                }
+            },
+
+            // ========== STEP 3: Employment Details ==========
+            new OSHManagement.Models.ViewModels.WizardStepConfig
+            {
+                StepId = "employmentDetails",
+                Title = "Employment Details",
+                Icon = "ri-calendar-line",
+                Description = "Specify employment dates and service information",
+                FieldsPerRow = 2,
+                FieldColumnClass = "col-md-6",
+                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "HireDate",
+                        PropertyName = nameof(EmployeeViewModel.HireDate),
+                        Label = "Hire Date",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Date,
+                        HelpText = "Date when employee was hired"
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "ServiceYears",
+                        PropertyName = nameof(EmployeeViewModel.ServiceYears),
+                        Label = "Years of Service",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Number,
+                        Placeholder = "Enter years of service",
+                        HelpText = "Total years of service (calculated or manual entry)"
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "ContractEndDate",
+                        PropertyName = nameof(EmployeeViewModel.ContractEndDate),
+                        Label = "Contract End Date",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Date,
+                        HelpText = "For contract employees: Contract expiration date"
+                    }
+                }
+            },
+
+            // ========== STEP 4: Reporting Structure ==========
+            new OSHManagement.Models.ViewModels.WizardStepConfig
+            {
+                StepId = "reportingStructure",
+                Title = "Reporting Structure",
+                Icon = "ri-team-line",
+                Description = "Define reporting hierarchy and supervisory relationships",
+                FieldsPerRow = 2,
+                FieldColumnClass = "col-md-6",
+                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "HodPayroll",
+                        PropertyName = nameof(EmployeeViewModel.HodPayroll),
+                        Label = "Head of Department (HOD)",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                        Options = employeeOptions,
+                        HelpText = "Select the department head this employee reports to"
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "SupervisorPayroll",
+                        PropertyName = nameof(EmployeeViewModel.SupervisorPayroll),
+                        Label = "Direct Supervisor",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                        Options = employeeOptions,
+                        HelpText = "Select the direct supervisor for this employee"
+                    }
+                }
+            }
+        }
+    };
+
+    var wizard = wizardConfig.BuildWizard();
+}
+
+<!-- Render Wizard -->
+<div class="row">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/Wizards/HorizontalFormWizard.cshtml" model="wizard" />
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function() {
+            // ============================================
+            // Cascading Dropdowns (Station → Department)
+            // ============================================
+            var allDepartments = @Html.Raw(Json.Serialize(ViewBag.Departments));
+            var stationSelect = $('#createEmployeeWizard_workAssignment_StationId');
+            var departmentSelect = $('#createEmployeeWizard_workAssignment_DepartmentId');
+
+            // Function to filter departments based on selected station
+            function filterDepartments() {
+                var selectedStationId = stationSelect.val();
+
+                // Store current selection
+                var currentSelection = departmentSelect.val();
+
+                // Clear all options except the first (placeholder)
+                departmentSelect.find('option:not(:first)').remove();
+
+                if (!selectedStationId) {
+                    // If no station selected, show all departments
+                    allDepartments.forEach(function(department) {
+                        departmentSelect.append(
+                            $('<option></option>')
+                                .val(department.departmentId)
+                                .text(department.departmentName)
+                        );
+                    });
+                } else {
+                    // Filter by selected station
+                    var filteredDepartments = allDepartments.filter(function(department) {
+                        return department.stationId == selectedStationId;
+                    });
+
+                    if (filteredDepartments.length === 0) {
+                        departmentSelect.append(
+                            $('<option></option>')
+                                .val('')
+                                .text('-- No departments in this station --')
+                                .prop('disabled', true)
+                        );
+                    } else {
+                        filteredDepartments.forEach(function(department) {
+                            var option = $('<option></option>')
+                                .val(department.departmentId)
+                                .text(department.departmentName);
+
+                            if (department.departmentId == currentSelection) {
+                                option.prop('selected', true);
+                            }
+
+                            departmentSelect.append(option);
+                        });
+                    }
+                }
+            }
+
+            // Filter departments when station changes
+            stationSelect.on('change', function() {
+                filterDepartments();
+            });
+
+            // Initial filter on page load
+            filterDepartments();
+        });
+    </script>
+}

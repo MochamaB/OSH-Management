@@ -1,0 +1,203 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.FormWizardViewModel
+
+@{
+    var progressPercentage = Model.GetProgressPercentage();
+}
+
+<form id="@Model.WizardId"
+      action="@Model.ActionUrl"
+      method="@Model.Method"
+      class="wizard-form"
+      data-validate-on-step-change="@Model.ValidateOnStepChange.ToString().ToLower()"
+      data-show-progress-bar="@Model.ShowProgressBar.ToString().ToLower()"
+      data-total-steps="@Model.TotalSteps">
+
+    @* Progress Bar (Optional) *@
+    @if (Model.ShowProgressBar)
+    {
+        <div class="wizard-progress mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="wizard-progress-text text-muted">Step 1 of @Model.TotalSteps</span>
+                <span class="wizard-progress-percentage text-muted">@progressPercentage%</span>
+            </div>
+            <div class="progress" style="height: 8px;">
+                <div class="progress-bar wizard-progress-bar bg-primary" role="progressbar"
+                     style="width: @progressPercentage%;"
+                     aria-valuenow="@progressPercentage"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Wizard Navigation Tabs *@
+    <div class="wizard-navigation mb-4">
+        <ul class="nav nav-tabs nav-justified wizard-tabs" role="tablist">
+            @foreach (var step in Model.Steps)
+            {
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link wizard-nav-link @(step.IsActive ? "active" : "")"
+                       href="#@step.TabId"
+                       data-step="@step.StepNumber"
+                       data-step-id="@step.StepId"
+                       role="tab"
+                       aria-controls="@step.TabId"
+                       aria-selected="@(step.IsActive ? "true" : "false")">
+                        @if (!string.IsNullOrEmpty(step.Icon))
+                        {
+                            <i class="@step.Icon me-2"></i>
+                        }
+                        @if (Model.ShowStepNumbers)
+                        {
+                            <span class="wizard-step-number d-none d-md-inline">@step.StepNumber.</span>
+                        }
+                        <span class="wizard-step-title">@step.Title</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </div>
+
+    @* Wizard Steps Content *@
+    <div class="wizard-content">
+        @foreach (var step in Model.Steps)
+        {
+            <div class="wizard-step @(step.IsActive ? "active" : "")"
+                 id="@step.TabId"
+                 data-step="@step.StepNumber"
+                 data-step-id="@step.StepId"
+                 style="@(step.IsActive ? "" : "display: none;")">
+
+                @* Step Description *@
+                @if (!string.IsNullOrEmpty(step.Description))
+                {
+                    <div class="alert alert-info border-0 mb-3">
+                        <i class="ri-information-line me-2"></i>@step.Description
+                    </div>
+                }
+
+                @* Step Fields *@
+                <div class="row gy-3">
+                    @foreach (var field in step.Fields)
+                    {
+                        <div class="@step.FieldColumnClass">
+                            @* Reuse existing FormField partial *@
+                            <partial name="~/Views/Shared/Components/Forms/_FormField.cshtml" model="field" />
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    @* Wizard Navigation Buttons *@
+    <div class="wizard-buttons d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <div>
+            @if (!string.IsNullOrEmpty(Model.CancelUrl))
+            {
+                <a href="@Model.CancelUrl" class="btn btn-light">
+                    <i class="ri-close-line me-1"></i>@Model.CancelButtonText
+                </a>
+            }
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary wizard-prev" style="display: none;">
+                <i class="ri-arrow-left-line me-1"></i>@Model.PreviousButtonText
+            </button>
+
+            <button type="button" class="btn btn-primary wizard-next">
+                @Model.NextButtonText<i class="ri-arrow-right-line ms-1"></i>
+            </button>
+
+            <button type="submit" class="btn btn-success wizard-submit" style="display: none;">
+                <i class="ri-check-line me-1"></i>@Model.SubmitButtonText
+            </button>
+        </div>
+    </div>
+</form>
+
+<style>
+    /* Wizard Navigation Tabs */
+    .wizard-tabs .nav-link {
+        padding: 1rem;
+        color: var(--bs-secondary);
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .wizard-tabs .nav-link:hover {
+        border-color: var(--bs-primary-bg-subtle);
+        background-color: var(--bs-light);
+    }
+
+    .wizard-tabs .nav-link.active {
+        color: var(--bs-primary);
+        border-bottom-color: var(--bs-primary);
+        background-color: var(--bs-primary-bg-subtle);
+        font-weight: 500;
+    }
+
+    .wizard-step-number {
+        font-weight: 600;
+        margin-right: 0.25rem;
+    }
+
+    .wizard-step-title {
+        font-size: 0.95rem;
+    }
+
+    /* Responsive tabs */
+    @@media (max-width: 768px) {
+        .wizard-tabs .nav-link {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .wizard-step-title {
+            font-size: 0.85rem;
+        }
+    }
+
+    /* Wizard Step Content */
+    .wizard-step {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Progress Bar */
+    .wizard-progress-bar {
+        transition: width 0.3s ease;
+    }
+
+    /* Form Validation Styling */
+    .wizard-step .is-invalid {
+        border-color: var(--bs-danger);
+    }
+
+    .wizard-step .invalid-feedback {
+        display: block;
+        color: var(--bs-danger);
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    /* Button Transitions */
+    .wizard-buttons button,
+    .wizard-buttons a {
+        transition: all 0.2s ease;
+    }
+</style>

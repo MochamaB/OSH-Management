@@ -1,75 +1,106 @@
 @model OSHManagement.Models.ViewModels.FormFieldViewModel
 
-@switch (Model.Type)
+@* Hidden fields don't need labels *@
+@if (Model.Type == OSHManagement.Models.ViewModels.FieldType.Hidden)
 {
-    case OSHManagement.Models.ViewModels.FieldType.Textarea:
-        <textarea class="form-control @Model.CustomCssClass" id="@Model.UniqueId" name="@Model.PropertyName"
-                  rows="@Model.Rows" placeholder="@Model.Placeholder"
-                  @(Model.Required ? "required" : "")
-                  @(Model.Disabled ? "disabled" : "")
-                  @(Model.ReadOnly ? "readonly" : "")
-                  @(Model.MaxLength.HasValue ? $"maxlength=\"{Model.MaxLength}\"" : "")>@Model.Value</textarea>
-        break;
-
-    case OSHManagement.Models.ViewModels.FieldType.Select:
-        var selectClass = $"form-select {Model.CustomCssClass}".Trim();
-
-        <select class="@selectClass" id="@Model.UniqueId" name="@Model.PropertyName"
-                required="@(Model.Required ? "required" : "")"
-                disabled="@(Model.Disabled ? "disabled" : "")">
-            @if (Model.Options != null)
-            {
-                @foreach (var option in Model.Options)
-                {
-                    if (option.Selected)
-                    {
-                        if (option.Disabled)
-                        {
-                            <option value="@option.Value" selected disabled>@option.Text</option>
-                        }
-                        else
-                        {
-                            <option value="@option.Value" selected>@option.Text</option>
-                        }
-                    }
-                    else if (option.Disabled)
-                    {
-                        <option value="@option.Value" disabled>@option.Text</option>
-                    }
-                    else
-                    {
-                        <option value="@option.Value">@option.Text</option>
-                    }
-                }
-            }
-        </select>
-        break;
-
-    case OSHManagement.Models.ViewModels.FieldType.Checkbox:
-        <div class="form-check">
-            <input class="form-check-input @Model.CustomCssClass" type="checkbox" id="@Model.UniqueId"
-                   name="@Model.PropertyName" value="true"
-                   @(Model.DefaultValue == "true" || Model.Value == "true" ? "checked" : "")
-                   @(Model.Required ? "required" : "")
-                   @(Model.Disabled ? "disabled" : "")>
-            <label class="form-check-label" for="@Model.UniqueId">
-                @Model.Label
-            </label>
-        </div>
-        break;
-
-    case OSHManagement.Models.ViewModels.FieldType.Hidden:
-        <input type="hidden" id="@Model.UniqueId" name="@Model.PropertyName" value="@Model.Value" />
-        break;
-
-    default:
-        var inputType = Model.Type.ToString().ToLower();
-        <input type="@inputType" class="form-control @Model.CustomCssClass" id="@Model.UniqueId"
-               name="@Model.PropertyName" value="@Model.Value" placeholder="@Model.Placeholder"
+    <input type="hidden" id="@Model.UniqueId" name="@Model.PropertyName" value="@Model.Value" />
+}
+else if (Model.Type == OSHManagement.Models.ViewModels.FieldType.Checkbox)
+{
+    @* Checkbox has label inside *@
+    <div class="form-check">
+        <input class="form-check-input @Model.CustomCssClass" type="checkbox" id="@Model.UniqueId"
+               name="@Model.PropertyName" value="true"
+               @(Model.DefaultValue == "true" || Model.Value == "true" ? "checked" : "")
                @(Model.Required ? "required" : "")
                @(Model.Disabled ? "disabled" : "")
-               @(Model.ReadOnly ? "readonly" : "")
-               @(Model.MaxLength.HasValue ? $"maxlength=\"{Model.MaxLength}\"" : "")
-               @(Model.MinLength.HasValue ? $"minlength=\"{Model.MinLength}\"" : "") />
-        break;
+               data-val-required="@(Model.ValidationMessage ?? "This field is required")">
+        <label class="form-check-label" for="@Model.UniqueId">
+            @Model.Label @if (Model.Required)
+            {<span class="text-danger">*</span>}
+        </label>
+        @if (!string.IsNullOrEmpty(Model.HelpText))
+        {
+            <div class="form-text">@Model.HelpText</div>
+        }
+    </div>
+}
+else
+{
+    @* All other fields with label *@
+    <div class="form-group">
+        @if (!string.IsNullOrEmpty(Model.Label))
+        {
+            <label for="@Model.UniqueId" class="form-label">
+                @Model.Label @if (Model.Required)
+                {<span class="text-danger">*</span>}
+            </label>
+        }
+
+        @switch (Model.Type)
+        {
+            case OSHManagement.Models.ViewModels.FieldType.Textarea:
+                <textarea class="form-control @Model.CustomCssClass" id="@Model.UniqueId" name="@Model.PropertyName"
+                          rows="@Model.Rows" placeholder="@Model.Placeholder"
+                          @(Model.Required ? "required" : "")
+                          @(Model.Disabled ? "disabled" : "")
+                          @(Model.ReadOnly ? "readonly" : "")
+                          @(Model.MaxLength.HasValue ? $"maxlength=\"{Model.MaxLength}\"" : "")
+                          data-val-required="@(Model.ValidationMessage ?? "This field is required")">@Model.Value</textarea>
+                break;
+
+            case OSHManagement.Models.ViewModels.FieldType.Select:
+                var selectClass = $"form-select {Model.CustomCssClass}".Trim();
+                <select class="@selectClass" id="@Model.UniqueId" name="@Model.PropertyName"
+                        @(Model.Required ? "required" : "")
+                        @(Model.Disabled ? "disabled" : "")
+                        data-val-required="@(Model.ValidationMessage ?? "This field is required")">
+                    @if (Model.Options != null)
+                    {
+                        @foreach (var option in Model.Options)
+                        {
+                            if (option.Selected)
+                            {
+                                if (option.Disabled)
+                                {
+                                    <option value="@option.Value" selected disabled>@option.Text</option>
+                                }
+                                else
+                                {
+                                    <option value="@option.Value" selected>@option.Text</option>
+                                }
+                            }
+                            else if (option.Disabled)
+                            {
+                                <option value="@option.Value" disabled>@option.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@option.Value">@option.Text</option>
+                            }
+                        }
+                    }
+                </select>
+                break;
+
+            default:
+                var inputType = Model.Type.ToString().ToLower();
+                <input type="@inputType" class="form-control @Model.CustomCssClass" id="@Model.UniqueId"
+                       name="@Model.PropertyName" value="@Model.Value" placeholder="@Model.Placeholder"
+                       @(Model.Required ? "required" : "")
+                       @(Model.Disabled ? "disabled" : "")
+                       @(Model.ReadOnly ? "readonly" : "")
+                       @(Model.MaxLength.HasValue ? $"maxlength=\"{Model.MaxLength}\"" : "")
+                       @(Model.MinLength.HasValue ? $"minlength=\"{Model.MinLength}\"" : "")
+                       data-val-required="@(Model.ValidationMessage ?? "This field is required")" />
+                break;
+        }
+
+        @if (!string.IsNullOrEmpty(Model.HelpText))
+        {
+            <div class="form-text">@Model.HelpText</div>
+        }
+
+        <span class="invalid-feedback"></span>
+    </div>
 }

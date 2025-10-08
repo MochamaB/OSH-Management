@@ -213,5 +213,102 @@ namespace OSHManagement.Controllers
 
             return View(employees);
         }
+
+        // GET: Employee/Create
+        public async Task<IActionResult> Create()
+        {
+            await PopulateDropdowns();
+            return View();
+        }
+
+        // POST: Employee/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(EmployeeViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // Check if payroll number already exists
+                    var existingEmployee = await _context.Employees
+                        .FirstOrDefaultAsync(e => e.PayrollNo == model.PayrollNo);
+
+                    if (existingEmployee != null)
+                    {
+                        ModelState.AddModelError("PayrollNo", "An employee with this payroll number already exists.");
+                        await PopulateDropdowns();
+                        return View(model);
+                    }
+
+                    // Create new employee
+                    var employee = new Models.Employee
+                    {
+                        PayrollNo = model.PayrollNo,
+                        RollNo = model.RollNo,
+                        FirstName = model.FirstName,
+                        LastName = model.LastName,
+                        EmailAddress = model.EmailAddress,
+                        PhoneNo = model.PhoneNo,
+                        StationId = model.StationId,
+                        DepartmentId = model.DepartmentId,
+                        Username = model.Username,
+                        EmploymentStatus = model.EmploymentStatus ?? "Active",
+                        EmployeeType = model.EmployeeType,
+                        Designation = model.Designation,
+                        HireDate = model.HireDate,
+                        ServiceYears = model.ServiceYears,
+                        ContractEndDate = model.ContractEndDate,
+                        HodPayroll = model.HodPayroll,
+                        SupervisorPayroll = model.SupervisorPayroll,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.Employees.Add(employee);
+                    await _context.SaveChangesAsync();
+
+                    TempData["Success"] = $"Employee '{model.FirstName} {model.LastName}' has been created successfully with payroll number {model.PayrollNo}.";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    TempData["Error"] = "An error occurred while creating the employee. Please try again.";
+                    // Log the exception here if you have logging configured
+                }
+            }
+
+            await PopulateDropdowns();
+            return View(model);
+        }
+
+        // Helper method to populate dropdowns
+        private async Task PopulateDropdowns()
+        {
+            var stations = await _context.Stations
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.StationName)
+                .Select(s => new { s.StationId, s.StationName })
+                .ToListAsync();
+
+            var departments = await _context.Departments
+                .Where(d => d.IsActive)
+                .OrderBy(d => d.DepartmentName)
+                .Select(d => new { d.DepartmentId, d.DepartmentName, d.StationId })
+                .ToListAsync();
+
+            var employees = await _context.Employees
+                .Where(e => e.EmploymentStatus == "Active")
+                .OrderBy(e => e.LastName).ThenBy(e => e.FirstName)
+                .Select(e => new { 
+                    e.EmployeeId, 
+                    e.PayrollNo, 
+                    FullName = e.FirstName + " " + e.LastName 
+                })
+                .ToListAsync();
+
+            ViewBag.Stations = stations;
+            ViewBag.Departments = departments;
+            ViewBag.Employees = employees;
+        }
     }
 }
