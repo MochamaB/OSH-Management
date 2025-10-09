@@ -16,17 +16,20 @@ namespace OSHManagement.Services
         private readonly OshDbContext _context;
         private readonly IPasswordHashService _passwordHashService;
         private readonly ILegacyPasswordService _legacyPasswordService;
+        private readonly IUserScopeService _userScopeService;
         private readonly ILogger<AuthenticationService> _logger;
 
         public AuthenticationService(
             OshDbContext context,
             IPasswordHashService passwordHashService,
             ILegacyPasswordService legacyPasswordService,
+            IUserScopeService userScopeService,
             ILogger<AuthenticationService> logger)
         {
             _context = context;
             _passwordHashService = passwordHashService;
             _legacyPasswordService = legacyPasswordService;
+            _userScopeService = userScopeService;
             _logger = logger;
         }
 
@@ -87,7 +90,7 @@ namespace OSHManagement.Services
             }
 
             // Build claims
-            var claims = BuildClaims(employee);
+            var claims = await BuildClaimsAsync(employee);
 
             _logger.LogInformation($"Login successful: {username}");
             return (true, employee, claims);
@@ -113,7 +116,7 @@ namespace OSHManagement.Services
             }
         }
 
-        private List<Claim> BuildClaims(Employee employee)
+        private async Task<List<Claim>> BuildClaimsAsync(Employee employee)
         {
             var claims = new List<Claim>
             {
@@ -125,6 +128,16 @@ namespace OSHManagement.Services
                 new Claim("StationId", employee.StationId.ToString()),
                 new Claim("StationName", employee.Station?.StationName ?? "")
             };
+
+            // Determine and add scope claims
+            var scopeLevel = await _userScopeService.DetermineScopeLevelAsync(employee.EmployeeId);
+            claims.Add(new Claim("Scope", scopeLevel.ToString()));
+
+            // Add DepartmentId if available
+            if (employee.DepartmentId.HasValue)
+            {
+                claims.Add(new Claim("DepartmentId", employee.DepartmentId.Value.ToString()));
+            }
 
             // Add roles
             foreach (var employeeRole in employee.EmployeeRoles.Where(er => er.IsActive))

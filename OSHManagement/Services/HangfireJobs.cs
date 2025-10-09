@@ -88,7 +88,6 @@ namespace OSHManagement.Services
                     "stations" => await _migrationService.SyncStationsAsync(),
                     "departments" => await _migrationService.SyncDepartmentsAsync(),
                     "employees" => await _migrationService.SyncEmployeesAsync(),
-                    "roles" => await _migrationService.SyncRolesAsync(),
                     _ => (false, $"Unknown entity type: {entityType}")
                 };
 

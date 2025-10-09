@@ -57,14 +57,11 @@ namespace OSHManagement.Services
                     return employeesResult;
                 }
 
-                var rolesResult = await SyncRolesAsync();
-                if (!rolesResult.Success)
-                {
-                    return rolesResult;
-                }
+                // Note: Role sync removed - roles are now managed via modern system
+                // See Database/Migrations/3_ModernRolesAndPermissions.sql
 
                 _logger.LogInformation("Full legacy data synchronization completed successfully");
-                return (true, "All data synchronized successfully");
+                return (true, "All data synchronized successfully (roles excluded)");
             }
             catch (Exception ex)
             {
@@ -160,34 +157,10 @@ namespace OSHManagement.Services
             }
         }
 
-        public async Task<(bool Success, string Message)> SyncRolesAsync()
-        {
-            try
-            {
-                _logger.LogInformation("Starting roles synchronization");
-
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                using var command = new SqlCommand("sp_SyncRolesFromLegacy", connection)
-                {
-                    CommandType = CommandType.StoredProcedure,
-                    CommandTimeout = 300
-                };
-
-                command.Parameters.AddWithValue("@LegacyConnectionString", _legacyConnectionString);
-
-                await command.ExecuteNonQueryAsync();
-
-                _logger.LogInformation("Roles synchronization completed");
-                return (true, "Roles synchronized successfully");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error syncing roles");
-                return (false, $"Roles sync failed: {ex.Message}");
-            }
-        }
+        // REMOVED: Role sync is no longer needed
+        // Roles are now managed via the modern dynamic system
+        // See: Database/Migrations/3_ModernRolesAndPermissions.sql
+        // Date Removed: 2025-01-09
 
         public async Task<Dictionary<string, int>> GetSyncStatisticsAsync()
         {
@@ -202,6 +175,7 @@ namespace OSHManagement.Services
                 stats["Stations"] = await GetCountAsync(connection, "SELECT COUNT(*) FROM Stations");
                 stats["Departments"] = await GetCountAsync(connection, "SELECT COUNT(*) FROM Departments");
                 stats["Employees"] = await GetCountAsync(connection, "SELECT COUNT(*) FROM Employees");
+                // Note: Roles and EmployeeRoles not synced from legacy anymore
                 stats["Roles"] = await GetCountAsync(connection, "SELECT COUNT(*) FROM Roles");
                 stats["EmployeeRoles"] = await GetCountAsync(connection, "SELECT COUNT(*) FROM EmployeeRoles");
             }

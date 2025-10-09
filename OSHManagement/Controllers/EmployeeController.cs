@@ -3,17 +3,20 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OSHManagement.Data;
 using OSHManagement.Models.ViewModels;
+using OSHManagement.Services;
+using OSHManagement.Extensions;
 
 namespace OSHManagement.Controllers
 {
     [Authorize]
-    public class EmployeeController : Controller
+    public class EmployeeController : ScopedController
     {
-        private readonly OshDbContext _context;
-
-        public EmployeeController(OshDbContext context)
+        public EmployeeController(
+            OshDbContext context,
+            IScopeFilterService scopeFilter,
+            ILogger<EmployeeController> logger)
+            : base(context, scopeFilter, logger)
         {
-            _context = context;
         }
 
         // GET: Employee/Index
@@ -30,6 +33,9 @@ namespace OSHManagement.Controllers
                 .Include(e => e.EmployeeRoles)
                     .ThenInclude(er => er.Role)
                 .AsQueryable();
+
+            // Apply scope filtering - users only see employees within their scope
+            query = ApplyScope(query);
 
             // Apply search filter
             if (!string.IsNullOrWhiteSpace(search))
@@ -256,9 +262,10 @@ namespace OSHManagement.Controllers
                     _context.Employees.Add(employee);
                     await _context.SaveChangesAsync();
 
-                    // Assign roles if selected
+                    // Assign roles
                     if (SelectedRoles != null && SelectedRoles.Any())
                     {
+                        // User selected specific roles
                         foreach (var roleId in SelectedRoles)
                         {
                             var employeeRole = new Models.EmployeeRole
@@ -271,9 +278,28 @@ namespace OSHManagement.Controllers
 
                             _context.EmployeeRoles.Add(employeeRole);
                         }
-
-                        await _context.SaveChangesAsync();
                     }
+                    else
+                    {
+                        // No roles selected - assign default "Employee" role
+                        var defaultRole = await _context.Roles
+                            .FirstOrDefaultAsync(r => r.RoleName == "Employee" && r.IsActive);
+
+                        if (defaultRole != null)
+                        {
+                            var employeeRole = new Models.EmployeeRole
+                            {
+                                EmployeeId = employee.EmployeeId,
+                                RoleId = defaultRole.RoleId,
+                                IsActive = true,
+                                AssignedAt = DateTime.UtcNow
+                            };
+
+                            _context.EmployeeRoles.Add(employeeRole);
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
 
                     TempData["Success"] = $"Employee '{model.FirstName} {model.LastName}' has been created successfully with payroll number {model.PayrollNo}.";
                     return RedirectToAction(nameof(Index));

@@ -73,6 +73,11 @@ builder.Services.AddScoped<IPasswordHashService, PasswordHashService>();
 builder.Services.AddScoped<ILegacyPasswordService, LegacyPasswordService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
+// Register scope services
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUserScopeService, UserScopeService>();
+builder.Services.AddScoped<IScopeFilterService, ScopeFilterService>();
+
 var app = builder.Build();
 
 // Seed database
