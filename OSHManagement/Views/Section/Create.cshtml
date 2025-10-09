@@ -1,0 +1,112 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.SectionViewModel
+@{
+    ViewData["Title"] = "Create Section";
+
+    // Build station options
+    var stationOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>
+    {
+        new OSHManagement.Models.ViewModels.FormSelectOption { Text = "-- Select Station --", Value = "" }
+    };
+    
+    if (ViewBag.Stations != null)
+    {
+        foreach (var station in (IEnumerable<dynamic>)ViewBag.Stations)
+        {
+            stationOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
+            {
+                Text = station.StationName,
+                Value = station.StationId.ToString()
+            });
+        }
+    }
+    
+    // Build employee options
+    var employeeOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>
+    {
+        new OSHManagement.Models.ViewModels.FormSelectOption { Text = "-- None --", Value = "" }
+    };
+    
+    if (ViewBag.Employees != null)
+    {
+        foreach (var emp in (IEnumerable<dynamic>)ViewBag.Employees)
+        {
+            employeeOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
+            {
+                Text = emp.FullName,
+                Value = emp.PayrollNo
+            });
+        }
+    }
+
+    // Configure form - SIMPLE DATA ONLY
+    var formConfig = new OSHManagement.Models.ViewModels.FormConfig
+    {
+        FormId = "createSectionForm",
+        ActionUrl = "/Section/Create",
+        Method = "POST",
+        FormType = OSHManagement.Models.ViewModels.FormType.FloatingLabelForm, // Mobile-friendly!
+        CardTitle = "Create New Section",
+
+        // Single column layout
+        FieldsPerRow = 1,
+        FieldColumnClass = "col-md-12",
+
+        Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
+        {
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "StationId",
+                PropertyName = nameof(SectionViewModel.StationId),
+                Label = "Station",
+                Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                Required = true,
+                Options = stationOptions,
+                ValidationMessage = "Please select a station",
+                HelpText = "Select the station this section belongs to"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "SectionName",
+                PropertyName = nameof(SectionViewModel.SectionName),
+                Label = "Section Name",
+                Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                Required = true,
+                Placeholder = "Enter section name",
+                MaxLength = 100,
+                ValidationMessage = "Section name is required",
+                HelpText = "Enter a unique name for this section"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "SectionSupervisorPayroll",
+                PropertyName = nameof(SectionViewModel.SectionSupervisorPayroll),
+                Label = "Section Supervisor",
+                Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                Required = false,
+                Options = employeeOptions,
+                HelpText = "Optional: Assign a supervisor for this section"
+            }
+        },
+
+        SubmitButtonText = "Create Section",
+        SubmitButtonClass = "btn btn-primary",
+        CancelButtonText = "Cancel",
+        CancelUrl = "/Section/Index",
+        WrapInCard = true
+    };
+
+    // Build form using extension method (ALL LOGIC HERE)
+    var form = formConfig.BuildForm();
+}
+
+<!-- Render Form -->
+<div class="row">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/Forms/_FloatingLabelForm.cshtml" model="form" />
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

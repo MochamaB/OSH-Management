@@ -139,6 +139,80 @@ namespace OSHManagement.Controllers
             return View();
         }
 
+        // GET: Section/Create
+        public async Task<IActionResult> Create()
+        {
+            // Load stations for dropdown
+            var stations = await _context.Stations
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.StationName)
+                .Select(s => new { s.StationId, s.StationName })
+                .ToListAsync();
+            
+            // Load employees for supervisor dropdown
+            var employees = await _context.Employees
+                .Where(e => e.EmploymentStatus == "Active")
+                .OrderBy(e => e.LastName).ThenBy(e => e.FirstName)
+                .Select(e => new { e.PayrollNo, FullName = e.FirstName + " " + e.LastName })
+                .ToListAsync();
+            
+            ViewBag.Stations = stations;
+            ViewBag.Employees = employees;
+            
+            return View();
+        }
+
+        // POST: Section/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(SectionViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // Check if section name already exists in this station
+                    var existingSection = await _context.Sections
+                        .AnyAsync(s => s.SectionName == model.SectionName && 
+                                      s.StationId == model.StationId && 
+                                      s.IsActive);
+                    
+                    if (existingSection)
+                    {
+                        ModelState.AddModelError("SectionName", "A section with this name already exists in the selected station.");
+                        
+                        // Reload dropdowns
+                        await LoadDropdowns();
+                        return View(model);
+                    }
+
+                    var section = new Models.Section
+                    {
+                        SectionName = model.SectionName.Trim(),
+                        StationId = model.StationId,
+                        SectionSupervisorPayroll = model.SectionSupervisorPayroll,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    
+                    _context.Sections.Add(section);
+                    await _context.SaveChangesAsync();
+                    
+                    TempData["Success"] = $"Section '{model.SectionName}' has been created successfully.";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    TempData["Error"] = "An error occurred while creating the section. Please try again.";
+                    // Log the exception if you have logging configured
+                }
+            }
+            
+            // Reload dropdowns on error
+            await LoadDropdowns();
+            return View(model);
+        }
+
         // GET: Section/BulkCreate
         public async Task<IActionResult> BulkCreate()
         {
@@ -236,6 +310,25 @@ namespace OSHManagement.Controllers
             ViewBag.Employees = employees;
             
             return View();
+        }
+
+        // Helper method to load dropdowns
+        private async Task LoadDropdowns()
+        {
+            var stations = await _context.Stations
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.StationName)
+                .Select(s => new { s.StationId, s.StationName })
+                .ToListAsync();
+            
+            var employees = await _context.Employees
+                .Where(e => e.EmploymentStatus == "Active")
+                .OrderBy(e => e.LastName).ThenBy(e => e.FirstName)
+                .Select(e => new { e.PayrollNo, FullName = e.FirstName + " " + e.LastName })
+                .ToListAsync();
+            
+            ViewBag.Stations = stations;
+            ViewBag.Employees = employees;
         }
     }
 

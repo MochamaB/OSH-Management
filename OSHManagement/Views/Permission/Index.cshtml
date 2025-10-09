@@ -1,0 +1,214 @@
+@using OSHManagement.Extensions
+@model List<OSHManagement.Models.ViewModels.PermissionViewModel>
+@{
+    ViewData["Title"] = "Permissions Management";
+
+    var modules = Model.GroupBy(p => p.Module).Select(g => g.Key).Distinct().ToList();
+
+    // Build stat cards
+    var statConfig = new OSHManagement.Models.ViewModels.StatsRowConfig
+    {
+        Titles = new List<string> { "Total Permissions", "Employee Module", "Incident Module", "Hazard Module" },
+        Values = new List<string> {
+            Model.Count.ToString(),
+            Model.Count(p => p.Module == "Employee").ToString(),
+            Model.Count(p => p.Module == "Incident").ToString(),
+            Model.Count(p => p.Module == "Hazard").ToString()
+        },
+        Icons = new List<string> {
+            "ri-checkbox-multiple-line",
+            "ri-user-line",
+            "ri-alert-line",
+            "ri-shield-line"
+        },
+        ColorThemes = new List<string> { "primary", "success", "warning", "danger" },
+        CardType = OSHManagement.Models.ViewModels.CardType.LeftBorderCard
+    };
+    var statCards = statConfig.BuildStatsRow();
+
+    // Build DataTable configuration
+    var tableConfig = new OSHManagement.Models.ViewModels.TableConfig
+    {
+        TableId = "permissionsTable",
+        ActionUrl = "/Permission/Index",
+        Columns = new List<string> {
+            "Permission Name",
+            "Module",
+            "Action",
+            "Assigned Roles",
+            "Status",
+            "Actions"
+        },
+        SearchPlaceholder = "Search permissions...",
+        CreateButtonText = "Create Permission",
+        CreateButtonUrl = "/Permission/Create",
+        Filters = new List<OSHManagement.Models.ViewModels.FilterConfig>
+        {
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Module",
+                ParameterName = "module",
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Modules", Value = "" }
+                }.Concat(
+                    modules.Select(m =>
+                        new OSHManagement.Models.ViewModels.FilterOptionConfig
+                        {
+                            Text = m,
+                            Value = m
+                        }
+                    )
+                ).ToList()
+            },
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Status",
+                ParameterName = "status",
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Status", Value = "" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Active", Value = "active" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Inactive", Value = "inactive" }
+                }
+            }
+        }
+    };
+
+    // Build table with row data
+    var table = tableConfig.BuildTable(
+        tableContent: @<text>
+            @foreach (var permission in Model)
+            {
+                var moduleClass = permission.Module switch
+                {
+                    "Employee" => "success",
+                    "Incident" => "warning",
+                    "Hazard" => "danger",
+                    "Organization" => "info",
+                    "Administration" => "primary",
+                    _ => "secondary"
+                };
+
+                var actionClass = permission.Action switch
+                {
+                    "Create" => "success",
+                    "Read" => "info",
+                    "Update" => "warning",
+                    "Delete" => "danger",
+                    _ => "primary"
+                };
+
+                var moduleIcon = permission.Module switch
+                {
+                    "Employee" => "ri-user-line",
+                    "Incident" => "ri-alert-line",
+                    "Hazard" => "ri-shield-line",
+                    "Organization" => "ri-building-line",
+                    "Administration" => "ri-settings-3-line",
+                    _ => "ri-checkbox-circle-line"
+                };
+
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar avatar-sm bg-@moduleClass-transparent me-2">
+                                <i class="@moduleIcon fs-16"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold">@permission.PermissionName</div>
+                                @if (!string.IsNullOrEmpty(permission.Description))
+                                {
+                                    <div class="text-muted fs-12">@permission.Description</div>
+                                }
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-@moduleClass-transparent">
+                            <i class="@moduleIcon me-1"></i>@permission.Module
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-@actionClass-transparent">
+                            @permission.Action
+                        </span>
+                    </td>
+                    <td>
+                        @if (permission.RoleNames.Any())
+                        {
+                            <div class="d-flex align-items-center gap-1 flex-wrap">
+                                @foreach (var roleName in permission.RoleNames.Take(2))
+                                {
+                                    <span class="badge bg-primary-transparent" title="@roleName">
+                                        @roleName
+                                    </span>
+                                }
+                                @if (permission.RoleNames.Count > 2)
+                                {
+                                    <span class="badge bg-secondary-transparent" title="@string.Join(", ", permission.RoleNames.Skip(2))">
+                                        +@(permission.RoleNames.Count - 2) more
+                                    </span>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                <i class="ri-information-line"></i> Not assigned
+                            </span>
+                        }
+                    </td>
+                    <td>
+                        @if (permission.IsActive)
+                        {
+                            <span class="badge bg-success-transparent">
+                                <i class="ri-checkbox-circle-line me-1"></i>Active
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger-transparent">
+                                <i class="ri-close-circle-line me-1"></i>Inactive
+                            </span>
+                        }
+                    </td>
+                    <td>
+                        @{
+                            var rowActions = new OSHManagement.Models.ViewModels.RowActionConfig
+                            {
+                                EditUrl = $"/Permission/Edit/{{id}}",
+                                ViewUrl = $"/Permission/Details/{{id}}",
+                                DeleteUrl = $"/Permission/Delete/{{id}}",
+                                DeleteItemName = permission.PermissionName,
+                                ShowView = true,
+                                ShowEdit = true,
+                                ShowDelete = true
+                            };
+                            var actions = OSHManagement.Extensions.DataTableExtensions.BuildRowActions(permission.PermissionId, "/Permission", rowActions);
+                        }
+                        <partial name="~/Views/Shared/Components/_ActionButtons.cshtml" model="actions" />
+                    </td>
+                </tr>
+            }
+        </text>,
+        currentUrl: Context.Request.Path + Context.Request.QueryString
+    );
+}
+
+<!-- Stat Cards Row -->
+<div class="row">
+    @foreach (var card in statCards)
+    {
+        <partial name="~/Views/Shared/Components/StatisticCards/_LeftBorderCard.cshtml" model="card" />
+    }
+</div>
+
+<!-- Main Content -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/_DataTable.cshtml" model="table" />
+    </div>
+</div>
