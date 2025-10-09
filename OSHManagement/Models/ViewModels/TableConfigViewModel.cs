@@ -50,8 +50,8 @@ namespace OSHManagement.Models.ViewModels
     {
         public string Text { get; set; } = "";
         public string Url { get; set; } = "";
-        public string Icon { get; set; } = "";
-        public string Color { get; set; } = "secondary";
+        public string IconClass { get; set; } = "";
+        public string ColorClass { get; set; } = "secondary";
     }
 
     /// <summary>

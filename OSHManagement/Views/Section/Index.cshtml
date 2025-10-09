@@ -42,6 +42,16 @@
         SearchValue = ViewBag.CurrentSearch,
         CreateButtonText = "Create Section",
         CreateButtonUrl = "/Section/Create",
+        HeaderActions = new List<OSHManagement.Models.ViewModels.HeaderActionConfig>
+        {
+            new OSHManagement.Models.ViewModels.HeaderActionConfig
+            {
+                Text = "Bulk Create",
+                Url = "/Section/BulkCreate",
+                IconClass = "ri-add-box-line",
+                ColorClass = "success"
+            }
+        },
         Filters = new List<OSHManagement.Models.ViewModels.FilterConfig>
         {
             new OSHManagement.Models.ViewModels.FilterConfig

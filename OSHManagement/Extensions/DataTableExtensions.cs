@@ -57,8 +57,8 @@ namespace OSHManagement.Extensions
                 {
                     Text = action.Text,
                     Url = action.Url,
-                    IconClass = action.Icon,
-                    ColorClass = action.Color
+                    IconClass = action.IconClass,
+                    ColorClass = action.ColorClass
                 });
             }
 

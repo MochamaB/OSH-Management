@@ -30,7 +30,12 @@
                     </button>
                 }
 
-                @* Custom Header Actions *@
+                
+            </div>
+
+            @* Right Side: Create Button *@
+            <div class="d-flex gap-2">
+            @* Custom Header Actions *@
                 @if (Model.HeaderActions != null && Model.HeaderActions.Any())
                 {
                     @foreach (var action in Model.HeaderActions)
@@ -44,10 +49,6 @@
                         </a>
                     }
                 }
-            </div>
-
-            @* Right Side: Create Button *@
-            <div class="d-flex gap-2">
                 @if (!string.IsNullOrEmpty(Model.CreateButtonText) && !string.IsNullOrEmpty(Model.CreateButtonUrl))
                 {
                     <a href="@Model.CreateButtonUrl" class="btn btn-primary">
