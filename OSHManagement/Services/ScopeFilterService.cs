@@ -38,27 +38,44 @@ namespace OSHManagement.Services
         {
             var entityType = typeof(T);
 
-            // Employee filtering
+            // Station filtering (Organizational Hierarchy)
+            if (entityType == typeof(Station))
+            {
+                return (IQueryable<T>)ApplyStationScope(query.Cast<Station>(), scope);
+            }
+
+            // Department filtering (Organizational Hierarchy)
+            if (entityType == typeof(Department))
+            {
+                return (IQueryable<T>)ApplyDepartmentScope(query.Cast<Department>(), scope);
+            }
+
+            // Section filtering (Organizational Hierarchy)
+            if (entityType == typeof(Section))
+            {
+                return (IQueryable<T>)ApplySectionScope(query.Cast<Section>(), scope);
+            }
+
+            // Employee filtering (Transactional)
             if (entityType == typeof(Employee))
             {
                 return (IQueryable<T>)ApplyEmployeeScope(query.Cast<Employee>(), scope);
             }
 
-            // Incident filtering
+            // Incident filtering (Transactional)
             if (entityType == typeof(Incident))
             {
                 return (IQueryable<T>)ApplyIncidentScope(query.Cast<Incident>(), scope);
             }
 
-            // Hazard filtering
+            // Hazard filtering (Transactional)
             if (entityType == typeof(Hazard))
             {
                 return (IQueryable<T>)ApplyHazardScope(query.Cast<Hazard>(), scope);
             }
 
-            // Add other entity types as needed...
-
             // Default: if entity doesn't have scope filtering, return as-is
+            // (e.g., OrgCategories, Roles, Permissions - reference data)
             return query;
         }
 
@@ -92,6 +109,75 @@ namespace OSHManagement.Services
             {
                 ScopeLevel.Station => query.Where(h => h.StationId == scope.StationId),
                 ScopeLevel.Department => query.Where(h => h.StationId == scope.StationId), // Department users see station-level hazards
+                _ => query
+            };
+        }
+
+        /// <summary>
+        /// Apply scope filtering to Station queries
+        /// Stations represent organizational hierarchy - users can only see stations within their scope
+        /// </summary>
+        private IQueryable<Station> ApplyStationScope(IQueryable<Station> query, UserScope scope)
+        {
+            return scope.Level switch
+            {
+                // Station scope: Users can ONLY see their assigned station
+                ScopeLevel.Station => query.Where(s => s.StationId == scope.StationId),
+                
+                // Department/Team/Self: Inherit from station - can only see their station
+                ScopeLevel.Department => query.Where(s => s.StationId == scope.StationId),
+                ScopeLevel.Team => query.Where(s => s.StationId == scope.StationId),
+                ScopeLevel.Self => query.Where(s => s.StationId == scope.StationId),
+                
+                // Organization scope sees all stations (handled in ApplyScope method)
+                _ => query
+            };
+        }
+
+        /// <summary>
+        /// Apply scope filtering to Department queries
+        /// CRITICAL: Department scope users can ONLY see THEIR department (Principle of Least Privilege)
+        /// This prevents Department Heads from assigning employees to other departments
+        /// </summary>
+        private IQueryable<Department> ApplyDepartmentScope(IQueryable<Department> query, UserScope scope)
+        {
+            return scope.Level switch
+            {
+                // Station scope: Users can see ALL departments in their station
+                ScopeLevel.Station => query.Where(d => d.StationId == scope.StationId),
+                
+                // ⚠️ CRITICAL: Department scope users can ONLY see their own department
+                // This enforces Principle of Least Privilege - they cannot assign to other departments
+                // BUG FIX: Using DepartmentId (not StationId) to restrict to single department
+                ScopeLevel.Department => query.Where(d => d.DepartmentId == scope.DepartmentId),
+                
+                // Team/Self: Inherit from department - can only see their department
+                ScopeLevel.Team => query.Where(d => d.DepartmentId == scope.DepartmentId),
+                ScopeLevel.Self => query.Where(d => d.DepartmentId == scope.DepartmentId),
+                
+                // Organization scope sees all departments (handled in ApplyScope method)
+                _ => query
+            };
+        }
+
+        /// <summary>
+        /// Apply scope filtering to Section queries
+        /// Sections follow station hierarchy for scope determination
+        /// </summary>
+        private IQueryable<Section> ApplySectionScope(IQueryable<Section> query, UserScope scope)
+        {
+            return scope.Level switch
+            {
+                // Station scope: Users can see all sections in their station
+                ScopeLevel.Station => query.Where(s => s.StationId == scope.StationId),
+                
+                // Department/Team/Self: Inherit from station - can see sections in their station
+                // Note: Sections are linked to Stations directly via StationId
+                ScopeLevel.Department => query.Where(s => s.StationId == scope.StationId),
+                ScopeLevel.Team => query.Where(s => s.StationId == scope.StationId),
+                ScopeLevel.Self => query.Where(s => s.StationId == scope.StationId),
+                
+                // Organization scope sees all sections (handled in ApplyScope method)
                 _ => query
             };
         }

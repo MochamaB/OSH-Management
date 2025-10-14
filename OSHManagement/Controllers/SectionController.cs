@@ -3,17 +3,31 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OSHManagement.Data;
 using OSHManagement.Models.ViewModels;
+using OSHManagement.Services;
 
 namespace OSHManagement.Controllers
 {
     [Authorize]
-    public class SectionController : Controller
+    public class SectionController : ScopedController
     {
-        private readonly OshDbContext _context;
+        private readonly IOrganizationService _organizationService;
+        private readonly IOrganizationalHierarchyService _orgHierarchyService;
+        private readonly IEmployeeService _employeeService;
+        private readonly IScopeFilterService _scopeFilterService;
 
-        public SectionController(OshDbContext context)
+        public SectionController(
+            OshDbContext context,
+            IScopeFilterService scopeFilter,
+            IOrganizationService organizationService,
+            IOrganizationalHierarchyService orgHierarchyService,
+            IEmployeeService employeeService,
+            ILogger<SectionController> logger)
+            : base(context, scopeFilter, logger)
         {
-            _context = context;
+            _organizationService = organizationService;
+            _orgHierarchyService = orgHierarchyService;
+            _employeeService = employeeService;
+            _scopeFilterService = scopeFilter;
         }
 
         // GET: Section/Index
@@ -22,10 +36,16 @@ namespace OSHManagement.Controllers
             const int pageSize = 15; // Items per page
 
             // Start with base query
-            var query = _context.Sections
+            var query = _context.Sections.AsQueryable();
+
+            // ⚠️ CRITICAL: Apply scope FIRST (security takes precedence)
+            // Users can only see sections in their station
+            query = _scopeFilterService.ApplyScope(query, CurrentScope);
+
+            // THEN apply includes (only for scoped data)
+            query = query
                 .Include(s => s.Station)
-                .Include(s => s.TeamMembers)
-                .AsQueryable();
+                .Include(s => s.TeamMembers);
 
             // Apply search filter
             if (!string.IsNullOrWhiteSpace(search))
@@ -88,25 +108,27 @@ namespace OSHManagement.Controllers
                 })
                 .ToListAsync();
 
-            // Get supervisor names
+            // ✅ Get supervisor names using service (with scope)
             var supervisorPayrolls = sections
                 .Where(s => !string.IsNullOrEmpty(s.SectionSupervisorPayroll))
-                .Select(s => s.SectionSupervisorPayroll)
+                .Select(s => s.SectionSupervisorPayroll!)
                 .Distinct()
                 .ToList();
 
-            var supervisorNames = await _context.Employees
-                .Where(e => supervisorPayrolls.Contains(e.PayrollNo))
-                .Select(e => new { e.PayrollNo, FullName = e.FirstName + " " + e.LastName })
-                .ToDictionaryAsync(e => e.PayrollNo, e => e.FullName);
-
-            // Populate supervisor names
-            foreach (var section in sections)
+            if (supervisorPayrolls.Any())
             {
-                if (!string.IsNullOrEmpty(section.SectionSupervisorPayroll) && 
-                    supervisorNames.ContainsKey(section.SectionSupervisorPayroll))
+                var supervisorNames = await _employeeService.GetEmployeeNamesByPayrollsAsync(
+                    supervisorPayrolls, 
+                    CurrentScope);
+
+                // Populate supervisor names
+                foreach (var section in sections)
                 {
-                    section.SupervisorFullName = supervisorNames[section.SectionSupervisorPayroll];
+                    if (!string.IsNullOrEmpty(section.SectionSupervisorPayroll) && 
+                        supervisorNames.ContainsKey(section.SectionSupervisorPayroll))
+                    {
+                        section.SupervisorFullName = supervisorNames[section.SectionSupervisorPayroll];
+                    }
                 }
             }
 
@@ -116,14 +138,8 @@ namespace OSHManagement.Controllers
             ViewBag.PageSize = pageSize;
             ViewBag.TotalItems = totalItems;
 
-            // Get stations for filter dropdown
-            var stations = await _context.Stations
-                .Where(st => st.IsActive)
-                .OrderBy(st => st.StationName)
-                .Select(st => new { st.StationId, st.StationName })
-                .ToListAsync();
-
-            ViewBag.Stations = stations;
+            // ✅ Use service for stations dropdown (with scope)
+            ViewBag.Stations = await _orgHierarchyService.GetActiveStationsAsync(CurrentScope);
 
             // Pass filter values to view for maintaining state
             ViewBag.CurrentSearch = search;
@@ -142,22 +158,9 @@ namespace OSHManagement.Controllers
         // GET: Section/Create
         public async Task<IActionResult> Create()
         {
-            // Load stations for dropdown
-            var stations = await _context.Stations
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.StationName)
-                .Select(s => new { s.StationId, s.StationName })
-                .ToListAsync();
-            
-            // Load employees for supervisor dropdown
-            var employees = await _context.Employees
-                .Where(e => e.EmploymentStatus == "Active")
-                .OrderBy(e => e.LastName).ThenBy(e => e.FirstName)
-                .Select(e => new { e.PayrollNo, FullName = e.FirstName + " " + e.LastName })
-                .ToListAsync();
-            
-            ViewBag.Stations = stations;
-            ViewBag.Employees = employees;
+            // ✅ Use services for dropdowns (with scope)
+            ViewBag.Stations = await _orgHierarchyService.GetActiveStationsAsync(CurrentScope);
+            ViewBag.Employees = await _employeeService.GetSupervisorCandidatesAsync(CurrentScope);
             
             return View();
         }
@@ -216,30 +219,10 @@ namespace OSHManagement.Controllers
         // GET: Section/BulkCreate
         public async Task<IActionResult> BulkCreate()
         {
-            // Load categories for filtering
-            var categories = await _context.OrgCategories
-                .Where(c => c.IsActive)
-                .OrderBy(c => c.CategoryName)
-                .Select(c => new { c.OrgCategoryId, c.CategoryName })
-                .ToListAsync();
-            
-            // Load stations for parent selector
-            var stations = await _context.Stations
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.StationName)
-                .Select(s => new { s.StationId, s.StationName, s.OrgCategoryId })
-                .ToListAsync();
-            
-            // Load employees for supervisor dropdown
-            var employees = await _context.Employees
-                .Where(e => e.EmploymentStatus == "Active")
-                .OrderBy(e => e.LastName).ThenBy(e => e.FirstName)
-                .Select(e => new { e.PayrollNo, FullName = e.FirstName + " " + e.LastName, e.StationId })
-                .ToListAsync();
-            
-            ViewBag.Categories = categories;
-            ViewBag.Stations = stations;
-            ViewBag.Employees = employees;
+            // ✅ Use services for dropdowns (with scope)
+            ViewBag.Categories = await _organizationService.GetActiveCategoriesAsync();
+            ViewBag.Stations = await _orgHierarchyService.GetActiveStationsAsync(CurrentScope);
+            ViewBag.Employees = await _employeeService.GetSupervisorCandidatesAsync(CurrentScope);
             
             return View();
         }
@@ -293,21 +276,9 @@ namespace OSHManagement.Controllers
                 }
             }
             
-            // Reload data on error
-            var stations = await _context.Stations
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.StationName)
-                .Select(s => new { s.StationId, s.StationName })
-                .ToListAsync();
-            
-            var employees = await _context.Employees
-                .Where(e => e.EmploymentStatus == "Active")
-                .OrderBy(e => e.LastName).ThenBy(e => e.FirstName)
-                .Select(e => new { e.PayrollNo, FullName = e.FirstName + " " + e.LastName, e.StationId })
-                .ToListAsync();
-            
-            ViewBag.Stations = stations;
-            ViewBag.Employees = employees;
+            // ✅ Reload data on error using services
+            ViewBag.Stations = await _orgHierarchyService.GetActiveStationsAsync(CurrentScope);
+            ViewBag.Employees = await _employeeService.GetSupervisorCandidatesAsync(CurrentScope);
             
             return View();
         }
@@ -315,20 +286,9 @@ namespace OSHManagement.Controllers
         // Helper method to load dropdowns
         private async Task LoadDropdowns()
         {
-            var stations = await _context.Stations
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.StationName)
-                .Select(s => new { s.StationId, s.StationName })
-                .ToListAsync();
-            
-            var employees = await _context.Employees
-                .Where(e => e.EmploymentStatus == "Active")
-                .OrderBy(e => e.LastName).ThenBy(e => e.FirstName)
-                .Select(e => new { e.PayrollNo, FullName = e.FirstName + " " + e.LastName })
-                .ToListAsync();
-            
-            ViewBag.Stations = stations;
-            ViewBag.Employees = employees;
+            // ✅ Use services for dropdowns (with scope awareness)
+            ViewBag.Stations = await _orgHierarchyService.GetActiveStationsAsync(CurrentScope);
+            ViewBag.Employees = await _employeeService.GetSupervisorCandidatesAsync(CurrentScope);
         }
     }
 

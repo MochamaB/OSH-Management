@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OSHManagement.Data;
+using OSHManagement.Models;
+using OSHManagement.Models.Authorization;
 using OSHManagement.Models.ViewModels;
 
 namespace OSHManagement.Controllers
@@ -56,6 +58,76 @@ namespace OSHManagement.Controllers
             }).ToList();
 
             return View(viewModels);
+        }
+
+        // GET: Role/Create
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        // POST: Role/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(CreateRoleViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // Check if role name already exists
+                    var existingRole = await _context.Roles
+                        .AnyAsync(r => r.RoleName == model.RoleName);
+
+                    if (existingRole)
+                    {
+                        ModelState.AddModelError("RoleName", "A role with this name already exists.");
+                        return View(model);
+                    }
+
+                    // Create role entity
+                    var role = new Role
+                    {
+                        RoleName = model.RoleName.Trim(),
+                        Description = model.Description?.Trim(),
+                        ScopeLevel = model.ScopeLevel,
+                        IsSystemRole = model.IsSystemRole,
+                        AllowCrossDepartmentAccess = model.AllowCrossDepartmentAccess,
+                        AllowCrossStationAccess = model.AllowCrossStationAccess,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.Roles.Add(role);
+                    await _context.SaveChangesAsync();
+
+                    // Add permissions if selected
+                    if (model.SelectedPermissionIds != null && model.SelectedPermissionIds.Any())
+                    {
+                        foreach (var permissionId in model.SelectedPermissionIds)
+                        {
+                            var rolePermission = new RolePermission
+                            {
+                                RoleId = role.RoleId,
+                                PermissionId = permissionId,
+                                CreatedAt = DateTime.UtcNow
+                            };
+                            _context.RolePermissions.Add(rolePermission);
+                        }
+                        await _context.SaveChangesAsync();
+                    }
+
+                    TempData["Success"] = $"Role '{model.RoleName}' has been created successfully.";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error creating role");
+                    TempData["Error"] = "An error occurred while creating the role. Please try again.";
+                }
+            }
+
+            return View(model);
         }
     }
 }

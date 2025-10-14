@@ -11,12 +11,24 @@ namespace OSHManagement.Controllers
     [Authorize]
     public class EmployeeController : ScopedController
     {
+        private readonly IOrganizationService _organizationService;
+        private readonly IOrganizationalHierarchyService _orgHierarchyService;
+        private readonly IEmployeeService _employeeService;
+        private readonly IScopeFilterService _scopeFilterService;
+
         public EmployeeController(
             OshDbContext context,
             IScopeFilterService scopeFilter,
+            IOrganizationService organizationService,
+            IOrganizationalHierarchyService orgHierarchyService,
+            IEmployeeService employeeService,
             ILogger<EmployeeController> logger)
             : base(context, scopeFilter, logger)
         {
+            _organizationService = organizationService;
+            _orgHierarchyService = orgHierarchyService;
+            _employeeService = employeeService;
+            _scopeFilterService = scopeFilter;
         }
 
         // GET: Employee/Index
@@ -27,15 +39,19 @@ namespace OSHManagement.Controllers
             // Start with base query - only active employees
             var query = _context.Employees
                 .Where(e => e.EmploymentStatus == "Active")
+                .AsQueryable();
+
+            // ⚠️ CRITICAL: Apply scope FIRST (security takes precedence)
+            // Users only see employees within their scope
+            query = _scopeFilterService.ApplyScope(query, CurrentScope);
+
+            // THEN apply includes (only for scoped data)
+            query = query
                 .Include(e => e.Station)
                     .ThenInclude(s => s.OrgCategory)
                 .Include(e => e.Department)
                 .Include(e => e.EmployeeRoles)
-                    .ThenInclude(er => er.Role)
-                .AsQueryable();
-
-            // Apply scope filtering - users only see employees within their scope
-            query = ApplyScope(query);
+                    .ThenInclude(er => er.Role);
 
             // Apply search filter
             if (!string.IsNullOrWhiteSpace(search))
@@ -126,19 +142,17 @@ namespace OSHManagement.Controllers
                 })
                 .ToListAsync();
 
-            // Get HOD and Supervisor names
-            var hodPayrolls = employees.Where(e => !string.IsNullOrEmpty(e.HodPayroll)).Select(e => e.HodPayroll).Distinct().ToList();
-            var supervisorPayrolls = employees.Where(e => !string.IsNullOrEmpty(e.SupervisorPayroll)).Select(e => e.SupervisorPayroll).Distinct().ToList();
+            // ✅ Get HOD and Supervisor names using service (with scope)
+            var hodPayrolls = employees.Where(e => !string.IsNullOrEmpty(e.HodPayroll)).Select(e => e.HodPayroll!).Distinct().ToList();
+            var supervisorPayrolls = employees.Where(e => !string.IsNullOrEmpty(e.SupervisorPayroll)).Select(e => e.SupervisorPayroll!).Distinct().ToList();
             
-            var hodNames = await _context.Employees
-                .Where(e => hodPayrolls.Contains(e.PayrollNo))
-                .Select(e => new { e.PayrollNo, FullName = e.FirstName + " " + e.LastName })
-                .ToDictionaryAsync(e => e.PayrollNo, e => e.FullName);
+            var allPayrolls = hodPayrolls.Concat(supervisorPayrolls).Distinct().ToList();
+            Dictionary<string, string> employeeNames = new();
 
-            var supervisorNames = await _context.Employees
-                .Where(e => supervisorPayrolls.Contains(e.PayrollNo))
-                .Select(e => new { e.PayrollNo, FullName = e.FirstName + " " + e.LastName })
-                .ToDictionaryAsync(e => e.PayrollNo, e => e.FullName);
+            if (allPayrolls.Any())
+            {
+                employeeNames = await _employeeService.GetEmployeeNamesByPayrollsAsync(allPayrolls, CurrentScope);
+            }
 
             // Get avatar URLs from MediaAssociation
             var employeeIds = employees.Select(e => e.EmployeeId).ToList();
@@ -157,14 +171,14 @@ namespace OSHManagement.Controllers
             // Populate HOD, Supervisor names and avatars
             foreach (var employee in employees)
             {
-                if (!string.IsNullOrEmpty(employee.HodPayroll) && hodNames.ContainsKey(employee.HodPayroll))
+                if (!string.IsNullOrEmpty(employee.HodPayroll) && employeeNames.ContainsKey(employee.HodPayroll))
                 {
-                    employee.HodFullName = hodNames[employee.HodPayroll];
+                    employee.HodFullName = employeeNames[employee.HodPayroll];
                 }
 
-                if (!string.IsNullOrEmpty(employee.SupervisorPayroll) && supervisorNames.ContainsKey(employee.SupervisorPayroll))
+                if (!string.IsNullOrEmpty(employee.SupervisorPayroll) && employeeNames.ContainsKey(employee.SupervisorPayroll))
                 {
-                    employee.SupervisorFullName = supervisorNames[employee.SupervisorPayroll];
+                    employee.SupervisorFullName = employeeNames[employee.SupervisorPayroll];
                 }
 
                 if (avatars.ContainsKey(employee.EmployeeId))
@@ -179,34 +193,17 @@ namespace OSHManagement.Controllers
             ViewBag.PageSize = pageSize;
             ViewBag.TotalItems = totalItems;
 
-            // Get filter dropdown data
-            var categories = await _context.OrgCategories
-                .Where(c => c.IsActive)
-                .OrderBy(c => c.CategoryName)
-                .Select(c => new { c.OrgCategoryId, c.CategoryName })
-                .ToListAsync();
-
-            var stations = await _context.Stations
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.StationName)
-                .Select(s => new { s.StationId, s.StationName, s.OrgCategoryId })
-                .ToListAsync();
-
-            var departments = await _context.Departments
-                .Where(d => d.IsActive)
-                .OrderBy(d => d.DepartmentName)
-                .Select(d => new { d.DepartmentId, d.DepartmentName })
-                .ToListAsync();
-
+            // ✅ Get filter dropdown data using services (with scope)
+            ViewBag.Categories = await _organizationService.GetActiveCategoriesAsync();
+            ViewBag.Stations = await _orgHierarchyService.GetActiveStationsAsync(CurrentScope);
+            ViewBag.Departments = await _orgHierarchyService.GetActiveDepartmentsAsync(CurrentScope);
+            
+            // Roles - no scope (reference data)
             var roles = await _context.Roles
                 .Where(r => r.IsActive)
                 .OrderBy(r => r.RoleName)
                 .Select(r => new { r.RoleId, r.RoleName })
                 .ToListAsync();
-
-            ViewBag.Categories = categories;
-            ViewBag.Stations = stations;
-            ViewBag.Departments = departments;
             ViewBag.Roles = roles;
 
             // Pass filter values to view for maintaining state
@@ -359,24 +356,23 @@ namespace OSHManagement.Controllers
                 UpdatedAt = employee.UpdatedAt
             };
 
-            // Get HOD and Supervisor names
-            if (!string.IsNullOrEmpty(employee.HodPayroll))
-            {
-                var hod = await _context.Employees
-                    .FirstOrDefaultAsync(e => e.PayrollNo == employee.HodPayroll);
-                if (hod != null)
-                {
-                    model.HodFullName = $"{hod.FirstName} {hod.LastName}";
-                }
-            }
+            // ✅ Get HOD and Supervisor names using service (with scope)
+            var payrolls = new List<string>();
+            if (!string.IsNullOrEmpty(employee.HodPayroll)) payrolls.Add(employee.HodPayroll);
+            if (!string.IsNullOrEmpty(employee.SupervisorPayroll)) payrolls.Add(employee.SupervisorPayroll);
 
-            if (!string.IsNullOrEmpty(employee.SupervisorPayroll))
+            if (payrolls.Any())
             {
-                var supervisor = await _context.Employees
-                    .FirstOrDefaultAsync(e => e.PayrollNo == employee.SupervisorPayroll);
-                if (supervisor != null)
+                var employeeNames = await _employeeService.GetEmployeeNamesByPayrollsAsync(payrolls, CurrentScope);
+                
+                if (!string.IsNullOrEmpty(employee.HodPayroll) && employeeNames.ContainsKey(employee.HodPayroll))
                 {
-                    model.SupervisorFullName = $"{supervisor.FirstName} {supervisor.LastName}";
+                    model.HodFullName = employeeNames[employee.HodPayroll];
+                }
+
+                if (!string.IsNullOrEmpty(employee.SupervisorPayroll) && employeeNames.ContainsKey(employee.SupervisorPayroll))
+                {
+                    model.SupervisorFullName = employeeNames[employee.SupervisorPayroll];
                 }
             }
 
@@ -550,46 +546,18 @@ namespace OSHManagement.Controllers
         // Helper method to populate dropdowns
         private async Task PopulateDropdowns()
         {
-            var categories = await _context.OrgCategories
-                .Where(c => c.IsActive)
-                .OrderBy(c => c.CategoryName)
-                .Select(c => new { c.OrgCategoryId, c.CategoryName })
-                .ToListAsync();
-
-            var stations = await _context.Stations
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.StationName)
-                .Select(s => new { s.StationId, s.StationName, s.OrgCategoryId })
-                .ToListAsync();
-
-            var departments = await _context.Departments
-                .Where(d => d.IsActive)
-                .OrderBy(d => d.DepartmentName)
-                .Select(d => new { d.DepartmentId, d.DepartmentName, d.StationId })
-                .ToListAsync();
-
-            var employees = await _context.Employees
-                .Where(e => e.EmploymentStatus == "Active")
-                .OrderBy(e => e.LastName).ThenBy(e => e.FirstName)
-                .Select(e => new {
-                    e.EmployeeId,
-                    e.PayrollNo,
-                    FullName = e.FirstName + " " + e.LastName,
-                    e.StationId,
-                    e.DepartmentId
-                })
-                .ToListAsync();
-
+            // ✅ Use services for dropdowns (with scope awareness)
+            ViewBag.OrgCategories = await _organizationService.GetActiveCategoriesAsync();
+            ViewBag.Stations = await _orgHierarchyService.GetActiveStationsAsync(CurrentScope);
+            ViewBag.Departments = await _orgHierarchyService.GetActiveDepartmentsAsync(CurrentScope);
+            ViewBag.Employees = await _employeeService.GetActiveEmployeesAsync(CurrentScope);
+            
+            // Roles - no scope (reference data)
             var roles = await _context.Roles
                 .Where(r => r.IsActive)
                 .OrderBy(r => r.RoleName)
                 .Select(r => new { r.RoleId, r.RoleName })
                 .ToListAsync();
-
-            ViewBag.OrgCategories = categories;
-            ViewBag.Stations = stations;
-            ViewBag.Departments = departments;
-            ViewBag.Employees = employees;
             ViewBag.Roles = roles;
         }
     }

@@ -78,6 +78,14 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserScopeService, UserScopeService>();
 builder.Services.AddScoped<IScopeFilterService, ScopeFilterService>();
 
+// Register common query services
+builder.Services.AddScoped<IOrganizationService, OrganizationService>();
+builder.Services.AddScoped<IOrganizationalHierarchyService, OrganizationalHierarchyService>();
+builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+
+// Add memory cache for reference data (Categories, Roles)
+builder.Services.AddMemoryCache();
+
 var app = builder.Build();
 
 // Seed database

@@ -3,17 +3,28 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OSHManagement.Data;
 using OSHManagement.Models.ViewModels;
+using OSHManagement.Services;
 
 namespace OSHManagement.Controllers
 {
     [Authorize]
-    public class DepartmentController : Controller
+    public class DepartmentController : ScopedController
     {
-        private readonly OshDbContext _context;
+        private readonly IOrganizationalHierarchyService _orgHierarchyService;
+        private readonly IEmployeeService _employeeService;
+        private readonly IScopeFilterService _scopeFilterService;
 
-        public DepartmentController(OshDbContext context)
+        public DepartmentController(
+            OshDbContext context,
+            IScopeFilterService scopeFilter,
+            IOrganizationalHierarchyService orgHierarchyService,
+            IEmployeeService employeeService,
+            ILogger<DepartmentController> logger)
+            : base(context, scopeFilter, logger)
         {
-            _context = context;
+            _orgHierarchyService = orgHierarchyService;
+            _employeeService = employeeService;
+            _scopeFilterService = scopeFilter;
         }
 
         // GET: Department/Index
@@ -22,11 +33,19 @@ namespace OSHManagement.Controllers
             const int pageSize = 10; // Items per page
             
             // Start with base query
-            var query = _context.Departments
+            var query = _context.Departments.AsQueryable();
+
+            // ⚠️ CRITICAL: Apply scope FIRST (security takes precedence)
+            // Organization: All departments
+            // Station: Departments in their station
+            // Department: ONLY their department (Principle of Least Privilege)
+            query = _scopeFilterService.ApplyScope(query, CurrentScope);
+
+            // THEN apply includes (only for scoped data)
+            query = query
                 .Include(d => d.Station)
                 .Include(d => d.ParentDepartment)
-                .Include(d => d.Employees)
-                .AsQueryable();
+                .Include(d => d.Employees);
 
             // Apply search filter
             if (!string.IsNullOrWhiteSpace(search))
@@ -105,14 +124,8 @@ namespace OSHManagement.Controllers
             ViewBag.PageSize = pageSize;
             ViewBag.TotalItems = totalItems;
 
-            // Get stations for filter dropdown
-            var stations = await _context.Stations
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.StationName)
-                .Select(s => new { s.StationId, s.StationName })
-                .ToListAsync();
-
-            ViewBag.Stations = stations;
+            // ✅ Use service for stations dropdown (with scope)
+            ViewBag.Stations = await _orgHierarchyService.GetActiveStationsAsync(CurrentScope);
 
             // Pass filter values to view for maintaining state
             ViewBag.CurrentSearch = search;
@@ -351,38 +364,29 @@ namespace OSHManagement.Controllers
         [HttpGet]
         public async Task<IActionResult> GetDepartmentsWithStations()
         {
-            var departments = await _context.Departments
-                .Where(d => d.IsActive)
-                .OrderBy(d => d.DepartmentName)
-                .Select(d => new
-                {
-                    departmentId = d.DepartmentId,
-                    departmentName = d.DepartmentName,
-                    stationId = d.StationId
-                })
-                .ToListAsync();
+            // ✅ Use service with scope filtering
+            var departments = await _orgHierarchyService.GetActiveDepartmentsAsync(CurrentScope);
 
-            return Json(departments);
+            return Json(departments.Select(d => new
+            {
+                departmentId = d.DepartmentId,
+                departmentName = d.DepartmentName,
+                stationId = d.StationId
+            }));
         }
 
         // Helper method to populate dropdowns
         private async Task PopulateDropdowns()
         {
-            var stations = await _context.Stations
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.StationName)
-                .Select(s => new { s.StationId, s.StationName })
-                .ToListAsync();
-
-            ViewBag.Stations = stations;
-
-            var parentDepartments = await _context.Departments
-                .Where(d => d.IsActive)
-                .OrderBy(d => d.DepartmentName)
-                .Select(d => new { d.DepartmentId, d.DepartmentName })
-                .ToListAsync();
-
-            ViewBag.ParentDepartments = parentDepartments;
+            // ✅ Use services for dropdowns (with scope awareness)
+            ViewBag.Stations = await _orgHierarchyService.GetActiveStationsAsync(CurrentScope);
+            
+            // 🔒 CRITICAL: Parent departments respects scope
+            // Department Head can ONLY see their department (not other departments)
+            ViewBag.ParentDepartments = await _orgHierarchyService.GetActiveDepartmentsAsync(CurrentScope);
+            
+            // ✅ HOD dropdown with scope (only employees in their scope)
+            ViewBag.HodCandidates = await _employeeService.GetHodCandidatesAsync(CurrentScope);
         }
     }
 }

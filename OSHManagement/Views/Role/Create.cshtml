@@ -1,0 +1,191 @@
+@using OSHManagement.Extensions
+@using OSHManagement.Models.Authorization
+@model OSHManagement.Models.ViewModels.CreateRoleViewModel
+
+@{
+    ViewData["Title"] = "Create Role";
+
+    // Configure Form Wizard with 3 Steps
+    var wizardConfig = new OSHManagement.Models.ViewModels.FormWizardConfig
+    {
+        WizardId = "createRoleWizard",
+        ActionUrl = "/Role/Create",
+        Method = "POST",
+        Type = OSHManagement.Models.ViewModels.WizardType.Vertical,
+        WrapInCard = true,
+        CardTitle = "Create New Role",
+        CardSubtitle = "Define role details and assign permissions using the multi-step wizard",
+        CancelUrl = "/Role/Index",
+        CancelButtonText = "Cancel",
+        PreviousButtonText = "Previous",
+        NextButtonText = "Next",
+        SubmitButtonText = "Create Role",
+        ValidateOnStepChange = true,
+        Steps = new List<OSHManagement.Models.ViewModels.WizardStepConfig>
+        {
+            // Step 1: Role Details
+            new OSHManagement.Models.ViewModels.WizardStepConfig
+            {
+                StepId = "roleDetails",
+                Title = "Role Details",
+                Icon = "ri-shield-user-line",
+                Description = "Basic information about the role",
+                FieldsPerRow = 1,
+                FieldColumnClass = "col-12",
+                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "RoleName",
+                        PropertyName = "RoleName",
+                        Label = "Role Name",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                        Placeholder = "Enter role name (e.g., Station Manager, Safety Officer)",
+                        Required = true,
+                        ValidationMessage = "Role name is required",
+                        MaxLength = 100,
+                        Value = Model?.RoleName
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "Description",
+                        PropertyName = "Description",
+                        Label = "Description",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Textarea,
+                        Placeholder = "Enter a brief description of this role's purpose and responsibilities",
+                        Rows = 3,
+                        MaxLength = 500,
+                        Value = Model?.Description
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "ScopeLevel",
+                        PropertyName = "ScopeLevel",
+                        Label = "Scope Level",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                        Required = true,
+                        ValidationMessage = "Scope level is required",
+                        HelpText = "Determines the organizational level at which this role operates",
+                        Options = new List<OSHManagement.Models.ViewModels.FormSelectOption>
+                        {
+                            new OSHManagement.Models.ViewModels.FormSelectOption { Value = "", Text = "-- Select Scope Level --" },
+                            new OSHManagement.Models.ViewModels.FormSelectOption
+                            {
+                                Value = ((int)ScopeLevel.Organization).ToString(),
+                                Text = "Organization - Full access to all stations and departments"
+                            },
+                            new OSHManagement.Models.ViewModels.FormSelectOption
+                            {
+                                Value = ((int)ScopeLevel.Station).ToString(),
+                                Text = "Station - Access to assigned station only"
+                            },
+                            new OSHManagement.Models.ViewModels.FormSelectOption
+                            {
+                                Value = ((int)ScopeLevel.Department).ToString(),
+                                Text = "Department - Access to assigned department only"
+                            },
+                            new OSHManagement.Models.ViewModels.FormSelectOption
+                            {
+                                Value = ((int)ScopeLevel.Team).ToString(),
+                                Text = "Team - Access to assigned team members only"
+                            },
+                            new OSHManagement.Models.ViewModels.FormSelectOption
+                            {
+                                Value = ((int)ScopeLevel.Self).ToString(),
+                                Text = "Self - Access to own data only"
+                            }
+                        },
+                        Value = Model?.ScopeLevel.ToString()
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "IsSystemRole",
+                        PropertyName = "IsSystemRole",
+                        Label = "System Role",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Checkbox,
+                        HelpText = "System roles are built-in roles that cannot be deleted (can still be modified)",
+                        Value = Model?.IsSystemRole.ToString().ToLower()
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "AllowCrossDepartmentAccess",
+                        PropertyName = "AllowCrossDepartmentAccess",
+                        Label = "Allow Cross-Department Access",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Checkbox,
+                        HelpText = "Users with this role can view and manage data across multiple departments within their station",
+                        Value = Model?.AllowCrossDepartmentAccess.ToString().ToLower()
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "AllowCrossStationAccess",
+                        PropertyName = "AllowCrossStationAccess",
+                        Label = "Allow Cross-Station Access",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Checkbox,
+                        HelpText = "Users with this role can view and manage data across multiple stations (typically for regional or organization-level roles)",
+                        Value = Model?.AllowCrossStationAccess.ToString().ToLower()
+                    }
+                }
+            },
+            // Step 2: Permissions (Placeholder - User requested not to implement yet)
+            new OSHManagement.Models.ViewModels.WizardStepConfig
+            {
+                StepId = "permissions",
+                Title = "Assign Permissions",
+                Icon = "ri-lock-password-line",
+                Description = "Select permissions for this role",
+                FieldsPerRow = 1,
+                FieldColumnClass = "col-12",
+                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "PermissionsPlaceholder",
+                        Label = "Permissions",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                        Placeholder = "Permission assignment will be implemented in next phase",
+                        Disabled = true,
+                        HelpText = "This step is under development - permissions can be assigned after role creation"
+                    }
+                }
+            },
+            // Step 3: Review (Placeholder - User requested not to implement yet)
+            new OSHManagement.Models.ViewModels.WizardStepConfig
+            {
+                StepId = "review",
+                Title = "Review & Create",
+                Icon = "ri-check-double-line",
+                Description = "Review role details before creating",
+                FieldsPerRow = 1,
+                FieldColumnClass = "col-12",
+                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "ReviewPlaceholder",
+                        Label = "Review",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                        Placeholder = "Review step will be implemented in next phase",
+                        Disabled = true,
+                        HelpText = "This step is under development - you can create the role directly from Step 1 for now"
+                    }
+                }
+            }
+        }
+    };
+
+    // Build the wizard
+    var wizard = wizardConfig.BuildWizard();
+}
+
+<!-- Render Wizard -->
+<div class="row">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/Wizards/VerticalFormWizard.cshtml" model="wizard" />
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/assets/libs/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/assets/libs/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script src="~/js/wizard.js"></script>
+}

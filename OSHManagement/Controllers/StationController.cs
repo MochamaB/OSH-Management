@@ -3,30 +3,48 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OSHManagement.Data;
 using OSHManagement.Models.ViewModels;
+using OSHManagement.Services;
 
 namespace OSHManagement.Controllers
 {
     [Authorize]
-    public class StationController : Controller
+    public class StationController : ScopedController
     {
-        private readonly OshDbContext _context;
+        private readonly IOrganizationService _organizationService;
+        private readonly IOrganizationalHierarchyService _orgHierarchyService;
+        private readonly IScopeFilterService _scopeFilterService;
 
-        public StationController(OshDbContext context)
+        public StationController(
+            OshDbContext context,
+            IScopeFilterService scopeFilter,
+            IOrganizationService organizationService,
+            IOrganizationalHierarchyService orgHierarchyService,
+            ILogger<StationController> logger)
+            : base(context, scopeFilter, logger)
         {
-            _context = context;
+            _organizationService = organizationService;
+            _orgHierarchyService = orgHierarchyService;
+            _scopeFilterService = scopeFilter;
         }
 
         // GET: Station/Index
         public async Task<IActionResult> Index(string? search, string? status, int? categoryId)
         {
             // Start with base query
-            var query = _context.Stations
+            var query = _context.Stations.AsQueryable();
+
+            // ⚠️ CRITICAL: Apply scope FIRST (security takes precedence)
+            // Organization scope: Sees all stations
+            // Station/Dept/Team/Self: Only sees their station
+            query = _scopeFilterService.ApplyScope(query, CurrentScope);
+
+            // THEN apply includes (only for scoped data)
+            query = query
                 .Include(s => s.OrgCategory)
                 .Include(s => s.ParentStation)
                 .Include(s => s.Departments)
                 .Include(s => s.Sections)
-                .Include(s => s.Teams)
-                .AsQueryable();
+                .Include(s => s.Teams);
 
             // Apply search filter
             if (!string.IsNullOrWhiteSpace(search))
@@ -86,14 +104,8 @@ namespace OSHManagement.Controllers
             ViewBag.InactiveStations = stations.Count(s => !s.IsActive);
             ViewBag.TotalDepartments = stations.Sum(s => s.DepartmentCount);
 
-            // Get categories for filter dropdown
-            var categories = await _context.OrgCategories
-                .Where(c => c.IsActive)
-                .OrderBy(c => c.CategoryName)
-                .Select(c => new { c.OrgCategoryId, c.CategoryName })
-                .ToListAsync();
-
-            ViewBag.Categories = categories;
+            // ✅ Use service for categories (no scope - reference data)
+            ViewBag.Categories = await _organizationService.GetActiveCategoriesAsync();
 
             // Pass filter values to view for maintaining state
             ViewBag.CurrentSearch = search;
@@ -106,23 +118,9 @@ namespace OSHManagement.Controllers
         // GET: Station/Create
         public async Task<IActionResult> Create()
         {
-            // Get categories for dropdown
-            var categories = await _context.OrgCategories
-                .Where(c => c.IsActive)
-                .OrderBy(c => c.CategoryName)
-                .Select(c => new { c.OrgCategoryId, c.CategoryName })
-                .ToListAsync();
-
-            ViewBag.Categories = categories;
-
-            // Get parent stations for dropdown
-            var parentStations = await _context.Stations
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.StationName)
-                .Select(s => new { s.StationId, s.StationName })
-                .ToListAsync();
-
-            ViewBag.ParentStations = parentStations;
+            // ✅ Use services for dropdowns
+            ViewBag.Categories = await _organizationService.GetActiveCategoriesAsync();
+            ViewBag.ParentStations = await _orgHierarchyService.GetActiveStationsAsync(CurrentScope);
 
             return View();
         }
@@ -364,38 +362,23 @@ namespace OSHManagement.Controllers
         [HttpGet]
         public async Task<IActionResult> GetStationsWithCategories()
         {
-            var stations = await _context.Stations
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.StationName)
-                .Select(s => new
-                {
-                    stationId = s.StationId,
-                    stationName = s.StationName,
-                    orgCategoryId = s.OrgCategoryId
-                })
-                .ToListAsync();
+            // ✅ Use service with scope filtering
+            var stations = await _orgHierarchyService.GetActiveStationsAsync(CurrentScope);
 
-            return Json(stations);
+            return Json(stations.Select(s => new
+            {
+                stationId = s.StationId,
+                stationName = s.StationName,
+                orgCategoryId = s.OrgCategoryId
+            }));
         }
 
         // Helper method to populate dropdowns
         private async Task PopulateDropdowns()
         {
-            var categories = await _context.OrgCategories
-                .Where(c => c.IsActive)
-                .OrderBy(c => c.CategoryName)
-                .Select(c => new { c.OrgCategoryId, c.CategoryName })
-                .ToListAsync();
-
-            ViewBag.Categories = categories;
-
-            var parentStations = await _context.Stations
-                .Where(s => s.IsActive)
-                .OrderBy(s => s.StationName)
-                .Select(s => new { s.StationId, s.StationName })
-                .ToListAsync();
-
-            ViewBag.ParentStations = parentStations;
+            // ✅ Use services for dropdowns (with scope awareness)
+            ViewBag.Categories = await _organizationService.GetActiveCategoriesAsync();
+            ViewBag.ParentStations = await _orgHierarchyService.GetActiveStationsAsync(CurrentScope);
         }
     }
 }
