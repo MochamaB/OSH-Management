@@ -78,6 +78,9 @@ namespace OSHManagement.Models.ViewModels
 
         [Display(Name = "Assign Permissions")]
         public List<int> SelectedPermissionIds { get; set; } = new List<int>();
+
+        [Display(Name = "Assign Employees")]
+        public List<int> SelectedEmployeeIds { get; set; } = new List<int>();
     }
 
     /// <summary>
@@ -114,6 +117,9 @@ namespace OSHManagement.Models.ViewModels
 
         [Display(Name = "Assign Permissions")]
         public List<int> SelectedPermissionIds { get; set; } = new List<int>();
+
+        [Display(Name = "Assign Employees")]
+        public List<int> SelectedEmployeeIds { get; set; } = new List<int>();
 
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

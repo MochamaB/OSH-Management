@@ -40,8 +40,7 @@
             "Actions"
         },
         SearchPlaceholder = "Search permissions...",
-        CreateButtonText = "Create Permission",
-        CreateButtonUrl = "/Permission/Create",
+        // No create button - permissions are managed via migration scripts
         Filters = new List<OSHManagement.Models.ViewModels.FilterConfig>
         {
             new OSHManagement.Models.ViewModels.FilterConfig
@@ -179,13 +178,11 @@
                         @{
                             var rowActions = new OSHManagement.Models.ViewModels.RowActionConfig
                             {
-                                EditUrl = $"/Permission/Edit/{{id}}",
                                 ViewUrl = $"/Permission/Details/{{id}}",
-                                DeleteUrl = $"/Permission/Delete/{{id}}",
                                 DeleteItemName = permission.PermissionName,
                                 ShowView = true,
-                                ShowEdit = true,
-                                ShowDelete = true
+                                ShowEdit = false,  // Permissions are read-only
+                                ShowDelete = false  // Permissions are read-only
                             };
                             var actions = OSHManagement.Extensions.DataTableExtensions.BuildRowActions(permission.PermissionId, "/Permission", rowActions);
                         }

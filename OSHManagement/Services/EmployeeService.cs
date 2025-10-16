@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using OSHManagement.Data;
 using OSHManagement.Models;
 using OSHManagement.Models.Authorization;
+using OSHManagement.Models.DTOs;
 using OSHManagement.Models.DTOs.Dropdowns;
 
 namespace OSHManagement.Services
@@ -223,6 +224,40 @@ namespace OSHManagement.Services
                     FullName = e.FirstName + " " + e.LastName
                 })
                 .ToDictionaryAsync(e => e.PayrollNo, e => e.FullName);
+        }
+
+        public async Task<List<EmployeeSelectionDto>> GetEmployeesForRoleAssignmentAsync(UserScope? scope = null)
+        {
+            var query = _context.Employees
+                .Where(e => e.EmploymentStatus == "Active");
+
+            // CRITICAL: Always apply scope for employees (security-critical)
+            // Fail-safe: Return empty if no scope provided
+            if (scope == null)
+            {
+                return new List<EmployeeSelectionDto>();
+            }
+
+            query = _scopeFilterService.ApplyScope(query, scope);
+
+            return await query
+                .Include(e => e.Station)
+                .Include(e => e.Department)
+                .OrderBy(e => e.Station.StationName)
+                    .ThenBy(e => e.LastName)
+                    .ThenBy(e => e.FirstName)
+                .Select(e => new EmployeeSelectionDto
+                {
+                    EmployeeId = e.EmployeeId,
+                    PayrollNo = e.PayrollNo,
+                    FullName = e.FirstName + " " + e.LastName,
+                    Designation = e.Designation,
+                    StationId = e.StationId,
+                    StationName = e.Station.StationName,
+                    DepartmentId = e.DepartmentId,
+                    DepartmentName = e.Department != null ? e.Department.DepartmentName : null
+                })
+                .ToListAsync();
         }
     }
 }

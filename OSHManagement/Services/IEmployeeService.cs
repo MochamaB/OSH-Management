@@ -1,4 +1,5 @@
 using OSHManagement.Models.Authorization;
+using OSHManagement.Models.DTOs;
 using OSHManagement.Models.DTOs.Dropdowns;
 
 namespace OSHManagement.Services
@@ -55,7 +56,15 @@ namespace OSHManagement.Services
         /// Returns dictionary: PayrollNo → FullName
         /// </summary>
         Task<Dictionary<string, string>> GetEmployeeNamesByPayrollsAsync(
-            List<string> payrolls, 
+            List<string> payrolls,
             UserScope? scope = null);
+
+        /// <summary>
+        /// Get employees for role assignment (with scope filtering)
+        /// Includes station and department names for display in checkboxes
+        /// Used in role creation wizard to assign initial employees
+        /// CRITICAL: Always applies scope - returns empty if no scope provided
+        /// </summary>
+        Task<List<EmployeeSelectionDto>> GetEmployeesForRoleAssignmentAsync(UserScope? scope = null);
     }
 }

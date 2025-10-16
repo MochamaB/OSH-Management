@@ -179,10 +179,13 @@ This file tracks pending implementations and features that need to be completed.
 - [x] Cookie authentication
 - [x] Password hashing (SHA256 + legacy support)
 - [x] Database seeder (admin user)
+- [x] Dynamic Role Management (Create/Edit with permissions and employees)
+- [x] Permission Management (Read-only, assigned via roles)
+- [x] Scope-based authorization system (Organization/Station/Department/Team/Self)
 
 ### ⏳ Pending
-- [ ] Role-based authorization
-- [ ] Permission system
+- [ ] **Update migration script to add all necessary permissions** (all modules × CRUD actions)
+- [ ] Role-based authorization enforcement in controllers
 - [ ] User management (CRUD)
 - [ ] Password reset functionality
 - [ ] Two-factor authentication

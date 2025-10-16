@@ -126,7 +126,7 @@
                     }
                 }
             },
-            // Step 2: Permissions (Placeholder - User requested not to implement yet)
+            // Step 2: Permissions
             new OSHManagement.Models.ViewModels.WizardStepConfig
             {
                 StepId = "permissions",
@@ -135,40 +135,20 @@
                 Description = "Select permissions for this role",
                 FieldsPerRow = 1,
                 FieldColumnClass = "col-12",
-                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
-                {
-                    new OSHManagement.Models.ViewModels.FormFieldConfig
-                    {
-                        Name = "PermissionsPlaceholder",
-                        Label = "Permissions",
-                        Type = OSHManagement.Models.ViewModels.FieldType.Text,
-                        Placeholder = "Permission assignment will be implemented in next phase",
-                        Disabled = true,
-                        HelpText = "This step is under development - permissions can be assigned after role creation"
-                    }
-                }
+                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>()
+                // Empty fields - will be populated with accordion via JavaScript
             },
-            // Step 3: Review (Placeholder - User requested not to implement yet)
+            // Step 3: Assign Employees
             new OSHManagement.Models.ViewModels.WizardStepConfig
             {
-                StepId = "review",
-                Title = "Review & Create",
-                Icon = "ri-check-double-line",
-                Description = "Review role details before creating",
+                StepId = "employees",
+                Title = "Assign Employees",
+                Icon = "ri-team-line",
+                Description = "Select initial employees for this role (optional)",
                 FieldsPerRow = 1,
                 FieldColumnClass = "col-12",
-                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
-                {
-                    new OSHManagement.Models.ViewModels.FormFieldConfig
-                    {
-                        Name = "ReviewPlaceholder",
-                        Label = "Review",
-                        Type = OSHManagement.Models.ViewModels.FieldType.Text,
-                        Placeholder = "Review step will be implemented in next phase",
-                        Disabled = true,
-                        HelpText = "This step is under development - you can create the role directly from Step 1 for now"
-                    }
-                }
+                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>()
+                // Empty fields - will be populated with accordion via JavaScript
             }
         }
     };
@@ -184,8 +164,215 @@
     </div>
 </div>
 
+<!-- Hidden container for permission accordion (will be moved to Step 2 via JavaScript) -->
+<div id="permissionAccordionContainer" style="display: none;">
+    <partial name="_PermissionCheckboxAccordion" model="ViewBag.PermissionsByModule" />
+</div>
+
+<!-- Hidden container for employee accordion (will be moved to Step 3 via JavaScript) -->
+<div id="employeeAccordionContainer" style="display: none;">
+    <partial name="_EmployeeCheckboxAccordion" model="ViewBag.EmployeesByStation" />
+</div>
+
 @section Scripts {
     <script src="~/assets/libs/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/assets/libs/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
     <script src="~/js/wizard.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Function to inject permission accordion into Step 2
+            function injectPermissionAccordion() {
+                var permissionsStepBody = $('#step-2 .wizard-step-body .row');
+
+                if (permissionsStepBody.length > 0 && permissionsStepBody.find('.accordion').length === 0) {
+                    // Get the pre-rendered accordion content from hidden container
+                    var accordionContent = $('#permissionAccordionContainer').html();
+
+                    // Clear placeholder and inject accordion
+                    permissionsStepBody.html('<div class="col-12">' + accordionContent + '</div>');
+
+                    // Re-initialize event handlers after injecting
+                    initializePermissionHandlers();
+                }
+            }
+
+            // Initialize permission checkbox handlers
+            function initializePermissionHandlers() {
+                // Update badge counts when checkboxes change
+                function updatePermissionCounts() {
+                    $('.permission-count').each(function() {
+                        var module = $(this).data('module');
+                        var totalCount = $('.permission-checkbox[data-module="' + module + '"]').length;
+                        var selectedCount = $('.permission-checkbox[data-module="' + module + '"]:checked').length;
+
+                        $(this).find('.selected-count').text(selectedCount);
+
+                        // Update badge color based on selection
+                        if (selectedCount === 0) {
+                            $(this).removeClass('bg-primary bg-warning').addClass('bg-light text-dark');
+                        } else if (selectedCount === totalCount) {
+                            $(this).removeClass('bg-light bg-warning text-dark').addClass('bg-primary text-white');
+                        } else {
+                            $(this).removeClass('bg-light bg-primary text-dark text-white').addClass('bg-warning text-dark');
+                        }
+                    });
+                }
+
+                // Select all permissions
+                $('#selectAllPermissions').off('click').on('click', function() {
+                    $('.permission-checkbox').prop('checked', true);
+                    updatePermissionCounts();
+                });
+
+                // Deselect all permissions
+                $('#deselectAllPermissions').off('click').on('click', function() {
+                    $('.permission-checkbox').prop('checked', false);
+                    updatePermissionCounts();
+                });
+
+                // Select all in module
+                $('.select-module-all').off('click').on('click', function() {
+                    var module = $(this).data('module');
+                    $('.permission-checkbox[data-module="' + module + '"]').prop('checked', true);
+                    updatePermissionCounts();
+                });
+
+                // Update counts on checkbox change
+                $('.permission-checkbox').off('change').on('change', function() {
+                    updatePermissionCounts();
+                });
+
+                // Initial count update
+                updatePermissionCounts();
+            }
+
+            // Inject on page load
+            injectPermissionAccordion();
+
+            // Function to inject employee accordion into Step 3
+            function injectEmployeeAccordion() {
+                var employeesStepBody = $('#step-3 .wizard-step-body .row');
+
+                if (employeesStepBody.length > 0 && employeesStepBody.find('.accordion').length === 0) {
+                    // Get the pre-rendered accordion content from hidden container
+                    var accordionContent = $('#employeeAccordionContainer').html();
+
+                    // Clear placeholder and inject accordion
+                    employeesStepBody.html('<div class="col-12">' + accordionContent + '</div>');
+
+                    // Re-initialize event handlers after injecting
+                    initializeEmployeeHandlers();
+                }
+            }
+
+            // Initialize employee checkbox handlers
+            function initializeEmployeeHandlers() {
+                // Update badge counts when checkboxes change
+                function updateEmployeeCounts() {
+                    $('.employee-count').each(function() {
+                        var station = $(this).data('station');
+                        var totalCount = $('.employee-checkbox[data-station="' + station + '"]').length;
+                        var selectedCount = $('.employee-checkbox[data-station="' + station + '"]:checked').length;
+
+                        $(this).find('.selected-count').text(selectedCount);
+
+                        // Update badge color based on selection
+                        if (selectedCount === 0) {
+                            $(this).removeClass('bg-primary bg-warning').addClass('bg-light text-dark');
+                        } else if (selectedCount === totalCount) {
+                            $(this).removeClass('bg-light bg-warning text-dark').addClass('bg-primary text-white');
+                        } else {
+                            $(this).removeClass('bg-light bg-primary text-dark text-white').addClass('bg-warning text-dark');
+                        }
+                    });
+                }
+
+                // Select all employees
+                $('#selectAllEmployees').off('click').on('click', function() {
+                    $('.employee-checkbox').prop('checked', true);
+                    updateEmployeeCounts();
+                });
+
+                // Deselect all employees
+                $('#deselectAllEmployees').off('click').on('click', function() {
+                    $('.employee-checkbox').prop('checked', false);
+                    updateEmployeeCounts();
+                });
+
+                // Select all in station
+                $('.select-station-all').off('click').on('click', function() {
+                    var station = $(this).data('station');
+                    $('.employee-checkbox[data-station="' + station + '"]').prop('checked', true);
+                    updateEmployeeCounts();
+                });
+
+                // Update counts on checkbox change
+                $('.employee-checkbox').off('change').on('change', function() {
+                    updateEmployeeCounts();
+                });
+
+                // Search functionality
+                $('#employeeSearch').off('keyup').on('keyup', function() {
+                    var searchTerm = $(this).val().toLowerCase();
+
+                    $('.employee-checkbox-wrapper').each(function() {
+                        var name = $(this).data('employee-name');
+                        var payroll = $(this).data('employee-payroll');
+
+                        if (name.includes(searchTerm) || payroll.includes(searchTerm)) {
+                            $(this).removeClass('hidden');
+                        } else {
+                            $(this).addClass('hidden');
+                        }
+                    });
+                });
+
+                // Initial count update
+                updateEmployeeCounts();
+            }
+
+            // Also inject when navigating to Step 2 or Step 3
+            $(document).on('click', '.wizard-nav-link-vertical, .wizard-next, .wizard-prev', function() {
+                setTimeout(function() {
+                    var activeStep = $('.wizard-step.active');
+                    if (activeStep.attr('id') === 'step-2') {
+                        injectPermissionAccordion();
+                    } else if (activeStep.attr('id') === 'step-3') {
+                        injectEmployeeAccordion();
+                    }
+                }, 200);
+            });
+
+            // Validate Step 2 - at least one permission should be selected
+            $(document).on('click', '.wizard-next', function(e) {
+                var activeStep = $('.wizard-step.active');
+                if (activeStep.attr('id') === 'step-2') {
+                    var selectedPermissions = $('.permission-checkbox:checked').length;
+
+                    if (selectedPermissions === 0) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        // Show warning
+                        if ($('#permissionWarning').length === 0) {
+                            var warningHtml = `
+                                <div id="permissionWarning" class="alert alert-warning alert-dismissible fade show mt-3" role="alert">
+                                    <i class="ri-alert-line me-2"></i>
+                                    <strong>Warning:</strong> Please select at least one permission for this role.
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            `;
+                            $('#step-2 .wizard-step-body').prepend(warningHtml);
+                        }
+
+                        return false;
+                    } else {
+                        // Remove warning if exists
+                        $('#permissionWarning').remove();
+                    }
+                }
+            });
+        });
+    </script>
 }
