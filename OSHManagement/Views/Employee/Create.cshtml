@@ -270,9 +270,9 @@
                 StepId = "reportingStructure",
                 Title = "Reporting & Roles",
                 Icon = "ri-team-line",
-                Description = "Define reporting hierarchy and assign roles",
-                FieldsPerRow = 2,
-                FieldColumnClass = "col-md-6",
+                Description = "Define reporting hierarchy and assign system access roles",
+                FieldsPerRow = 1,
+                FieldColumnClass = "col-12",
                 Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
                 {
                     new OSHManagement.Models.ViewModels.FormFieldConfig
@@ -282,7 +282,8 @@
                         Label = "Head of Department (HOD)",
                         Type = OSHManagement.Models.ViewModels.FieldType.Select,
                         Options = employeeOptions,
-                        HelpText = "Select the department head this employee reports to"
+                        HelpText = "Select the department head this employee reports to",
+                        CustomCssClass = "col-md-6 d-inline-block pe-2"
                     },
                     new OSHManagement.Models.ViewModels.FormFieldConfig
                     {
@@ -291,7 +292,8 @@
                         Label = "Direct Supervisor",
                         Type = OSHManagement.Models.ViewModels.FieldType.Select,
                         Options = employeeOptions,
-                        HelpText = "Select the direct supervisor for this employee"
+                        HelpText = "Select the direct supervisor for this employee",
+                        CustomCssClass = "col-md-6 d-inline-block ps-2"
                     }
                 }
             }
@@ -308,7 +310,6 @@
     </div>
 </div>
 
-<!-- Roles Selection (outside wizard field system for custom layout) -->
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 
@@ -326,6 +327,58 @@
             var contractEndDateField = $('#createEmployeeWizard_workAssignment_ContractEndDate').closest('.mb-3');
             var hodSelect = $('#createEmployeeWizard_reportingStructure_HodPayroll');
             var supervisorSelect = $('#createEmployeeWizard_reportingStructure_SupervisorPayroll');
+
+            // ============================================
+            // Inject Role Selection into Step 3
+            // ============================================
+            function injectRoleSelection() {
+                var step3 = $('#createEmployeeWizard').find('.wizard-step[data-step="3"]');
+
+                // Check if roles already injected
+                if (step3.find('#rolesSelectionContainer').length > 0) return;
+
+                var rolesHtml = `
+                    <div id="rolesSelectionContainer" class="mt-4">
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="mb-3">System Access Roles</h6>
+                                <p class="text-muted mb-3">Select one or more roles to grant system access. If no roles are selected, the employee will be assigned the default "Employee" role.</p>
+                                <div class="row">`;
+
+                if (allRoles && allRoles.length > 0) {
+                    allRoles.forEach(function(role) {
+                        rolesHtml += `
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="form-check card card-body p-3 border">
+                                    <input class="form-check-input" type="checkbox" name="SelectedRoles" value="${role.roleId}" id="role_${role.roleId}">
+                                    <label class="form-check-label" for="role_${role.roleId}">
+                                        <strong>${role.roleName}</strong>
+                                        ${role.description ? `<br><small class="text-muted">${role.description}</small>` : ''}
+                                    </label>
+                                </div>
+                            </div>`;
+                    });
+                } else {
+                    rolesHtml += `
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="ri-information-line me-2"></i>
+                                No roles available. The employee will be assigned the default "Employee" role.
+                            </div>
+                        </div>`;
+                }
+
+                rolesHtml += `
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                step3.append(rolesHtml);
+            }
+
+            // Inject roles when page loads
+            injectRoleSelection();
 
             // ============================================
             // Category → Station Filtering

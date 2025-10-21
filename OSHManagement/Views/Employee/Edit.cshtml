@@ -276,6 +276,73 @@
                         </div>
                     </div>
                 </text>
+            },
+
+            // ========== TAB 5: Security & Password ==========
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "security",
+                Title = "Security & Password",
+                Icon = "ri-lock-password-line",
+                Content = @<text>
+                    <div class="alert alert-warning border-0 mb-4">
+                        <i class="ri-information-line me-2"></i>
+                        <strong>Security Notice:</strong> Password changes are logged for audit purposes. Only update passwords when necessary.
+                    </div>
+
+                    <div class="row">
+                        <!-- Username -->
+                        <div class="col-md-6 mb-4">
+                            <label asp-for="Username" class="form-label fw-semibold"></label>
+                            <input asp-for="Username" class="form-control" placeholder="Enter system username" />
+                            <span asp-validation-for="Username" class="text-danger"></span>
+                            <div class="form-text">Username for system login (optional)</div>
+                        </div>
+
+                        <!-- Update Password Checkbox -->
+                        <div class="col-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" asp-for="UpdatePassword" id="updatePasswordToggle" />
+                                <label class="form-check-label fw-semibold" for="updatePasswordToggle">
+                                    Update Password
+                                </label>
+                            </div>
+                            <div class="form-text">Check this box to set a new password for the employee</div>
+                        </div>
+
+                        <!-- Password Fields Container -->
+                        <div id="passwordFieldsContainer" style="display: none;">
+                            <div class="card border mb-4">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-3">
+                                        <i class="ri-key-2-line me-2"></i>Set New Password
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label asp-for="NewPassword" class="form-label"></label>
+                                            <input asp-for="NewPassword" class="form-control" placeholder="Enter new password" />
+                                            <span asp-validation-for="NewPassword" class="text-danger"></span>
+                                            <div class="form-text">Minimum 6 characters recommended</div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label asp-for="ConfirmPassword" class="form-label"></label>
+                                            <input asp-for="ConfirmPassword" class="form-control" placeholder="Confirm new password" />
+                                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Legacy Password Info (Read-Only) -->
+                        <div class="col-12">
+                            <div class="alert alert-info border-0">
+                                <i class="ri-information-line me-2"></i>
+                                <strong>Note:</strong> Legacy password is automatically synchronized from the legacy database and cannot be modified here.
+                            </div>
+                        </div>
+                    </div>
+                </text>
             }
         }
     };
@@ -330,6 +397,32 @@
             var contractEndDateField = $('#edit_ContractEndDateField');
             var hodSelect = $('#edit_HodPayroll');
             var supervisorSelect = $('#edit_SupervisorPayroll');
+
+            // ============================================
+            // Password Update Toggle
+            // ============================================
+            var updatePasswordToggle = $('#updatePasswordToggle');
+            var passwordFieldsContainer = $('#passwordFieldsContainer');
+            var newPasswordField = $('#NewPassword');
+            var confirmPasswordField = $('#ConfirmPassword');
+
+            function togglePasswordFields() {
+                if (updatePasswordToggle.is(':checked')) {
+                    passwordFieldsContainer.slideDown(300);
+                    newPasswordField.prop('required', true);
+                    confirmPasswordField.prop('required', true);
+                } else {
+                    passwordFieldsContainer.slideUp(300);
+                    newPasswordField.prop('required', false).val('');
+                    confirmPasswordField.prop('required', false).val('');
+                }
+            }
+
+            // Initialize password fields visibility
+            togglePasswordFields();
+
+            // Handle toggle change
+            updatePasswordToggle.on('change', togglePasswordFields);
 
             // Set initial category based on selected station
             var initialStationId = stationSelect.val();

@@ -40,13 +40,20 @@ else
         @switch (Model.Type)
         {
             case OSHManagement.Models.ViewModels.FieldType.Textarea:
+                var textareaAttrs = new System.Text.StringBuilder();
+                if (Model.Required) textareaAttrs.Append(" required");
+                if (Model.Disabled) textareaAttrs.Append(" disabled");
+                if (Model.ReadOnly) textareaAttrs.Append(" readonly");
+                if (Model.MaxLength.HasValue) textareaAttrs.Append($" maxlength=\"{Model.MaxLength}\"");
+                if (Model.MaxLength.HasValue || Model.Required) textareaAttrs.Append(" data-val=\"true\"");
+                if (Model.Required) textareaAttrs.Append($" data-val-required=\"{Model.ValidationMessage ?? "This field is required"}\"");
+                if (Model.MaxLength.HasValue)
+                {
+                    textareaAttrs.Append($" data-val-maxlength=\"Please enter no more than {Model.MaxLength} characters.\"");
+                    textareaAttrs.Append($" data-val-maxlength-max=\"{Model.MaxLength}\"");
+                }
                 <textarea class="form-control @Model.CustomCssClass" id="@Model.UniqueId" name="@Model.PropertyName"
-                          rows="@Model.Rows" placeholder="@Model.Placeholder"
-                          @(Model.Required ? "required" : "")
-                          @(Model.Disabled ? "disabled" : "")
-                          @(Model.ReadOnly ? "readonly" : "")
-                          @(Model.MaxLength.HasValue ? $"maxlength=\"{Model.MaxLength}\"" : "")
-                          data-val-required="@(Model.ValidationMessage ?? "This field is required")">@Model.Value</textarea>
+                          rows="@Model.Rows" placeholder="@Model.Placeholder"@Html.Raw(textareaAttrs.ToString())>@Model.Value</textarea>
                 break;
 
             case OSHManagement.Models.ViewModels.FieldType.Select:
@@ -85,14 +92,26 @@ else
 
             default:
                 var inputType = Model.Type.ToString().ToLower();
+                var inputAttrs = new System.Text.StringBuilder();
+                if (Model.Required) inputAttrs.Append(" required");
+                if (Model.Disabled) inputAttrs.Append(" disabled");
+                if (Model.ReadOnly) inputAttrs.Append(" readonly");
+                if (Model.MaxLength.HasValue) inputAttrs.Append($" maxlength=\"{Model.MaxLength}\"");
+                if (Model.MinLength.HasValue) inputAttrs.Append($" minlength=\"{Model.MinLength}\"");
+                if (Model.MaxLength.HasValue || Model.MinLength.HasValue || Model.Required) inputAttrs.Append(" data-val=\"true\"");
+                if (Model.Required) inputAttrs.Append($" data-val-required=\"{Model.ValidationMessage ?? "This field is required"}\"");
+                if (Model.MaxLength.HasValue)
+                {
+                    inputAttrs.Append($" data-val-maxlength=\"Please enter no more than {Model.MaxLength} characters.\"");
+                    inputAttrs.Append($" data-val-maxlength-max=\"{Model.MaxLength}\"");
+                }
+                if (Model.MinLength.HasValue)
+                {
+                    inputAttrs.Append($" data-val-minlength=\"Please enter at least {Model.MinLength} characters.\"");
+                    inputAttrs.Append($" data-val-minlength-min=\"{Model.MinLength}\"");
+                }
                 <input type="@inputType" class="form-control @Model.CustomCssClass" id="@Model.UniqueId"
-                       name="@Model.PropertyName" value="@Model.Value" placeholder="@Model.Placeholder"
-                       @(Model.Required ? "required" : "")
-                       @(Model.Disabled ? "disabled" : "")
-                       @(Model.ReadOnly ? "readonly" : "")
-                       @(Model.MaxLength.HasValue ? $"maxlength=\"{Model.MaxLength}\"" : "")
-                       @(Model.MinLength.HasValue ? $"minlength=\"{Model.MinLength}\"" : "")
-                       data-val-required="@(Model.ValidationMessage ?? "This field is required")" />
+                       name="@Model.PropertyName" value="@Model.Value" placeholder="@Model.Placeholder"@Html.Raw(inputAttrs.ToString()) />
                 break;
         }
 

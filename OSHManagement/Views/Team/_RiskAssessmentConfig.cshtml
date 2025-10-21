@@ -1,0 +1,34 @@
+@model OSHManagement.Models.ViewModels.CreateTeamViewModel
+
+<h6 class="mb-3">Risk Assessment Team Settings</h6>
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label for="AssessmentFrequency" class="form-label">Assessment Frequency</label>
+            <select class="form-select" id="AssessmentFrequency" name="AssessmentFrequency">
+                <option value="">-- Select Frequency --</option>
+                @if (ViewBag.FrequencyOptions != null)
+                {
+                    foreach (var freq in (List<string>)ViewBag.FrequencyOptions)
+                    {
+                        var isSelected = Model?.AssessmentFrequency == freq;
+                        <option value="@freq" selected="@isSelected">@freq</option>
+                    }
+                }
+            </select>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label for="NextAssessmentDate" class="form-label">Next Assessment Date</label>
+            <input type="date" class="form-control" id="NextAssessmentDate" name="NextAssessmentDate" value="@Model?.NextAssessmentDate?.ToString("yyyy-MM-dd")" />
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="mb-3">
+            <label for="TeamQualifications" class="form-label">Team Qualifications</label>
+            <textarea class="form-control" id="TeamQualifications" name="TeamQualifications" rows="3" maxlength="500">@Model?.TeamQualifications</textarea>
+            <small class="text-muted">Describe required qualifications and expertise</small>
+        </div>
+    </div>
+</div>

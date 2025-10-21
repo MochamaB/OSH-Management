@@ -72,7 +72,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("CommitteeActions", (string)null);
+                    b.ToTable("CommitteeActions");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.CommitteeIssue", b =>
@@ -120,9 +120,6 @@ namespace OSHManagement.Migrations
                     b.Property<int>("TeamId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("TeamMemberMemberId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -132,9 +129,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.HasIndex("TeamMemberMemberId");
-
-                    b.ToTable("CommitteeIssues", (string)null);
+                    b.ToTable("CommitteeIssues");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.CommitteeRecommendation", b =>
@@ -186,7 +181,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("CommitteeRecommendations", (string)null);
+                    b.ToTable("CommitteeRecommendations");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.ControlAction", b =>
@@ -252,7 +247,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("IncidentId");
 
-                    b.ToTable("ControlActions", (string)null);
+                    b.ToTable("ControlActions");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Department", b =>
@@ -302,7 +297,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("Departments", (string)null);
+                    b.ToTable("Departments");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Employee", b =>
@@ -404,7 +399,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("Employees", (string)null);
+                    b.ToTable("Employees");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.EmployeeRole", b =>
@@ -440,7 +435,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("EmployeeRoles", (string)null);
+                    b.ToTable("EmployeeRoles");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Hazard", b =>
@@ -512,7 +507,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("Hazards", (string)null);
+                    b.ToTable("Hazards");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Incident", b =>
@@ -605,7 +600,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("Incidents", (string)null);
+                    b.ToTable("Incidents");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.IncidentCause", b =>
@@ -666,7 +661,7 @@ namespace OSHManagement.Migrations
                     b.HasIndex("IncidentId")
                         .IsUnique();
 
-                    b.ToTable("IncidentCauses", (string)null);
+                    b.ToTable("IncidentCauses");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.IncidentInvestigation", b =>
@@ -728,7 +723,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("InvestigationTeamId");
 
-                    b.ToTable("IncidentInvestigations", (string)null);
+                    b.ToTable("IncidentInvestigations");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.IncidentInvestigationConfig", b =>
@@ -769,7 +764,7 @@ namespace OSHManagement.Migrations
                     b.HasIndex("TeamId")
                         .IsUnique();
 
-                    b.ToTable("IncidentInvestigationConfigs", (string)null);
+                    b.ToTable("IncidentInvestigationConfigs");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.LessonLearned", b =>
@@ -831,7 +826,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("IncidentId");
 
-                    b.ToTable("LessonsLearned", (string)null);
+                    b.ToTable("LessonsLearned");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.MediaAccessLog", b =>
@@ -878,7 +873,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("MediaId");
 
-                    b.ToTable("MediaAccessLogs", (string)null);
+                    b.ToTable("MediaAccessLogs");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.MediaAssociation", b =>
@@ -931,7 +926,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("MediaId");
 
-                    b.ToTable("MediaAssociations", (string)null);
+                    b.ToTable("MediaAssociations");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.MediaCollection", b =>
@@ -986,7 +981,7 @@ namespace OSHManagement.Migrations
 
                     b.HasKey("CollectionId");
 
-                    b.ToTable("MediaCollections", (string)null);
+                    b.ToTable("MediaCollections");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.MediaConversionJob", b =>
@@ -1038,7 +1033,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("OutputMediaId");
 
-                    b.ToTable("MediaConversionJobs", (string)null);
+                    b.ToTable("MediaConversionJobs");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.MediaFile", b =>
@@ -1125,7 +1120,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("ParentMediaId");
 
-                    b.ToTable("MediaFiles", (string)null);
+                    b.ToTable("MediaFiles");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.OrgCategory", b =>
@@ -1144,12 +1139,6 @@ namespace OSHManagement.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Description")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -1157,15 +1146,12 @@ namespace OSHManagement.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("OrgCategoryId");
 
-                    b.ToTable("OrgCategories", (string)null);
+                    b.ToTable("OrgCategories");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.OrgMetadata", b =>
@@ -1212,7 +1198,7 @@ namespace OSHManagement.Migrations
                     b.HasIndex("StationId")
                         .IsUnique();
 
-                    b.ToTable("OrgMetadata", (string)null);
+                    b.ToTable("OrgMetadata");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.OshCommitteeConfig", b =>
@@ -1257,7 +1243,7 @@ namespace OSHManagement.Migrations
                     b.HasIndex("TeamId")
                         .IsUnique();
 
-                    b.ToTable("OshCommitteeConfigs", (string)null);
+                    b.ToTable("OshCommitteeConfigs");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.OshPolicy", b =>
@@ -1320,7 +1306,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("OshPolicies", (string)null);
+                    b.ToTable("OshPolicies");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Permission", b =>
@@ -1361,7 +1347,7 @@ namespace OSHManagement.Migrations
 
                     b.HasKey("PermissionId");
 
-                    b.ToTable("Permissions", (string)null);
+                    b.ToTable("Permissions");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.RiskAssessmentConfig", b =>
@@ -1401,7 +1387,7 @@ namespace OSHManagement.Migrations
                     b.HasIndex("TeamId")
                         .IsUnique();
 
-                    b.ToTable("RiskAssessmentConfigs", (string)null);
+                    b.ToTable("RiskAssessmentConfigs");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.RiskMitigationPlan", b =>
@@ -1452,7 +1438,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("HazardId");
 
-                    b.ToTable("RiskMitigationPlans", (string)null);
+                    b.ToTable("RiskMitigationPlans");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Role", b =>
@@ -1462,6 +1448,12 @@ namespace OSHManagement.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RoleId"));
+
+                    b.Property<bool>("AllowCrossDepartmentAccess")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AllowCrossStationAccess")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1473,21 +1465,23 @@ namespace OSHManagement.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<string>("LegacyRoleMapping")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                    b.Property<bool>("IsSystemRole")
+                        .HasColumnType("bit");
 
                     b.Property<string>("RoleName")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int>("ScopeLevel")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("RoleId");
 
-                    b.ToTable("Roles", (string)null);
+                    b.ToTable("Roles");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.RolePermission", b =>
@@ -1513,7 +1507,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("RolePermissions", (string)null);
+                    b.ToTable("RolePermissions");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Section", b =>
@@ -1549,7 +1543,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("Sections", (string)null);
+                    b.ToTable("Sections");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Station", b =>
@@ -1563,16 +1557,7 @@ namespace OSHManagement.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<string>("LegacyStationMapping")
@@ -1604,7 +1589,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("ParentStationId");
 
-                    b.ToTable("Stations", (string)null);
+                    b.ToTable("Stations");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.Team", b =>
@@ -1662,7 +1647,7 @@ namespace OSHManagement.Migrations
 
                     b.HasIndex("StationId");
 
-                    b.ToTable("Teams", (string)null);
+                    b.ToTable("Teams");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.TeamMember", b =>
@@ -1697,11 +1682,6 @@ namespace OSHManagement.Migrations
                     b.Property<bool>("IsVotingMember")
                         .HasColumnType("bit");
 
-                    b.Property<string>("MemberRole")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<string>("RelevantExperience")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -1712,16 +1692,75 @@ namespace OSHManagement.Migrations
                     b.Property<int>("TeamId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("TeamRoleDefinitionId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("MemberId");
 
+                    b.HasIndex("EmployeePayroll");
+
                     b.HasIndex("SectionId");
 
                     b.HasIndex("TeamId");
 
-                    b.ToTable("TeamMembers", (string)null);
+                    b.HasIndex("TeamRoleDefinitionId");
+
+                    b.ToTable("TeamMembers");
+                });
+
+            modelBuilder.Entity("OSHManagement.Models.TeamRoleDefinition", b =>
+                {
+                    b.Property<int>("TeamRoleDefinitionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TeamRoleDefinitionId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("MaxOccurrences")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MinOccurrences")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RequiredQualifications")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("RequiresVotingRights")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("TeamType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("TeamRoleDefinitionId");
+
+                    b.ToTable("TeamRoleDefinitions");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.CommitteeAction", b =>
@@ -1729,13 +1768,13 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.CommitteeRecommendation", "Recommendation")
                         .WithMany("Actions")
                         .HasForeignKey("RecommendationId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("OSHManagement.Models.Team", "Team")
                         .WithMany()
                         .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Recommendation");
@@ -1746,9 +1785,9 @@ namespace OSHManagement.Migrations
             modelBuilder.Entity("OSHManagement.Models.CommitteeIssue", b =>
                 {
                     b.HasOne("OSHManagement.Models.TeamMember", "RaisedByMember")
-                        .WithMany()
+                        .WithMany("RaisedIssues")
                         .HasForeignKey("RaisedByMemberId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("OSHManagement.Models.Team", "Team")
@@ -1756,10 +1795,6 @@ namespace OSHManagement.Migrations
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("OSHManagement.Models.TeamMember", null)
-                        .WithMany("RaisedIssues")
-                        .HasForeignKey("TeamMemberMemberId");
 
                     b.Navigation("RaisedByMember");
 
@@ -1771,19 +1806,19 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.CommitteeIssue", "Issue")
                         .WithMany("Recommendations")
                         .HasForeignKey("IssueId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("OSHManagement.Models.TeamMember", "RecommendedByMember")
                         .WithMany("Recommendations")
                         .HasForeignKey("RecommendedByMemberId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("OSHManagement.Models.Team", "Team")
                         .WithMany()
                         .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Issue");
@@ -1797,13 +1832,12 @@ namespace OSHManagement.Migrations
                 {
                     b.HasOne("OSHManagement.Models.Department", "AssignedDepartment")
                         .WithMany()
-                        .HasForeignKey("AssignedDepartmentId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("AssignedDepartmentId");
 
                     b.HasOne("OSHManagement.Models.Incident", "Incident")
                         .WithMany("ControlActions")
                         .HasForeignKey("IncidentId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("AssignedDepartment");
@@ -1815,13 +1849,12 @@ namespace OSHManagement.Migrations
                 {
                     b.HasOne("OSHManagement.Models.Department", "ParentDepartment")
                         .WithMany("ChildDepartments")
-                        .HasForeignKey("ParentDepartmentId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("ParentDepartmentId");
 
                     b.HasOne("OSHManagement.Models.Station", "Station")
                         .WithMany("Departments")
                         .HasForeignKey("StationId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ParentDepartment");
@@ -1833,13 +1866,12 @@ namespace OSHManagement.Migrations
                 {
                     b.HasOne("OSHManagement.Models.Department", "Department")
                         .WithMany("Employees")
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("DepartmentId");
 
                     b.HasOne("OSHManagement.Models.Station", "Station")
                         .WithMany()
                         .HasForeignKey("StationId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Department");
@@ -1870,19 +1902,18 @@ namespace OSHManagement.Migrations
                 {
                     b.HasOne("OSHManagement.Models.Section", "Section")
                         .WithMany()
-                        .HasForeignKey("SectionId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("SectionId");
 
                     b.HasOne("OSHManagement.Models.Station", "Station")
                         .WithMany()
                         .HasForeignKey("StationId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("OSHManagement.Models.Team", "Team")
                         .WithMany("Hazards")
                         .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Section");
@@ -1896,18 +1927,16 @@ namespace OSHManagement.Migrations
                 {
                     b.HasOne("OSHManagement.Models.Team", "InvestigationTeam")
                         .WithMany()
-                        .HasForeignKey("InvestigationTeamId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("InvestigationTeamId");
 
                     b.HasOne("OSHManagement.Models.Section", "Section")
                         .WithMany()
-                        .HasForeignKey("SectionId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("SectionId");
 
                     b.HasOne("OSHManagement.Models.Station", "Station")
                         .WithMany()
                         .HasForeignKey("StationId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("InvestigationTeam");
@@ -1922,7 +1951,7 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.Incident", "Incident")
                         .WithOne("IncidentCause")
                         .HasForeignKey("OSHManagement.Models.IncidentCause", "IncidentId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Incident");
@@ -1933,13 +1962,13 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.Incident", "Incident")
                         .WithOne("Investigation")
                         .HasForeignKey("OSHManagement.Models.IncidentInvestigation", "IncidentId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("OSHManagement.Models.Team", "InvestigationTeam")
                         .WithMany()
                         .HasForeignKey("InvestigationTeamId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Incident");
@@ -1952,7 +1981,7 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.Team", "Team")
                         .WithOne("IncidentInvestigationConfig")
                         .HasForeignKey("OSHManagement.Models.IncidentInvestigationConfig", "TeamId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Team");
@@ -1963,7 +1992,7 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.Incident", "Incident")
                         .WithMany("LessonsLearned")
                         .HasForeignKey("IncidentId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Incident");
@@ -1974,7 +2003,7 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.MediaFile", "Media")
                         .WithMany("AccessLogs")
                         .HasForeignKey("MediaId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Media");
@@ -1985,7 +2014,7 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.MediaFile", "Media")
                         .WithMany("Associations")
                         .HasForeignKey("MediaId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Media");
@@ -1996,13 +2025,12 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.MediaFile", "Media")
                         .WithMany()
                         .HasForeignKey("MediaId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("OSHManagement.Models.MediaFile", "OutputMedia")
                         .WithMany()
-                        .HasForeignKey("OutputMediaId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("OutputMediaId");
 
                     b.Navigation("Media");
 
@@ -2014,13 +2042,12 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.MediaCollection", "Collection")
                         .WithMany("MediaFiles")
                         .HasForeignKey("CollectionId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("OSHManagement.Models.MediaFile", "ParentMedia")
                         .WithMany("ChildVersions")
-                        .HasForeignKey("ParentMediaId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("ParentMediaId");
 
                     b.Navigation("Collection");
 
@@ -2032,7 +2059,7 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.Station", "Station")
                         .WithOne("OrgMetadata")
                         .HasForeignKey("OSHManagement.Models.OrgMetadata", "StationId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Station");
@@ -2043,7 +2070,7 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.Team", "Team")
                         .WithOne("OshCommitteeConfig")
                         .HasForeignKey("OSHManagement.Models.OshCommitteeConfig", "TeamId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Team");
@@ -2054,7 +2081,7 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.Station", "Station")
                         .WithMany()
                         .HasForeignKey("StationId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Station");
@@ -2065,7 +2092,7 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.Team", "Team")
                         .WithOne("RiskAssessmentConfig")
                         .HasForeignKey("OSHManagement.Models.RiskAssessmentConfig", "TeamId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Team");
@@ -2076,7 +2103,7 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.Hazard", "Hazard")
                         .WithMany("MitigationPlans")
                         .HasForeignKey("HazardId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Hazard");
@@ -2106,7 +2133,7 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.Station", "Station")
                         .WithMany("Sections")
                         .HasForeignKey("StationId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Station");
@@ -2117,13 +2144,12 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.OrgCategory", "OrgCategory")
                         .WithMany("Stations")
                         .HasForeignKey("OrgCategoryId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("OSHManagement.Models.Station", "ParentStation")
                         .WithMany("ChildStations")
-                        .HasForeignKey("ParentStationId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("ParentStationId");
 
                     b.Navigation("OrgCategory");
 
@@ -2135,7 +2161,7 @@ namespace OSHManagement.Migrations
                     b.HasOne("OSHManagement.Models.Station", "Station")
                         .WithMany("Teams")
                         .HasForeignKey("StationId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Station");
@@ -2143,20 +2169,35 @@ namespace OSHManagement.Migrations
 
             modelBuilder.Entity("OSHManagement.Models.TeamMember", b =>
                 {
+                    b.HasOne("OSHManagement.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeePayroll")
+                        .HasPrincipalKey("PayrollNo")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("OSHManagement.Models.Section", "Section")
                         .WithMany("TeamMembers")
-                        .HasForeignKey("SectionId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("SectionId");
 
                     b.HasOne("OSHManagement.Models.Team", "Team")
                         .WithMany("TeamMembers")
                         .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("OSHManagement.Models.TeamRoleDefinition", "TeamRoleDefinition")
+                        .WithMany("TeamMembers")
+                        .HasForeignKey("TeamRoleDefinitionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Employee");
 
                     b.Navigation("Section");
 
                     b.Navigation("Team");
+
+                    b.Navigation("TeamRoleDefinition");
                 });
 
             modelBuilder.Entity("OSHManagement.Models.CommitteeIssue", b =>
@@ -2266,6 +2307,11 @@ namespace OSHManagement.Migrations
                     b.Navigation("RaisedIssues");
 
                     b.Navigation("Recommendations");
+                });
+
+            modelBuilder.Entity("OSHManagement.Models.TeamRoleDefinition", b =>
+                {
+                    b.Navigation("TeamMembers");
                 });
 #pragma warning restore 612, 618
         }

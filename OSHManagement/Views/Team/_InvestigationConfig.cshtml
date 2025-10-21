@@ -1,0 +1,33 @@
+@model OSHManagement.Models.ViewModels.CreateTeamViewModel
+
+<h6 class="mb-3">Investigation Team Settings</h6>
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label for="ResponseTimeHours" class="form-label">Response Time (Hours)</label>
+            <input type="number" class="form-control" id="ResponseTimeHours" name="ResponseTimeHours" value="@(Model?.ResponseTimeHours ?? 24)" min="1" />
+            <small class="text-muted">Expected response time for incident investigations</small>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label for="EscalationThreshold" class="form-label">Escalation Threshold</label>
+            <input type="text" class="form-control" id="EscalationThreshold" name="EscalationThreshold" value="@Model?.EscalationThreshold" />
+            <small class="text-muted">Criteria for escalating investigations</small>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="mb-3">
+            <label for="InvestigationScope" class="form-label">Investigation Scope</label>
+            <textarea class="form-control" id="InvestigationScope" name="InvestigationScope" rows="2" maxlength="500">@Model?.InvestigationScope</textarea>
+            <small class="text-muted">Define the scope of investigations this team handles</small>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="mb-3">
+            <label for="TeamExpertise" class="form-label">Team Expertise</label>
+            <textarea class="form-control" id="TeamExpertise" name="TeamExpertise" rows="2" maxlength="500">@Model?.TeamExpertise</textarea>
+            <small class="text-muted">Describe team members' expertise and specializations</small>
+        </div>
+    </div>
+</div>

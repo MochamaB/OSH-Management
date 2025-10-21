@@ -1,0 +1,158 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.TabsViewModel
+
+<!-- Horizontal Tabs (Tab Style-8 from Vyzor) -->
+<ul class="nav nav-tabs mb-3 tab-style-8 scaleX" id="@Model.TabsId" role="tablist">
+    @foreach (var tab in Model.Tabs)
+    {
+        <li class="nav-item" role="presentation">
+            <button class="nav-link @(tab.IsActive ? "active" : "") @(tab.IsDisabled ? "disabled" : "")"
+                    id="@tab.NavId"
+                    data-bs-toggle="tab"
+                    data-bs-target="#@tab.PanelId"
+                    type="button"
+                    role="tab"
+                    aria-controls="@tab.PanelId"
+                    aria-selected="@tab.AriaSelected"
+                    tabindex="@tab.TabIndexAttr"
+                    @(tab.IsDisabled ? "disabled" : "")>
+                @if (!string.IsNullOrEmpty(tab.Icon))
+                {
+                    <i class="@tab.Icon me-1 align-middle"></i>
+                }
+                @tab.Title
+            </button>
+        </li>
+    }
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="@(Model.TabsId)-content">
+    @foreach (var tab in Model.Tabs)
+    {
+        <div class="tab-pane fade @(tab.IsActive ? "show active" : "")"
+             id="@tab.PanelId"
+             role="tabpanel"
+             aria-labelledby="@tab.NavId"
+             tabindex="0">
+            @if (tab.Content != null)
+            {
+                @tab.Content(null)
+            }
+        </div>
+    }
+</div>
+
+<style>
+    /* Horizontal Tabs Style-8 (Vyzor theme) */
+    .tab-style-8.nav-tabs {
+        border-bottom: none;
+        padding: 0px !important;
+    }
+
+    .tab-style-8.nav-tabs > .nav-item > .nav-link {
+        border-bottom: 3px solid transparent;
+        color: var(--default-text-color);
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .tab-style-8.nav-tabs > .nav-item > .nav-link:not(.active):hover,
+    .tab-style-8.nav-tabs > .nav-item > .nav-link:not(.active):focus {
+        color: var(--primary-color);
+        background: none;
+        border-color: transparent;
+        border-bottom-color: transparent;
+    }
+
+    .tab-style-8.nav-tabs > .nav-item > .nav-link.active {
+        color: var(--primary-color);
+        background-color: transparent;
+        border-color: transparent transparent var(--primary-color) transparent;
+    }
+
+    /* Scale animation variant */
+    .tab-style-8.nav-tabs.scaleX.nav-tabs > .nav-item > .nav-link {
+        position: relative;
+        border-bottom: none;
+        padding: 0.75rem 1rem;
+    }
+
+    .tab-style-8.nav-tabs.scaleX.nav-tabs > .nav-item > .nav-link:focus::before,
+    .tab-style-8.nav-tabs.scaleX.nav-tabs > .nav-item > .nav-link.active::before {
+        transform: scaleX(1);
+    }
+
+    .tab-style-8.nav-tabs.scaleX.nav-tabs > .nav-item > .nav-link::before {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0%;
+        height: 2px;
+        width: 100%;
+        transform: scaleX(0);
+        transform-origin: center;
+        background-color: var(--primary-color);
+        transition: transform ease 300ms;
+    }
+
+    /* Icon styling for horizontal tabs */
+    .tab-style-8 .nav-link i {
+        font-size: 1rem;
+        vertical-align: middle;
+        transition: color 0.3s ease;
+    }
+
+    .tab-style-8 .nav-link:hover i {
+        color: var(--primary-color);
+    }
+
+    .tab-style-8 .nav-link.active i {
+        color: var(--primary-color);
+    }
+
+    .tab-style-8 .nav-link.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Tab Content Styling */
+    .tab-content {
+        min-height: 200px;
+    }
+
+    .tab-pane {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive behavior */
+    @@media (max-width: 767.98px) {
+        .tab-style-8.nav-tabs {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab-style-8 .nav-item {
+            flex-shrink: 0;
+        }
+
+        .tab-style-8 .nav-link {
+            white-space: nowrap;
+            padding: 0.75rem 0.75rem;
+        }
+    }
+</style>

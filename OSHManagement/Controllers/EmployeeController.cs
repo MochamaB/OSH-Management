@@ -5,6 +5,7 @@ using OSHManagement.Data;
 using OSHManagement.Models.ViewModels;
 using OSHManagement.Services;
 using OSHManagement.Extensions;
+using FluentValidation.AspNetCore;
 
 namespace OSHManagement.Controllers
 {
@@ -15,6 +16,7 @@ namespace OSHManagement.Controllers
         private readonly IOrganizationalHierarchyService _orgHierarchyService;
         private readonly IEmployeeService _employeeService;
         private readonly IScopeFilterService _scopeFilterService;
+        private readonly IPasswordHashService _passwordHashService;
 
         public EmployeeController(
             OshDbContext context,
@@ -22,6 +24,7 @@ namespace OSHManagement.Controllers
             IOrganizationService organizationService,
             IOrganizationalHierarchyService orgHierarchyService,
             IEmployeeService employeeService,
+            IPasswordHashService passwordHashService,
             ILogger<EmployeeController> logger)
             : base(context, scopeFilter, logger)
         {
@@ -29,6 +32,7 @@ namespace OSHManagement.Controllers
             _orgHierarchyService = orgHierarchyService;
             _employeeService = employeeService;
             _scopeFilterService = scopeFilter;
+            _passwordHashService = passwordHashService;
         }
 
         // GET: Employee/Index
@@ -227,8 +231,20 @@ namespace OSHManagement.Controllers
         // POST: Employee/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(EmployeeViewModel model, List<int>? SelectedRoles)
+        public async Task<IActionResult> Create([CustomizeValidator(Skip = true)] EmployeeViewModel model, List<int>? SelectedRoles)
         {
+            // Manual validation with async support
+            var validator = new Validators.EmployeeValidator(_context);
+            var validationResult = await validator.ValidateAsync(model);
+
+            if (!validationResult.IsValid)
+            {
+                foreach (var error in validationResult.Errors)
+                {
+                    ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+                }
+            }
+
             if (ModelState.IsValid)
             {
                 try
@@ -383,12 +399,24 @@ namespace OSHManagement.Controllers
         // POST: Employee/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, EmployeeViewModel model, List<int>? SelectedRoles)
+        public async Task<IActionResult> Edit(int id, [CustomizeValidator(Skip = true)] EmployeeViewModel model, List<int>? SelectedRoles)
         {
             if (id != model.EmployeeId)
             {
                 TempData["Error"] = "Invalid employee ID.";
                 return RedirectToAction(nameof(Index));
+            }
+
+            // Manual validation with async support
+            var validator = new Validators.EmployeeValidator(_context);
+            var validationResult = await validator.ValidateAsync(model);
+
+            if (!validationResult.IsValid)
+            {
+                foreach (var error in validationResult.Errors)
+                {
+                    ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+                }
             }
 
             if (ModelState.IsValid)
@@ -422,6 +450,14 @@ namespace OSHManagement.Controllers
                     employee.HodPayroll = model.HodPayroll;
                     employee.SupervisorPayroll = model.SupervisorPayroll;
                     employee.UpdatedAt = DateTime.UtcNow;
+
+                    // Update password if requested
+                    if (model.UpdatePassword && !string.IsNullOrWhiteSpace(model.NewPassword))
+                    {
+                        // Hash the new password using PasswordHashService (SHA256)
+                        employee.PasswordHash = _passwordHashService.HashPassword(model.NewPassword);
+                        _logger.LogInformation($"Password updated for employee {employee.PayrollNo} by user {User.Identity?.Name}");
+                    }
 
                     // Update roles
                     // Deactivate all existing roles

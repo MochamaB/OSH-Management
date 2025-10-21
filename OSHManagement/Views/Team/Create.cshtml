@@ -1,0 +1,619 @@
+@using OSHManagement.Extensions
+@using OSHManagement.Models.Enums
+@model OSHManagement.Models.ViewModels.CreateTeamViewModel
+
+@{
+    ViewData["Title"] = "Create Team";
+
+    // Configure Form Wizard with 4 Steps
+    var wizardConfig = new OSHManagement.Models.ViewModels.FormWizardConfig
+    {
+        WizardId = "createTeamWizard",
+        ActionUrl = "/Team/Create",
+        Method = "POST",
+        Type = OSHManagement.Models.ViewModels.WizardType.Vertical,
+        WrapInCard = true,
+        CardTitle = "Create New Team",
+        CardSubtitle = "Set up a new team for OSH management using the multi-step wizard",
+        CancelUrl = "/Team/Index",
+        CancelButtonText = "Cancel",
+        PreviousButtonText = "Previous",
+        NextButtonText = "Next",
+        SubmitButtonText = "Create Team",
+        ValidateOnStepChange = true,
+        Steps = new List<OSHManagement.Models.ViewModels.WizardStepConfig>
+        {
+            // Step 1: Basic Team Information
+            new OSHManagement.Models.ViewModels.WizardStepConfig
+            {
+                StepId = "basicInfo",
+                Title = "Basic Information",
+                Icon = "ri-information-line",
+                Description = "Essential team details - Type-specific configuration will be done in the respective module (OSH Committee, Risk Assessment, etc.)",
+                FieldsPerRow = 2,
+                FieldColumnClass = "col-md-6",
+                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "TeamType",
+                        PropertyName = "TeamType",
+                        Label = "Team Type",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                        Required = true,
+                        ValidationMessage = "Team type is required",
+                        HelpText = "Select the type of team - detailed configuration happens in the team's module",
+                        Options = ViewBag.TeamTypes != null
+                            ? (new List<OSHManagement.Models.ViewModels.FormSelectOption>
+                            {
+                                new OSHManagement.Models.ViewModels.FormSelectOption { Value = "", Text = "-- Select Team Type --" }
+                            }).Concat(((Dictionary<string, string>)ViewBag.TeamTypes).Select(kvp =>
+                                new OSHManagement.Models.ViewModels.FormSelectOption { Value = kvp.Key, Text = kvp.Value }
+                            )).ToList()
+                            : new List<OSHManagement.Models.ViewModels.FormSelectOption>(),
+                        Value = Model?.TeamType
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "StationId",
+                        PropertyName = "StationId",
+                        Label = "Station",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                        Required = true,
+                        ValidationMessage = "Station is required",
+                        HelpText = "Select the station where this team operates",
+                        Options = ViewBag.Stations != null
+                            ? (new List<OSHManagement.Models.ViewModels.FormSelectOption>
+                            {
+                                new OSHManagement.Models.ViewModels.FormSelectOption { Value = "", Text = "-- Select Station --" }
+                            }).Concat(((IEnumerable<dynamic>)ViewBag.Stations).Select(s =>
+                                new OSHManagement.Models.ViewModels.FormSelectOption { Value = s.StationId.ToString(), Text = s.StationName }
+                            )).ToList()
+                            : new List<OSHManagement.Models.ViewModels.FormSelectOption>(),
+                        Value = Model?.StationId.ToString()
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "TeamName",
+                        PropertyName = "TeamName",
+                        Label = "Team Name",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                        Placeholder = "Enter team name",
+                        Required = true,
+                        ValidationMessage = "Team name is required",
+                        MaxLength = 100,
+                        Value = Model?.TeamName
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "FormationDate",
+                        PropertyName = "FormationDate",
+                        Label = "Formation Date",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Date,
+                        Required = true,
+                        ValidationMessage = "Formation date is required",
+                        Value = Model?.FormationDate.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd")
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "TeamDescription",
+                        PropertyName = "TeamDescription",
+                        Label = "Description",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Textarea,
+                        Placeholder = "Enter team description (optional)",
+                        Rows = 3,
+                        MaxLength = 500,
+                        CustomCssClass = "col-12",
+                        Value = Model?.TeamDescription
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "RequiredMemberCount",
+                        PropertyName = "RequiredMemberCount",
+                        Label = "Required Member Count",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Number,
+                        Placeholder = "Minimum required members",
+                        HelpText = "Minimum number of members required for this team",
+                        Value = Model?.RequiredMemberCount?.ToString()
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "MaxMemberCount",
+                        PropertyName = "MaxMemberCount",
+                        Label = "Maximum Member Count",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Number,
+                        Placeholder = "Maximum allowed members",
+                        HelpText = "Maximum number of members allowed in this team",
+                        Value = Model?.MaxMemberCount?.ToString()
+                    },
+                    new OSHManagement.Models.ViewModels.FormFieldConfig
+                    {
+                        Name = "RequiresSectionRepresentation",
+                        PropertyName = "RequiresSectionRepresentation",
+                        Label = "Requires Section Representation",
+                        Type = OSHManagement.Models.ViewModels.FieldType.Checkbox,
+                        HelpText = "Check if this team requires representatives from different sections",
+                        CustomCssClass = "col-12",
+                        Value = Model?.RequiresSectionRepresentation.ToString().ToLower()
+                    }
+                }
+            },
+            // Step 2: Type-Specific Configuration
+            new OSHManagement.Models.ViewModels.WizardStepConfig
+            {
+                StepId = "typeConfig",
+                Title = "Configuration",
+                Icon = "ri-settings-3-line",
+                Description = "Team-specific settings based on type",
+                FieldsPerRow = 1,
+                FieldColumnClass = "col-12",
+                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>()
+                // Will be populated dynamically based on team type selection
+            },
+            // Step 3: Team Members
+            new OSHManagement.Models.ViewModels.WizardStepConfig
+            {
+                StepId = "members",
+                Title = "Team Members",
+                Icon = "ri-team-line",
+                Description = "Select and configure team members",
+                FieldsPerRow = 1,
+                FieldColumnClass = "col-12",
+                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>()
+                // Empty fields - will be populated with accordion via JavaScript
+            },
+            // Step 4: Review & Submit
+            new OSHManagement.Models.ViewModels.WizardStepConfig
+            {
+                StepId = "review",
+                Title = "Review & Submit",
+                Icon = "ri-checkbox-circle-line",
+                Description = "Review team details before submission",
+                FieldsPerRow = 1,
+                FieldColumnClass = "col-12",
+                Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>()
+                // Will be populated with review summary via JavaScript
+            }
+        }
+    };
+
+    // Build the wizard
+    var wizard = wizardConfig.BuildWizard();
+}
+
+<!-- Render Wizard -->
+<div class="row">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/Wizards/VerticalFormWizard.cshtml" model="wizard" />
+    </div>
+</div>
+
+<!-- Hidden container for member selection accordion (will be moved to Step 3 via JavaScript) -->
+<div id="memberAccordionContainer" style="display: none;">
+    <partial name="_MemberSelectionAccordion" />
+</div>
+
+<!-- Type-specific configurations (will be injected into Step 2) -->
+<div id="typeConfigsContainer" style="display: none;">
+    <div class="type-config-section" data-team-type="OshCommittee">
+        <partial name="_OshCommitteeConfig" model="Model" />
+    </div>
+    <div class="type-config-section" data-team-type="RiskAssessment">
+        <partial name="_RiskAssessmentConfig" model="Model" />
+    </div>
+    <div class="type-config-section" data-team-type="Investigation">
+        <partial name="_InvestigationConfig" model="Model" />
+    </div>
+    <div class="type-config-section" data-team-type="Custom">
+        <partial name="_CustomConfig" />
+    </div>
+</div>
+
+<!-- Hidden container for review summary -->
+<div id="reviewSummaryContainer" style="display: none;">
+    <partial name="_ReviewSummary" model="Model" />
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/form-wizard.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Track selected members globally
+            window.selectedMembers = [];
+
+            // Team type constants from enum (using enum names, not display names)
+            const TEAM_TYPES = {
+                OSH_COMMITTEE: '@TeamType.OshCommittee.ToString()',
+                RISK_ASSESSMENT: '@TeamType.RiskAssessment.ToString()',
+                INVESTIGATION: '@TeamType.Investigation.ToString()',
+                CUSTOM: '@TeamType.Custom.ToString()'
+            };
+
+            // Team type display names mapping
+            const TEAM_TYPE_NAMES = {
+                'OshCommittee': 'OSH Committee',
+                'RiskAssessment': 'Risk Assessment',
+                'Investigation': 'Investigation',
+                'Custom': 'Custom'
+            };
+
+            console.log('=== Page Load Diagnostics ===');
+            console.log('TEAM_TYPES loaded:', TEAM_TYPES);
+            console.log('Type configs container exists:', $('#typeConfigsContainer').length);
+            console.log('Type configs HTML length:', $('#typeConfigsContainer').html()?.length || 0);
+            console.log('Sections in hidden container:', $('#typeConfigsContainer .type-config-section').length);
+            console.log('Wizard form exists:', $('#createTeamWizard').length);
+            console.log('============================');
+
+            // Auto-fill team name based on Station and Team Type
+            function autoFillTeamName() {
+                var stationId = $('#createTeamWizard_basicInfo_StationId').val();
+                var teamType = $('#createTeamWizard_basicInfo_TeamType').val();
+                var teamNameField = $('#createTeamWizard_basicInfo_TeamName');
+
+                // Only auto-fill if both fields are selected and team name is empty or was auto-generated
+                if (stationId && teamType && (!teamNameField.val() || teamNameField.data('auto-filled'))) {
+                    // Get station name from the selected option text
+                    var stationName = $('#createTeamWizard_basicInfo_StationId option:selected').text();
+
+                    // Get team type display name
+                    var teamTypeName = TEAM_TYPE_NAMES[teamType] || teamType;
+
+                    // Format: "Station - Team Type" (e.g., "Boito - OSH Committee")
+                    var autoGeneratedName = stationName + ' - ' + teamTypeName;
+
+                    teamNameField.val(autoGeneratedName);
+                    teamNameField.data('auto-filled', true); // Mark as auto-filled
+
+                    console.log('Auto-filled team name:', autoGeneratedName);
+                }
+            }
+
+            // Load employees by station via AJAX
+            function loadEmployeesByStation(stationId) {
+                console.log('Loading employees for station:', stationId);
+
+                // Show loading indicator
+                $('#memberAccordionContainer').html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading employees...</p></div>');
+
+                $.ajax({
+                    url: '/Team/GetEmployeesByStation',
+                    type: 'GET',
+                    data: { stationId: stationId },
+                    success: function(html) {
+                        // Replace the accordion container with the new HTML
+                        $('#memberAccordionContainer').html(html);
+                        console.log('Employees loaded successfully');
+
+                        // Re-initialize handlers if already on Step 3
+                        var stepContainer = $('[data-step-id="members"]');
+                        if (stepContainer.hasClass('active')) {
+                            initializeMemberHandlers();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading employees:', error);
+                        $('#memberAccordionContainer').html('<div class="alert alert-danger"><i class="ri-error-warning-line me-2"></i>Failed to load employees. Please try again.</div>');
+                    }
+                });
+            }
+
+            // Listen for changes in Station dropdown
+            $(document).on('change', '#createTeamWizard_basicInfo_StationId', function() {
+                autoFillTeamName();
+
+                var stationId = $(this).val();
+                if (stationId) {
+                    loadEmployeesByStation(stationId);
+                } else {
+                    // Clear employees if no station selected
+                    $('#memberAccordionContainer').html('<div class="alert alert-info"><i class="ri-information-line me-2"></i>Please select a station to view employees.</div>');
+                }
+            });
+
+            // Listen for changes in Team Type dropdown
+            $(document).on('change', '#createTeamWizard_basicInfo_TeamType', function() {
+                autoFillTeamName();
+            });
+
+            // When user manually edits the team name, remove auto-fill flag
+            $(document).on('input', '#createTeamWizard_basicInfo_TeamName', function() {
+                $(this).data('auto-filled', false);
+            });
+            
+            // Inspect wizard structure after a delay
+            setTimeout(function() {
+                console.log('=== Wizard Structure Inspection ===');
+                console.log('All wizard step divs:', $('div[id^="createTeamWizard_"]').map(function() {
+                    return $(this).attr('id');
+                }).get());
+                console.log('Step containers with class:', $('.wizard-step-container').length);
+                console.log('Steps with wizard-step class:', $('.wizard-step').length);
+                console.log('===================================');
+            }, 1000);
+
+            // Function to inject all type configs into Step 2 on first load
+            function injectTypeConfigs() {
+                // Use data-step-id attribute (semantic) instead of constructed ID
+                var stepContainer = $('[data-step-id="typeConfig"]');
+                
+                if (stepContainer.length === 0) {
+                    console.log('ERROR: Step 2 container not found via data-step-id="typeConfig"');
+                    return;
+                }
+                
+                // The wizard structure is: .wizard-step > .wizard-step-body > .row
+                var configContainer = stepContainer.find('.wizard-step-body .row');
+                
+                if (configContainer.length === 0) {
+                    console.log('ERROR: Could not find .wizard-step-body .row in step 2');
+                    return;
+                }
+                
+                console.log('✓ injectTypeConfigs - step container found');
+                console.log('Existing type-config-sections:', configContainer.find('.type-config-section').length);
+
+                if (configContainer.find('.type-config-section').length === 0) {
+                    // Clone all type config sections and append to Step 2
+                    var allConfigs = $('#typeConfigsContainer').html();
+                    console.log('Injecting configs, HTML length:', allConfigs ? allConfigs.length : 0);
+                    
+                    configContainer.append('<div class="col-12">' + allConfigs + '</div>');
+                    console.log('After injection, sections found:', configContainer.find('.type-config-section').length);
+
+                    // Initially hide all configs
+                    configContainer.find('.type-config-section').hide();
+                } else {
+                    console.log('Configs already injected, skipping');
+                }
+            }
+
+            // Function to show/hide type-specific configuration based on team type
+            function updateTypeConfiguration() {
+                // Get team type from Step 1 - field names are: WizardId_StepId_FieldName
+                var teamType = $('#createTeamWizard_basicInfo_TeamType').val();
+
+                console.log('=== updateTypeConfiguration ===');
+                console.log('Selected teamType:', teamType);
+
+                // Use data-step-id to find Step 2
+                var stepContainer = $('[data-step-id="typeConfig"]');
+                console.log('Step container found:', stepContainer.length);
+                
+                if (!stepContainer.length) {
+                    console.log('ERROR: Step 2 not found via data-step-id="typeConfig"');
+                    return;
+                }
+                
+                // Find the content container: .wizard-step-body > .row
+                var configContainer = stepContainer.find('.wizard-step-body .row');
+                console.log('Config container found:', configContainer.length);
+                
+                if (!configContainer.length) {
+                    console.log('ERROR: Could not find .wizard-step-body .row');
+                    return;
+                }
+
+                // Ensure configs are injected first
+                injectTypeConfigs();
+
+                // Hide all type config sections first
+                configContainer.find('.type-config-section').hide();
+
+                if (teamType) {
+                    // Show the matching config section using data-team-type attribute
+                    var selector = '.type-config-section[data-team-type="' + teamType + '"]';
+                    console.log('Looking for selector:', selector);
+                    
+                    var targetSection = configContainer.find(selector);
+                    console.log('Matching sections found:', targetSection.length);
+
+                    if (targetSection.length > 0) {
+                        targetSection.show();
+                        console.log('✓ Section shown for:', teamType);
+                    } else {
+                        console.log('ERROR: No section found for teamType:', teamType);
+                        console.log('Available sections:');
+                        configContainer.find('.type-config-section').each(function() {
+                            console.log('  - data-team-type:', $(this).attr('data-team-type'));
+                        });
+                    }
+                } else {
+                    console.log('No team type selected');
+                }
+            }
+
+            // Update type config when team type changes (listen to Step 1 field)
+            $(document).on('change', '#createTeamWizard_basicInfo_TeamType', function() {
+                setTimeout(updateTypeConfiguration, 100);
+            });
+
+            // Function to inject member selection accordion into Step 3
+            function injectMemberAccordion() {
+                var stepContainer = $('[data-step-id="members"]');
+                var configContainer = stepContainer.find('.wizard-step-body .row');
+
+                if (configContainer.length > 0 && configContainer.find('.accordion').length === 0) {
+                    var accordionContent = $('#memberAccordionContainer').html();
+                    configContainer.append('<div class="col-12">' + accordionContent + '</div>');
+
+                    initializeMemberHandlers();
+                }
+            }
+
+            // Initialize member selection handlers
+            function initializeMemberHandlers() {
+                // Update badge counts when checkboxes change
+                function updateMemberCounts() {
+                    $('.member-count').each(function() {
+                        var department = $(this).data('department');
+                        var totalCount = $('.member-checkbox[data-department="' + department + '"]').length;
+                        var selectedCount = $('.member-checkbox[data-department="' + department + '"]:checked').length;
+
+                        $(this).find('.selected-count').text(selectedCount);
+
+                        if (selectedCount === 0) {
+                            $(this).removeClass('bg-primary bg-warning').addClass('bg-light text-dark');
+                        } else if (selectedCount === totalCount) {
+                            $(this).removeClass('bg-light bg-warning text-dark').addClass('bg-primary text-white');
+                        } else {
+                            $(this).removeClass('bg-light bg-primary text-dark text-white').addClass('bg-warning text-dark');
+                        }
+                    });
+
+                    // Update global selected count
+                    var totalSelected = $('.member-checkbox:checked').length;
+                    $('#selectedMemberCount').text(totalSelected);
+                }
+
+                // Select all members
+                $('#selectAllMembers').off('click').on('click', function() {
+                    $('.member-checkbox').prop('checked', true);
+                    updateMemberCounts();
+                });
+
+                // Deselect all members
+                $('#deselectAllMembers').off('click').on('click', function() {
+                    $('.member-checkbox').prop('checked', false);
+                    updateMemberCounts();
+                });
+
+                // Select all in department
+                $('.select-department-all').off('click').on('click', function() {
+                    var department = $(this).data('department');
+                    $('.member-checkbox[data-department="' + department + '"]').prop('checked', true);
+                    updateMemberCounts();
+                });
+
+                // Update counts on checkbox change
+                $('.member-checkbox').off('change').on('change', function() {
+                    updateMemberCounts();
+                });
+
+                // Search functionality
+                $('#memberSearch').off('keyup').on('keyup', function() {
+                    var searchTerm = $(this).val().toLowerCase();
+
+                    $('.member-checkbox-wrapper').each(function() {
+                        var name = $(this).data('member-name');
+                        var payroll = $(this).data('member-payroll');
+
+                        if (name.includes(searchTerm) || payroll.includes(searchTerm)) {
+                            $(this).removeClass('hidden');
+                        } else {
+                            $(this).addClass('hidden');
+                        }
+                    });
+                });
+
+                updateMemberCounts();
+            }
+
+            // Function to build review summary
+            function buildReviewSummary() {
+                var stepContainer = $('[data-step-id="review"]');
+                var configContainer = stepContainer.find('.wizard-step-body .row');
+
+                if (configContainer.length > 0 && configContainer.find('.card').length === 0) {
+                    // Inject the review summary HTML
+                    var reviewHtml = $('#reviewSummaryContainer').html();
+                    configContainer.append('<div class="col-12">' + reviewHtml + '</div>');
+                }
+
+                // Update the review summary values
+                var teamType = $('#createTeamWizard_basicInfo_TeamType option:selected').text();
+                var teamName = $('#createTeamWizard_basicInfo_TeamName').val();
+                var station = $('#createTeamWizard_basicInfo_StationId option:selected').text();
+                var formationDate = $('#createTeamWizard_basicInfo_FormationDate').val();
+                var description = $('#createTeamWizard_basicInfo_TeamDescription').val() || 'N/A';
+                var requiredMembers = $('#createTeamWizard_basicInfo_RequiredMemberCount').val() || 'Not specified';
+                var maxMembers = $('#createTeamWizard_basicInfo_MaxMemberCount').val() || 'Not specified';
+                var sectionRep = $('#createTeamWizard_basicInfo_RequiresSectionRepresentation').is(':checked') ? 'Yes' : 'No';
+                var selectedMemberCount = $('.member-checkbox:checked').length;
+
+                $('#review_teamType').text(teamType);
+                $('#review_teamName').text(teamName);
+                $('#review_station').text(station);
+                $('#review_formationDate').text(formationDate);
+                $('#review_description').text(description);
+                $('#review_requiredMembers').text(requiredMembers);
+                $('#review_maxMembers').text(maxMembers);
+                $('#review_sectionRep').text(sectionRep);
+                $('#review_memberCount').text(selectedMemberCount + ' member(s) selected');
+            }
+
+            // Handle wizard navigation - listen to step changes
+            $(document).on('click', '.wizard-nav-link-vertical, .wizard-next, .wizard-prev', function() {
+                console.log('Navigation clicked');
+                
+                setTimeout(function() {
+                    // Find active step using .wizard-step.active (from wizard component)
+                    var activeStep = $('.wizard-step.active');
+                    
+                    console.log('Active step found:', activeStep.length);
+                    
+                    if (activeStep.length > 0) {
+                        var stepId = activeStep.attr('data-step-id'); // Use data-step-id, not id
+                        console.log('Active step data-step-id:', stepId);
+
+                        if (stepId === 'typeConfig') {
+                            console.log('→ Navigated to Step 2 - triggering updateTypeConfiguration');
+                            updateTypeConfiguration();
+                        } else if (stepId === 'members') {
+                            console.log('→ Navigated to Step 3 - triggering injectMemberAccordion');
+                            injectMemberAccordion();
+                        } else if (stepId === 'review') {
+                            console.log('→ Navigated to Step 4 - triggering buildReviewSummary');
+                            buildReviewSummary();
+                        }
+                    } else {
+                        console.log('ERROR: Could not find .wizard-step.active');
+                    }
+                }, 300); // 300ms for DOM to settle
+            });
+
+            // Wait for wizard to be fully initialized before triggering config
+            function waitForWizard() {
+                var attempts = 0;
+                var maxAttempts = 20; // Try for 2 seconds (20 * 100ms)
+                
+                var checkInterval = setInterval(function() {
+                    attempts++;
+                    
+                    var wizardExists = $('[data-step-id="typeConfig"]').length > 0;
+                    console.log('Checking for wizard step 2... attempt', attempts, 'found:', wizardExists);
+                    
+                    if (wizardExists) {
+                        console.log('✓ Wizard initialized, triggering initial config');
+                        clearInterval(checkInterval);
+                        updateTypeConfiguration();
+                    } else if (attempts >= maxAttempts) {
+                        console.log('✗ Wizard not found after', attempts, 'attempts');
+                        clearInterval(checkInterval);
+                    }
+                }, 100); // Check every 100ms
+            }
+            
+            // Start checking after a short delay
+            setTimeout(waitForWizard, 200);
+
+            // Before form submission, collect selected members
+            $('#createTeamWizard').on('submit', function() {
+                // Clear any existing hidden inputs for members
+                $('input[name^="SelectedMemberPayrolls"]').remove();
+
+                // Add selected member payrolls as hidden inputs
+                $('.member-checkbox:checked').each(function(index) {
+                    var payroll = $(this).val();
+                    $('<input>').attr({
+                        type: 'hidden',
+                        name: 'SelectedMemberPayrolls[' + index + ']',
+                        value: payroll
+                    }).appendTo('#createTeamWizard');
+                });
+            });
+        });
+    </script>
+}

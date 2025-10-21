@@ -1,0 +1,176 @@
+@using OSHManagement.Models.DTOs
+
+@{
+    var employeesByDepartment = ViewBag.EmployeesByDepartment as IEnumerable<IGrouping<dynamic, EmployeeSelectionDto>>;
+}
+
+<div class="mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <label class="form-label fw-semibold mb-1">Select Team Members</label>
+            <div class="form-text">
+                Choose employees to be part of this team. Members can be assigned specific roles later.
+                <br><strong id="selectedMemberCount">0</strong> member(s) selected
+            </div>
+        </div>
+        <div>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllMembers">
+                <i class="ri-checkbox-multiple-line me-1"></i>Select All
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllMembers">
+                <i class="ri-checkbox-blank-line me-1"></i>Deselect All
+            </button>
+        </div>
+    </div>
+
+    <!-- Search Filter -->
+    <div class="mb-3">
+        <input type="text"
+               class="form-control"
+               id="memberSearch"
+               placeholder="Search by name or payroll number...">
+    </div>
+
+    @if (employeesByDepartment != null && employeesByDepartment.Any())
+    {
+        <div class="accordion accordion-primary" id="membersAccordion">
+            @{
+                var deptIndex = 0;
+            }
+            @foreach (var departmentGroup in employeesByDepartment)
+            {
+                var department = departmentGroup.Key;
+                var employees = departmentGroup.ToList();
+                var collapseId = $"collapse-dept-{department.DepartmentId ?? 0}";
+                var headerId = $"heading-dept-{department.DepartmentId ?? 0}";
+                var isFirstDept = deptIndex == 0;
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="@headerId">
+                        <button class="accordion-button @(isFirstDept ? "" : "collapsed")"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#@collapseId"
+                                aria-expanded="@(isFirstDept ? "true" : "false")"
+                                aria-controls="@collapseId">
+                            <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                <span>
+                                    <i class="ri-building-2-line me-2"></i>
+                                    <strong>@(department.DepartmentName ?? "Unknown Department")</strong>
+                                    <small class="text-muted ms-2">@department.StationName</small>
+                                </span>
+                                <span class="badge bg-light text-dark member-count" data-department="@(department.DepartmentId ?? 0)">
+                                    <span class="selected-count">0</span>/@employees.Count
+                                </span>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="@collapseId"
+                         class="accordion-collapse collapse @(isFirstDept ? "show" : "")"
+                         aria-labelledby="@headerId"
+                         data-bs-parent="#membersAccordion">
+                        <div class="accordion-body">
+                            <div class="d-flex justify-content-end mb-2">
+                                <button type="button" class="btn btn-xs btn-outline-primary select-department-all" data-department="@(department.DepartmentId ?? 0)">
+                                    <i class="ri-checkbox-line me-1"></i>Select All in @(department.DepartmentName ?? "Department")
+                                </button>
+                            </div>
+                            <div class="row g-3">
+                                @foreach (var employee in employees)
+                                {
+                                    <div class="col-md-6 member-checkbox-wrapper"
+                                         data-member-name="@employee.FullName.ToLower()"
+                                         data-member-payroll="@employee.PayrollNo.ToLower()">
+                                        <div class="form-check member-checkbox-card">
+                                            <input class="form-check-input member-checkbox"
+                                                   type="checkbox"
+                                                   name="SelectedMemberPayrolls_temp"
+                                                   value="@employee.PayrollNo"
+                                                   id="member_@employee.PayrollNo"
+                                                   data-department="@(department.DepartmentId ?? 0)"
+                                                   data-employee-id="@employee.EmployeeId"
+                                                   data-payroll="@employee.PayrollNo"
+                                                   data-name="@employee.FullName"
+                                                   data-designation="@employee.Designation"
+                                                   data-department-name="@(department.DepartmentName ?? "")"
+                                                   data-station-id="@employee.StationId">
+                                            <label class="form-check-label w-100" for="member_@employee.PayrollNo">
+                                                <div class="d-flex flex-column">
+                                                    <span class="fw-medium member-name">@employee.FullName</span>
+                                                    <small class="text-muted member-payroll">
+                                                        <i class="ri-user-line me-1"></i>@employee.PayrollNo
+                                                        @if (!string.IsNullOrEmpty(employee.Designation))
+                                                        {
+                                                            <span> • @employee.Designation</span>
+                                                        }
+                                                    </small>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                deptIndex++;
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info" role="alert">
+            <i class="ri-information-line me-2"></i>
+            No employees available in your scope. You can add team members later from the Team Edit page.
+        </div>
+    }
+</div>
+
+<style>
+    .member-checkbox-card {
+        padding: 0.75rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+        transition: all 0.2s ease;
+        background-color: var(--bs-body-bg);
+        cursor: pointer;
+    }
+
+    .member-checkbox-card:hover {
+        background-color: var(--bs-light);
+        border-color: var(--bs-primary);
+    }
+
+    .member-checkbox-card .form-check-input:checked ~ label {
+        color: var(--bs-primary);
+    }
+
+    .member-checkbox-card .form-check-input:checked {
+        background-color: var(--bs-primary);
+        border-color: var(--bs-primary);
+    }
+
+    .member-count {
+        font-size: 0.875rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .accordion-button:not(.collapsed) .member-count {
+        background-color: var(--bs-primary) !important;
+        color: white !important;
+    }
+
+    .btn-xs {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .member-checkbox-wrapper {
+        display: block;
+    }
+
+    .member-checkbox-wrapper.hidden {
+        display: none;
+    }
+</style>

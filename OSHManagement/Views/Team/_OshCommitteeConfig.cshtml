@@ -1,0 +1,51 @@
+@model OSHManagement.Models.ViewModels.CreateTeamViewModel
+
+<h6 class="mb-3">OSH Committee Settings</h6>
+<div class="row">
+    <div class="col-md-6">
+        <div class="form-check mb-3">
+            @{
+                var isCommitteeTrained = Model?.IsCommitteeTrained == true;
+            }
+            <input class="form-check-input" type="checkbox" id="IsCommitteeTrained" name="IsCommitteeTrained" checked="@isCommitteeTrained" />
+            <label class="form-check-label" for="IsCommitteeTrained">Committee Trained</label>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label for="TrainingDate" class="form-label">Training Date</label>
+            <input type="date" class="form-control" id="TrainingDate" name="TrainingDate" value="@Model?.TrainingDate?.ToString("yyyy-MM-dd")" />
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-check mb-3">
+            @{
+                var hasMeetingSchedule = Model?.HasMeetingSchedule == true;
+            }
+            <input class="form-check-input" type="checkbox" id="HasMeetingSchedule" name="HasMeetingSchedule" checked="@hasMeetingSchedule" />
+            <label class="form-check-label" for="HasMeetingSchedule">Has Meeting Schedule</label>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label for="InspectionFrequency" class="form-label">Inspection Frequency</label>
+            <select class="form-select" id="InspectionFrequency" name="InspectionFrequency">
+                <option value="">-- Select Frequency --</option>
+                @if (ViewBag.FrequencyOptions != null)
+                {
+                    foreach (var freq in (List<string>)ViewBag.FrequencyOptions)
+                    {
+                        var isSelected = Model?.InspectionFrequency == freq;
+                        <option value="@freq" selected="@isSelected">@freq</option>
+                    }
+                }
+            </select>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label for="NextInspectionDate" class="form-label">Next Inspection Date</label>
+            <input type="date" class="form-control" id="NextInspectionDate" name="NextInspectionDate" value="@Model?.NextInspectionDate?.ToString("yyyy-MM-dd")" />
+        </div>
+    </div>
+</div>

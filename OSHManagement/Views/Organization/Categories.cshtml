@@ -79,10 +79,10 @@
                             var rowActions = new RowActionConfig
                             {
                                 EditUrl = $"/Organization/EditCategory/{{id}}",
-                                ViewUrl = $"/Organization/ViewCategory/{{id}}",
+                                ViewUrl = $"/Organization/CategoryDetails/{{id}}",
                                 DeleteUrl = $"/Organization/DeleteCategory/{{id}}",
                                 DeleteItemName = item.CategoryName,
-                                ShowView = false,
+                                ShowView = true,
                                 ShowEdit = true,
                                 ShowDelete = true
                             };

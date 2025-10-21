@@ -1,0 +1,267 @@
+@using OSHManagement.Extensions
+@model List<OSHManagement.Models.ViewModels.TeamViewModel>
+@{
+    ViewData["Title"] = "Team Management";
+
+    // Build stat cards
+    var statConfig = new OSHManagement.Models.ViewModels.StatsRowConfig
+    {
+        Titles = new List<string> { "Total Teams", "OSH Committees", "Risk Assessment", "Investigation Teams" },
+        Values = new List<string> {
+            Model.Count.ToString(),
+            Model.Count(t => t.TeamType == "OSH Committee").ToString(),
+            Model.Count(t => t.TeamType == "Risk Assessment").ToString(),
+            Model.Count(t => t.TeamType == "Investigation").ToString()
+        },
+        Icons = new List<string> {
+            "ri-team-line",
+            "ri-shield-check-line",
+            "ri-alert-line",
+            "ri-search-line"
+        },
+        ColorThemes = new List<string> { "primary", "success", "warning", "danger" },
+        CardType = OSHManagement.Models.ViewModels.CardType.LeftBorderCard
+    };
+    var statCards = statConfig.BuildStatsRow();
+
+    // Get unique stations for filter
+    var stations = Model
+        .Select(t => new { t.StationId, t.StationName })
+        .Distinct()
+        .OrderBy(s => s.StationName)
+        .ToList();
+
+    // Build DataTable configuration
+    var tableConfig = new OSHManagement.Models.ViewModels.TableConfig
+    {
+        TableId = "teamsTable",
+        ActionUrl = "/Team/Index",
+        Columns = new List<string> {
+            "Team Name",
+            "Type",
+            "Station",
+            "Members",
+            "Status",
+            "Formation Date",
+            "Actions"
+        },
+        SearchPlaceholder = "Search teams or members...",
+        CreateButtonText = "Create Team",
+        CreateButtonUrl = "/Team/Create",
+        Filters = new List<OSHManagement.Models.ViewModels.FilterConfig>
+        {
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Team Type",
+                ParameterName = "teamType",
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Types", Value = "" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "OSH Committee", Value = "OSH Committee" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Risk Assessment", Value = "Risk Assessment" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Investigation", Value = "Investigation" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Custom", Value = "Custom" }
+                }
+            },
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Station",
+                ParameterName = "stationId",
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Stations", Value = "" }
+                }.Concat(
+                    stations.Select(s =>
+                        new OSHManagement.Models.ViewModels.FilterOptionConfig
+                        {
+                            Text = s.StationName,
+                            Value = s.StationId.ToString()
+                        }
+                    )
+                ).ToList()
+            },
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Status",
+                ParameterName = "status",
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Status", Value = "" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Active", Value = "Active" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Inactive", Value = "Inactive" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Disbanded", Value = "Disbanded" }
+                }
+            }
+        }
+    };
+
+    // Build table with row data
+    var table = tableConfig.BuildTable(
+        tableContent: @<text>
+            @foreach (var team in Model)
+            {
+                // Team type badge colors and icons
+                var typeClass = team.TeamType switch
+                {
+                    "OSH Committee" => "success",
+                    "Risk Assessment" => "warning",
+                    "Investigation" => "danger",
+                    "Custom" => "info",
+                    _ => "secondary"
+                };
+
+                var typeIcon = team.TeamType switch
+                {
+                    "OSH Committee" => "ri-shield-check-line",
+                    "Risk Assessment" => "ri-alert-line",
+                    "Investigation" => "ri-search-line",
+                    "Custom" => "ri-team-line",
+                    _ => "ri-group-line"
+                };
+
+                // Status badge colors
+                var statusClass = team.TeamStatus switch
+                {
+                    "Active" => "success",
+                    "Inactive" => "warning",
+                    "Disbanded" => "secondary",
+                    _ => "light"
+                };
+
+                // Member count color coding
+                var memberCountClass = "text-dark";
+                if (team.MaxMemberCount.HasValue && team.ActiveMemberCount >= team.MaxMemberCount.Value)
+                {
+                    memberCountClass = "text-danger"; // At capacity
+                }
+                else if (team.RequiredMemberCount.HasValue && team.ActiveMemberCount < team.RequiredMemberCount.Value)
+                {
+                    memberCountClass = "text-warning"; // Below minimum
+                }
+                else if (team.ActiveMemberCount > 0)
+                {
+                    memberCountClass = "text-success"; // Good
+                }
+
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar avatar-sm bg-@typeClass-transparent me-2">
+                                <i class="@typeIcon fs-16"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold">@team.TeamName</div>
+                                @if (!string.IsNullOrEmpty(team.TeamDescription))
+                                {
+                                    <div class="text-muted fs-12">@(team.TeamDescription.Length > 50 ? team.TeamDescription.Substring(0, 50) + "..." : team.TeamDescription)</div>
+                                }
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-@typeClass-transparent">
+                            <i class="@typeIcon me-1"></i>@team.TeamType
+                        </span>
+                    </td>
+                    <td>
+                        <span class="text-muted">
+                            <i class="ri-building-line me-1"></i>@team.StationName
+                        </span>
+                    </td>
+                    <td>
+                        <span class="@memberCountClass fw-semibold">
+                            @team.ActiveMemberCount
+                            @if (team.MaxMemberCount.HasValue)
+                            {
+                                <span class="text-muted">/@team.MaxMemberCount</span>
+                            }
+                            else if (team.RequiredMemberCount.HasValue)
+                            {
+                                <span class="text-muted">(min: @team.RequiredMemberCount)</span>
+                            }
+                        </span>
+                        @if (team.RequiresSectionRepresentation)
+                        {
+                            <br />
+                            <small class="text-muted">
+                                <i class="ri-git-branch-line me-1"></i>Section Rep Required
+                            </small>
+                        }
+                    </td>
+                    <td>
+                        <span class="badge bg-@statusClass-transparent">
+                            @team.TeamStatus
+                        </span>
+                        @if (team.TeamStatus == "Disbanded" && team.DisbandDate.HasValue)
+                        {
+                            <br />
+                            <small class="text-muted">@team.DisbandDate.Value.ToString("MMM dd, yyyy")</small>
+                        }
+                    </td>
+                    <td>
+                        @team.FormationDate.ToString("MMM dd, yyyy")
+                    </td>
+                    <td>
+                        @{
+                            var rowActions = new OSHManagement.Models.ViewModels.RowActionConfig
+                            {
+                                ViewUrl = $"/Team/Details/{{id}}",
+                                EditUrl = $"/Team/Edit/{{id}}",
+                                DeleteUrl = $"/Team/Disband/{{id}}",
+                                DeleteItemName = team.TeamName,
+                                ShowView = true,
+                                ShowEdit = team.TeamStatus != "Disbanded",
+                                ShowDelete = team.TeamStatus == "Active"
+                            };
+                            var actions = OSHManagement.Extensions.DataTableExtensions.BuildRowActions(team.TeamId, "/Team", rowActions);
+                        }
+                        <partial name="~/Views/Shared/Components/_ActionButtons.cshtml" model="actions" />
+                    </td>
+                </tr>
+            }
+        </text>,
+        currentUrl: Context.Request.Path + Context.Request.QueryString
+    );
+}
+
+<!-- Stat Cards Row -->
+<div class="row">
+    @foreach (var card in statCards)
+    {
+        <partial name="~/Views/Shared/Components/StatisticCards/_LeftBorderCard.cshtml" model="card" />
+    }
+</div>
+
+<!-- Main Content -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/_DataTable.cshtml" model="table" />
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="alert alert-info" role="alert">
+                <h5 class="alert-heading">
+                    <i class="ri-information-line me-2"></i>No Teams Found
+                </h5>
+                <p class="mb-0">
+                    There are no teams in your scope yet.
+                    @if (User.HasClaim("Permission", "Team.Create"))
+                    {
+                        <text>Click "Create Team" to set up your first team.</text>
+                    }
+                    else
+                    {
+                        <text>Contact your administrator to create teams.</text>
+                    }
+                </p>
+            </div>
+        </div>
+    </div>
+}

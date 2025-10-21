@@ -1,0 +1,57 @@
+@model OSHManagement.Models.ViewModels.CreateTeamViewModel
+
+<div class="card border mb-3">
+    <div class="card-header bg-light">
+        <h6 class="mb-0"><i class="ri-information-line me-2"></i>Team Summary</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small">Team Type</label>
+                <div class="fw-semibold" id="review_teamType">-</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small">Team Name</label>
+                <div class="fw-semibold" id="review_teamName">-</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small">Station</label>
+                <div class="fw-semibold" id="review_station">-</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small">Formation Date</label>
+                <div class="fw-semibold" id="review_formationDate">-</div>
+            </div>
+            <div class="col-12 mb-3">
+                <label class="text-muted small">Description</label>
+                <div id="review_description">-</div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="text-muted small">Required Members</label>
+                <div class="fw-semibold" id="review_requiredMembers">-</div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="text-muted small">Maximum Members</label>
+                <div class="fw-semibold" id="review_maxMembers">-</div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="text-muted small">Section Representation</label>
+                <div class="fw-semibold" id="review_sectionRep">-</div>
+            </div>
+            <div class="col-12">
+                <label class="text-muted small">Selected Members</label>
+                <div class="fw-semibold text-primary" id="review_memberCount">0 member(s) selected</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-6">
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="SaveAsDraft" name="SaveAsDraft" value="true" />
+        <label class="form-check-label" for="SaveAsDraft">
+            Save as Draft (Inactive)
+        </label>
+        <div class="form-text">Check to save this team as inactive. You can activate it later.</div>
+    </div>
+</div>

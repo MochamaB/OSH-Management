@@ -86,8 +86,9 @@ namespace OSHManagement.Models.ViewModels
     /// </summary>
     public enum TabsType
     {
-        VerticalStyle1,      // Pills on left, content on right (default)
+        VerticalStyle1,      // Pills on left, content on right (default - Vyzor tab-style-7)
         VerticalStyle2,      // Alternative vertical style
+        HorizontalStyle8,    // Horizontal tabs with bottom border animation (Vyzor tab-style-8)
         Horizontal,          // Traditional horizontal tabs
         Pills,               // Horizontal pills
         Justified            // Full-width tabs

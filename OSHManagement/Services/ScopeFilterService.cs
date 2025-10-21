@@ -74,6 +74,12 @@ namespace OSHManagement.Services
                 return (IQueryable<T>)ApplyHazardScope(query.Cast<Hazard>(), scope);
             }
 
+            // Team filtering (Transactional)
+            if (entityType == typeof(Team))
+            {
+                return (IQueryable<T>)ApplyTeamScope(query.Cast<Team>(), scope);
+            }
+
             // Default: if entity doesn't have scope filtering, return as-is
             // (e.g., OrgCategories, Roles, Permissions - reference data)
             return query;
@@ -109,6 +115,32 @@ namespace OSHManagement.Services
             {
                 ScopeLevel.Station => query.Where(h => h.StationId == scope.StationId),
                 ScopeLevel.Department => query.Where(h => h.StationId == scope.StationId), // Department users see station-level hazards
+                _ => query
+            };
+        }
+
+        /// <summary>
+        /// Apply scope filtering to Team queries
+        /// Teams are station-scoped entities - users can only see teams within their scope
+        /// Team/Self scope users can only see teams they are members of
+        /// </summary>
+        private IQueryable<Team> ApplyTeamScope(IQueryable<Team> query, UserScope scope)
+        {
+            return scope.Level switch
+            {
+                // Station scope: Users can see all teams in their station
+                ScopeLevel.Station => query.Where(t => t.StationId == scope.StationId),
+
+                // Department scope: Users can see all teams in their station (teams are station-level, not department-level)
+                ScopeLevel.Department => query.Where(t => t.StationId == scope.StationId),
+
+                // Team/Self scope: Users can only see teams where they are active members
+                ScopeLevel.Team => query.Where(t => t.TeamMembers.Any(tm =>
+                    tm.EmployeePayroll == scope.PayrollNo && tm.IsActive)),
+                ScopeLevel.Self => query.Where(t => t.TeamMembers.Any(tm =>
+                    tm.EmployeePayroll == scope.PayrollNo && tm.IsActive)),
+
+                // Organization scope sees all teams (handled in ApplyScope method)
                 _ => query
             };
         }

@@ -1,0 +1,408 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.EditTeamViewModel
+@{
+    ViewData["Title"] = $"Edit Team - {Model.TeamName}";
+
+    // Get current members
+    var currentMembers = ViewBag.CurrentMembers as List<dynamic> ?? new List<dynamic>();
+
+    // Get station name from ViewBag.Stations
+    var stations = ViewBag.Stations as IEnumerable<dynamic>;
+    var currentStation = stations?.FirstOrDefault(s => s.StationId == Model.StationId);
+    var stationName = currentStation?.StationName ?? "Unknown Station";
+
+    // Configure Vertical Tabs
+    var tabsConfig = new OSHManagement.Models.ViewModels.TabsConfig
+    {
+        TabsId = "editTeamTabs",
+        Type = OSHManagement.Models.ViewModels.TabsType.VerticalStyle1,
+        NavColumnClass = "col-md-3",
+        ContentColumnClass = "col-md-9",
+        WrapInCard = true,
+        CardTitle = $"Edit Team: {Model.TeamName}",
+        CardSubtitle = $"{Model.TeamType} | {stationName}",
+
+        Tabs = new List<OSHManagement.Models.ViewModels.TabConfig>
+        {
+            // ========== TAB 1: Basic Information ==========
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "basicInfo",
+                Title = "Basic Information",
+                Icon = "ri-information-line",
+                IsActive = true,
+                Content = @<text>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="TeamName" class="form-label"></label>
+                            <input asp-for="TeamName" class="form-control" required />
+                            <span asp-validation-for="TeamName" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="TeamType" class="form-label"></label>
+                            <input asp-for="TeamType" class="form-control" readonly />
+                            <div class="form-text">Team type cannot be changed after creation</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="StationId" class="form-label"></label>
+                            <select asp-for="StationId" class="form-select" disabled>
+                                @if (ViewBag.Stations != null)
+                                {
+                                    foreach (var station in (IEnumerable<dynamic>)ViewBag.Stations)
+                                    {
+                                        <option value="@station.StationId" selected="@(station.StationId == Model.StationId)">
+                                            @station.StationName
+                                        </option>
+                                    }
+                                }
+                            </select>
+                            <div class="form-text">Station cannot be changed after creation</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="TeamStatus" class="form-label"></label>
+                            <select asp-for="TeamStatus" class="form-select">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                                <option value="Suspended">Suspended</option>
+                            </select>
+                            <span asp-validation-for="TeamStatus" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="FormationDate" class="form-label"></label>
+                            <input asp-for="FormationDate" type="date" class="form-control" />
+                            <span asp-validation-for="FormationDate" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Created At</label>
+                            <input type="text" class="form-control" value="@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")" readonly />
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label asp-for="TeamDescription" class="form-label"></label>
+                            <textarea asp-for="TeamDescription" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="TeamDescription" class="text-danger"></span>
+                        </div>
+                    </div>
+                </text>
+            },
+
+            // ========== TAB 2: Team Configuration ==========
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "configuration",
+                Title = "Configuration",
+                Icon = "ri-settings-3-line",
+                Content = @<text>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="RequiredMemberCount" class="form-label"></label>
+                            <input asp-for="RequiredMemberCount" type="number" class="form-control" min="1" />
+                            <span asp-validation-for="RequiredMemberCount" class="text-danger"></span>
+                            <div class="form-text">Minimum members required for team validation</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="MaxMemberCount" class="form-label"></label>
+                            <input asp-for="MaxMemberCount" type="number" class="form-control" min="1" />
+                            <span asp-validation-for="MaxMemberCount" class="text-danger"></span>
+                            <div class="form-text">Maximum members allowed in team</div>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input asp-for="RequiresSectionRepresentation" class="form-check-input" type="checkbox" />
+                                <label asp-for="RequiresSectionRepresentation" class="form-check-label"></label>
+                            </div>
+                            <div class="form-text">Requires members from different sections</div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="alert alert-info border-0">
+                                <i class="ri-information-line me-2"></i>
+                                <strong>Current Status:</strong> @currentMembers.Count member(s) currently in team
+                                @if (Model.RequiredMemberCount.HasValue)
+                                {
+                                    <span>(Minimum: @Model.RequiredMemberCount)</span>
+                                }
+                                @if (Model.MaxMemberCount.HasValue)
+                                {
+                                    <span>(Maximum: @Model.MaxMemberCount)</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </text>
+            },
+
+            // ========== TAB 3: Team Members ==========
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "members",
+                Title = "Team Members",
+                Icon = "ri-team-line",
+                Content = @<text>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Current Members (@currentMembers.Count)</h6>
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                            <i class="ri-user-add-line me-1"></i>Add Member
+                        </button>
+                    </div>
+
+                    @if (currentMembers.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Role</th>
+                                        <th>Section</th>
+                                        <th>Appointed</th>
+                                        <th>Voting</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var member in currentMembers)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@member.EmployeeName</strong><br>
+                                                <small class="text-muted">@member.EmployeePayroll</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">@member.MemberRole</span>
+                                            </td>
+                                            <td>@(member.SectionId != null ? "Section assigned" : "—")</td>
+                                            <td>@((DateTime)member.AppointmentDate).ToString("dd/MM/yyyy")</td>
+                                            <td>
+                                                @if (member.IsVotingMember)
+                                                {
+                                                    <i class="ri-checkbox-circle-fill text-success"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="ri-close-circle-fill text-muted"></i>
+                                                }
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-light" onclick="editMember(@member.MemberId)">
+                                                    <i class="ri-edit-line"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-danger" onclick="removeMember(@member.MemberId)">
+                                                    <i class="ri-user-unfollow-line"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning border-0">
+                            <i class="ri-alert-line me-2"></i>
+                            No members in this team yet. Click "Add Member" to add team members.
+                        </div>
+                    }
+                </text>
+            },
+
+            // ========== TAB 4: Type-Specific Settings ==========
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "typeSettings",
+                Title = $"{Model.TeamType} Settings",
+                Icon = "ri-file-settings-line",
+                Content = @<text>
+                    <div class="alert alert-info border-0 mb-3">
+                        <i class="ri-information-line me-2"></i>
+                        <strong>Team Type:</strong> @Model.TeamType
+                    </div>
+
+                    @if (Model.TeamType == "OSH Committee" && ViewBag.OshCommitteeConfig != null)
+                    {
+                        var config = ViewBag.OshCommitteeConfig;
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <h6 class="fw-semibold">OSH Committee Configuration</h6>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Committee Trained</label>
+                                <div>@(config.IsCommitteeTrained ? "Yes" : "No")</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Training Date</label>
+                                <div>@(config.TrainingDate?.ToString("dd/MM/yyyy") ?? "—")</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Has Meeting Schedule</label>
+                                <div>@(config.HasMeetingSchedule ? "Yes" : "No")</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Inspection Frequency</label>
+                                <div>@(config.InspectionFrequency ?? "—")</div>
+                            </div>
+                        </div>
+                    }
+                    else if (Model.TeamType == "Risk Assessment" && ViewBag.RiskAssessmentConfig != null)
+                    {
+                        var config = ViewBag.RiskAssessmentConfig;
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <h6 class="fw-semibold">Risk Assessment Configuration</h6>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Assessment Frequency</label>
+                                <div>@(config.AssessmentFrequency ?? "—")</div>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Team Qualifications</label>
+                                <div>@(config.TeamQualifications ?? "—")</div>
+                            </div>
+                        </div>
+                    }
+                    else if (Model.TeamType == "Investigation" && ViewBag.IncidentInvestigationConfig != null)
+                    {
+                        var config = ViewBag.IncidentInvestigationConfig;
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <h6 class="fw-semibold">Investigation Team Configuration</h6>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Response Time</label>
+                                <div>@config.ResponseTimeHours hours</div>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Investigation Scope</label>
+                                <div>@(config.InvestigationScope ?? "—")</div>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Team Expertise</label>
+                                <div>@(config.TeamExpertise ?? "—")</div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-secondary border-0">
+                            <i class="ri-file-list-line me-2"></i>
+                            No additional configuration for this team type.
+                        </div>
+                    }
+
+                    <div class="alert alert-warning border-0 mt-3">
+                        <i class="ri-alert-line me-2"></i>
+                        Type-specific settings can only be changed when creating a new team. To modify these settings, contact system administrator.
+                    </div>
+                </text>
+            },
+
+            // ========== TAB 5: Activity Log ==========
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "activityLog",
+                Title = "Activity Log",
+                Icon = "ri-history-line",
+                Content = @<text>
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <h6 class="fw-semibold">Team History</h6>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card border">
+                                <div class="card-body">
+                                    <h6 class="card-title text-muted fs-12">Created</h6>
+                                    <p class="mb-0">@Model.CreatedAt.ToString("dd MMMM yyyy, HH:mm")</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card border">
+                                <div class="card-body">
+                                    <h6 class="card-title text-muted fs-12">Last Updated</h6>
+                                    <p class="mb-0">@(Model.UpdatedAt?.ToString("dd MMMM yyyy, HH:mm") ?? "Never")</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="text-center py-5">
+                                <i class="ri-history-line fs-1 text-muted mb-3 d-block"></i>
+                                <p class="text-muted">Detailed activity logging will be implemented soon.</p>
+                            </div>
+                        </div>
+                    </div>
+                </text>
+            }
+        }
+    };
+
+    var tabs = tabsConfig.BuildTabs();
+}
+
+<!-- Form wraps entire tabs component -->
+<form id="editTeamForm" method="post" asp-action="Edit" asp-route-id="@Model.TeamId">
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.TeamId)
+    @Html.HiddenFor(m => m.TeamType)
+    @Html.HiddenFor(m => m.StationId)
+    @Html.HiddenFor(m => m.CreatedAt)
+
+    <!-- Render Tabs -->
+    <div class="row">
+        <div class="col-xl-12">
+            <partial name="~/Views/Shared/Components/Tabs/VerticalTabs.cshtml" model="tabs" />
+        </div>
+    </div>
+
+    <!-- Form Actions (outside tabs) -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card custom-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="ri-arrow-left-line me-1"></i> Back to List
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ri-save-line me-1"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Add Member Modal (Placeholder) -->
+<div class="modal fade" id="addMemberModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Team Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Member management functionality will be implemented in the next phase.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        function editMember(memberId) {
+            alert('Edit member functionality will be implemented in the next phase.');
+        }
+
+        function removeMember(memberId) {
+            if (confirm('Are you sure you want to remove this member from the team?')) {
+                // TODO: Implement member removal
+                alert('Member removal functionality will be implemented in the next phase.');
+            }
+        }
+    </script>
+}

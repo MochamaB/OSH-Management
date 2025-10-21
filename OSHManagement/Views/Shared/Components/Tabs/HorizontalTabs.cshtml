@@ -1,0 +1,25 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.TabsViewModel
+
+@if (Model.WrapInCard)
+{
+    <div class="card custom-card">
+        @if (!string.IsNullOrEmpty(Model.CardTitle))
+        {
+            <div class="card-header">
+                <div class="card-title">@Model.CardTitle</div>
+                @if (!string.IsNullOrEmpty(Model.CardSubtitle))
+                {
+                    <div class="card-subtitle text-muted">@Model.CardSubtitle</div>
+                }
+            </div>
+        }
+        <div class="card-body">
+            <partial name="~/Views/Shared/Components/Tabs/_HorizontalTabsContent.cshtml" model="Model" />
+        </div>
+    </div>
+}
+else
+{
+    <partial name="~/Views/Shared/Components/Tabs/_HorizontalTabsContent.cshtml" model="Model" />
+}

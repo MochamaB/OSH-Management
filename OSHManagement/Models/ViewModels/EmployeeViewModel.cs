@@ -64,6 +64,19 @@ namespace OSHManagement.Models.ViewModels
         [Display(Name = "Supervisor Payroll")]
         public string? SupervisorPayroll { get; set; }
 
+        // Password Management (Edit only)
+        [Display(Name = "New Password")]
+        [DataType(DataType.Password)]
+        public string? NewPassword { get; set; }
+
+        [Display(Name = "Confirm New Password")]
+        [DataType(DataType.Password)]
+        [Compare("NewPassword", ErrorMessage = "The password and confirmation password do not match.")]
+        public string? ConfirmPassword { get; set; }
+
+        // Flag to indicate if user wants to update password
+        public bool UpdatePassword { get; set; }
+
         // Read-only properties for display
         public string StationName { get; set; } = string.Empty;
         public string? DepartmentName { get; set; }

@@ -75,6 +75,40 @@ namespace OSHManagement.Controllers
             return View(categories);
         }
 
+        // GET: Organization/CategoryDetails/5
+        public async Task<IActionResult> CategoryDetails(int id)
+        {
+            var category = await _context.OrgCategories
+                .Include(c => c.Stations)
+                .FirstOrDefaultAsync(c => c.OrgCategoryId == id);
+
+            if (category == null)
+            {
+                TempData["Error"] = "Category not found.";
+                return RedirectToAction(nameof(Categories));
+            }
+
+            var model = new OrgCategoryViewModel
+            {
+                OrgCategoryId = category.OrgCategoryId,
+                CategoryName = category.CategoryName,
+                Description = category.Description ?? "",
+                IsActive = category.IsActive,
+                StationCount = category.Stations.Count,
+                CreatedAt = category.CreatedAt,
+                UpdatedAt = category.UpdatedAt
+            };
+
+            // Calculate basic statistics
+            ViewBag.TotalDepartments = _context.Departments
+                .Count(d => category.Stations.Select(s => s.StationId).Contains(d.StationId));
+
+            ViewBag.TotalSections = _context.Sections
+                .Count(s => category.Stations.Select(st => st.StationId).Contains(s.StationId));
+
+            return View(model);
+        }
+
         // GET: Organization/CreateCategory
         public IActionResult CreateCategory()
         {

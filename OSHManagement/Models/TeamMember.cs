@@ -13,9 +13,11 @@ namespace OSHManagement.Models
         [MaxLength(20)]
         public string EmployeePayroll { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(50)]
-        public string MemberRole { get; set; } = string.Empty;
+        /// <summary>
+        /// Foreign key to TeamRoleDefinition
+        /// Defines what role this member holds in the team
+        /// </summary>
+        public int? TeamRoleDefinitionId { get; set; }
 
         public int? SectionId { get; set; }
 
@@ -36,6 +38,8 @@ namespace OSHManagement.Models
 
         // Navigation properties
         public Team Team { get; set; } = null!;
+        public Employee Employee { get; set; } = null!;
+        public TeamRoleDefinition? TeamRoleDefinition { get; set; }
         public Section? Section { get; set; }
         public ICollection<CommitteeIssue> RaisedIssues { get; set; } = new List<CommitteeIssue>();
         public ICollection<CommitteeRecommendation> Recommendations { get; set; } = new List<CommitteeRecommendation>();

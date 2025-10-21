@@ -1,0 +1,341 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.OrgCategoryViewModel
+
+@{
+    ViewData["Title"] = $"{Model.CategoryName} - Details";
+
+    // Configure Detail Card
+    var detailCardConfig = new OSHManagement.Models.ViewModels.DetailCardConfig
+    {
+        CardId = "categoryDetailCard",
+        Icon = "ri-folder-line",
+        IconColor = "primary",
+        Title = Model.CategoryName,
+        Subtitle = "Organization Category",
+        Category = Model.IsActive ? "Active Category" : "Inactive Category",
+        StatusBadge = new OSHManagement.Models.ViewModels.DetailBadge
+        {
+            Text = Model.StatusText,
+            Color = Model.IsActive ? "success" : "danger",
+            Icon = Model.IsActive ? "ri-checkbox-circle-line" : "ri-close-circle-line"
+        },
+        Fields = new List<OSHManagement.Models.ViewModels.DetailField>
+        {
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Total Stations",
+                Value = Model.StationCount.ToString(),
+                Icon = "ri-building-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Total Departments",
+                Value = ViewBag.TotalDepartments.ToString(),
+                Icon = "ri-community-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Total Sections",
+                Value = ViewBag.TotalSections.ToString(),
+                Icon = "ri-organization-chart"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Created",
+                Value = Model.FormattedCreatedDate,
+                Icon = "ri-calendar-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Last Updated",
+                Value = Model.FormattedUpdatedDate,
+                Icon = "ri-history-line"
+            }
+        },
+        Actions = new List<OSHManagement.Models.ViewModels.DetailCardAction>
+        {
+            new OSHManagement.Models.ViewModels.DetailCardAction
+            {
+                Text = "Edit",
+                Icon = "ri-edit-line",
+                Url = $"/Organization/EditCategory/{Model.OrgCategoryId}",
+                ButtonStyle = "primary",
+                ButtonSize = ""
+            },
+            new OSHManagement.Models.ViewModels.DetailCardAction
+            {
+                Text = "Actions",
+                Icon = "ri-more-2-fill",
+                ButtonStyle = "light",
+                ButtonSize = "",
+                IsDropdown = true,
+                DropdownItems = new List<OSHManagement.Models.ViewModels.DropdownItem>
+                {
+                    new OSHManagement.Models.ViewModels.DropdownItem
+                    {
+                        Text = "Add Station",
+                        Icon = "ri-add-line",
+                        Url = $"/Organization/CreateStation?categoryId={Model.OrgCategoryId}"
+                    },
+                    new OSHManagement.Models.ViewModels.DropdownItem
+                    {
+                        Text = "Export Data",
+                        Icon = "ri-download-line",
+                        Url = $"/Organization/ExportCategory/{Model.OrgCategoryId}"
+                    },
+                    new OSHManagement.Models.ViewModels.DropdownItem { IsDivider = true },
+                    new OSHManagement.Models.ViewModels.DropdownItem
+                    {
+                        Text = Model.IsActive ? "Deactivate" : "Activate",
+                        Icon = Model.IsActive ? "ri-close-circle-line" : "ri-checkbox-circle-line",
+                        OnClick = $"toggleCategoryStatus({Model.OrgCategoryId})"
+                    },
+                    new OSHManagement.Models.ViewModels.DropdownItem { IsDivider = true },
+                    new OSHManagement.Models.ViewModels.DropdownItem
+                    {
+                        Text = "Delete Category",
+                        Icon = "ri-delete-bin-line",
+                        OnClick = $"confirmDelete({Model.OrgCategoryId}, '{Model.CategoryName}')"
+                    }
+                }
+            },
+            new OSHManagement.Models.ViewModels.DetailCardAction
+            {
+                Text = "Back",
+                Icon = "ri-arrow-left-line",
+                Url = "/Organization/Categories",
+                ButtonStyle = "light",
+                ButtonSize = ""
+            }
+        }
+    };
+
+    var detailCard = detailCardConfig.BuildDetailCard();
+
+    // Configure Horizontal Tabs
+    var tabsConfig = new OSHManagement.Models.ViewModels.TabsConfig
+    {
+        TabsId = "categoryDetailsTabs",
+        Type = OSHManagement.Models.ViewModels.TabsType.HorizontalStyle8,
+        WrapInCard = true,
+        CardTitle = "",
+        Tabs = new List<OSHManagement.Models.ViewModels.TabConfig>
+        {
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "overview",
+                Title = "Overview",
+                Icon = "ri-information-line",
+                IsActive = true,
+                Content = @<div class="p-3">
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <h6 class="fw-semibold mb-3">Category Information</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-borderless mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <td class="text-muted" style="width: 40%;">Category ID</td>
+                                                <td class="fw-medium">@Model.OrgCategoryId</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Category Name</td>
+                                                <td class="fw-medium">@Model.CategoryName</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Status</td>
+                                                <td>
+                                                    <span class="badge bg-@(Model.IsActive ? "success" : "danger")">
+                                                        @Model.StatusText
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-muted">Created Date</td>
+                                                <td class="fw-medium">@Model.CreatedAt.ToString("dd MMMM yyyy, hh:mm tt")</td>
+                                            </tr>
+                                            @if (Model.UpdatedAt.HasValue)
+                                            {
+                                                <tr>
+                                                    <td class="text-muted">Last Updated</td>
+                                                    <td class="fw-medium">@Model.UpdatedAt.Value.ToString("dd MMMM yyyy, hh:mm tt")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <h6 class="fw-semibold mb-3">Description</h6>
+                                <p class="text-muted">
+                                    @(string.IsNullOrEmpty(Model.Description) ? "No description provided." : Model.Description)
+                                </p>
+
+                                <h6 class="fw-semibold mb-3 mt-4">Statistics</h6>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <div class="card border">
+                                            <div class="card-body text-center p-3">
+                                                <h4 class="mb-1 text-primary">@Model.StationCount</h4>
+                                                <p class="text-muted mb-0 fs-12">Stations</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="card border">
+                                            <div class="card-body text-center p-3">
+                                                <h4 class="mb-1 text-success">@ViewBag.TotalDepartments</h4>
+                                                <p class="text-muted mb-0 fs-12">Departments</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="card border">
+                                            <div class="card-body text-center p-3">
+                                                <h4 class="mb-1 text-info">@ViewBag.TotalSections</h4>
+                                                <p class="text-muted mb-0 fs-12">Sections</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="card border">
+                                            <div class="card-body text-center p-3">
+                                                <h4 class="mb-1 text-secondary">@(ViewBag.TotalDepartments + ViewBag.TotalSections)</h4>
+                                                <p class="text-muted mb-0 fs-12">Total Units</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+            },
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "stations",
+                Title = "Stations",
+                Icon = "ri-building-line",
+                Content = @<text>
+                    <div class="p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Stations under @Model.CategoryName (@Model.StationCount)</h6>
+                            <a href="/Organization/Stations" class="btn btn-sm btn-primary">
+                                <i class="ri-building-line me-1"></i>View All Stations
+                            </a>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="ri-information-line me-2"></i>
+                            This category contains <strong>@Model.StationCount stations</strong>. Station management will be implemented in the Stations module.
+                        </div>
+
+                        <div class="text-center py-4">
+                            <i class="ri-building-line fs-1 text-muted mb-3 d-block"></i>
+                            <p class="text-muted mb-3">Stations for this category will be displayed here.</p>
+                            <a href="/Organization/Stations" class="btn btn-primary btn-sm">
+                                <i class="ri-arrow-right-line me-1"></i>Go to Stations
+                            </a>
+                        </div>
+                    </div>
+                </text>
+            },
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "departments",
+                Title = "Departments",
+                Icon = "ri-community-line",
+                Content = @<text>
+                    <div class="p-3">
+                        <h6 class="mb-3">All Departments (@ViewBag.TotalDepartments)</h6>
+                        <p class="text-muted">Departments are organized under stations. View the Stations tab to manage departments.</p>
+
+                        <div class="alert alert-info">
+                            <i class="ri-information-line me-2"></i>
+                            This category contains <strong>@ViewBag.TotalDepartments departments</strong> across <strong>@Model.StationCount stations</strong>.
+                        </div>
+                    </div>
+                </text>
+            },
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "sections",
+                Title = "Sections",
+                Icon = "ri-organization-chart",
+                Content = @<text>
+                    <div class="p-3">
+                        <h6 class="mb-3">All Sections (@ViewBag.TotalSections)</h6>
+                        <p class="text-muted">Sections are organized under stations. View the Stations tab to manage sections.</p>
+
+                        <div class="alert alert-info">
+                            <i class="ri-information-line me-2"></i>
+                            This category contains <strong>@ViewBag.TotalSections sections</strong> across <strong>@Model.StationCount stations</strong>.
+                        </div>
+                    </div>
+                </text>
+            },
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "activity",
+                Title = "Activity Log",
+                Icon = "ri-history-line",
+                Content = @<text>
+                    <div class="p-3">
+                        <h6 class="mb-3">Recent Activity</h6>
+                        <div class="text-center py-5">
+                            <i class="ri-history-line fs-1 text-muted mb-3"></i>
+                            <p class="text-muted">Activity logging will be implemented soon.</p>
+                        </div>
+                    </div>
+                </text>
+            }
+        }
+    };
+
+    var tabs = tabsConfig.BuildTabs();
+}
+
+<!-- Detail Card -->
+<div class="row">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/Cards/DetailCard.cshtml" model="detailCard" />
+    </div>
+</div>
+
+<!-- Horizontal Tabs -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/Tabs/HorizontalTabs.cshtml" model="tabs" />
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleCategoryStatus(categoryId) {
+            // TODO: Implement status toggle
+            alert('Status toggle functionality will be implemented soon');
+        }
+
+        function confirmDelete(categoryId, categoryName) {
+            if (confirm(`Are you sure you want to delete the category "${categoryName}"?`)) {
+                // Create a form and submit
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/Organization/DeleteCategory/${categoryId}`;
+
+                // Add anti-forgery token
+                const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (token) {
+                    const tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = '__RequestVerificationToken';
+                    tokenInput.value = token.value;
+                    form.appendChild(tokenInput);
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
+}

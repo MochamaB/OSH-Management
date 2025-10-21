@@ -13,6 +13,8 @@
       data-show-progress-bar="@Model.ShowProgressBar.ToString().ToLower()"
       data-total-steps="@Model.TotalSteps">
 
+    @Html.AntiForgeryToken()
+
     @* Progress Bar (Optional) *@
     @if (Model.ShowProgressBar)
     {

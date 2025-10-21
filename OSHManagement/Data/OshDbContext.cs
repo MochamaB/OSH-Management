@@ -29,6 +29,7 @@ namespace OSHManagement.Data
         // Teams
         public DbSet<Team> Teams { get; set; }
         public DbSet<TeamMember> TeamMembers { get; set; }
+        public DbSet<TeamRoleDefinition> TeamRoleDefinitions { get; set; }
         public DbSet<OshCommitteeConfig> OshCommitteeConfigs { get; set; }
         public DbSet<RiskAssessmentConfig> RiskAssessmentConfigs { get; set; }
         public DbSet<IncidentInvestigationConfig> IncidentInvestigationConfigs { get; set; }
@@ -104,6 +105,25 @@ namespace OSHManagement.Data
                     .WithMany(p => p.RolePermissions)
                     .HasForeignKey(e => e.PermissionId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // TeamMember configuration
+            modelBuilder.Entity<TeamMember>(entity =>
+            {
+                entity.HasKey(e => e.MemberId);
+                
+                // Configure Employee relationship using PayrollNo (string FK)
+                entity.HasOne(tm => tm.Employee)
+                    .WithMany()
+                    .HasForeignKey(tm => tm.EmployeePayroll)
+                    .HasPrincipalKey(e => e.PayrollNo)
+                    .OnDelete(DeleteBehavior.Restrict);
+                
+                // Configure TeamRoleDefinition relationship (nullable)
+                entity.HasOne(tm => tm.TeamRoleDefinition)
+                    .WithMany(trd => trd.TeamMembers)
+                    .HasForeignKey(tm => tm.TeamRoleDefinitionId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
         }
     }
