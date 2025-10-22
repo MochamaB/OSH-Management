@@ -1,0 +1,515 @@
+@model List<OSHManagement.Models.Notification>
+@{
+    ViewData["Title"] = "In-App Notifications";
+    ViewData["PageTitle"] = "In-App Notifications";
+    ViewData["Breadcrumbs"] = new List<(string Name, string? Url)>
+    {
+        ("Notifications", null),
+        ("In-App", null)
+    };
+}
+
+<style>
+    .notifications-wrapper {
+        height: calc(100vh - 200px);
+        min-height: 600px;
+    }
+    .notifications-info {
+        width: 360px;
+        background: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .notifications-info .notification-list-scroll {
+        max-height: calc(100vh - 350px);
+        overflow-y: auto;
+    }
+    .notification-content {
+        flex: 1;
+        background: #fff;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+    }
+    .notification-content-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2rem;
+    }
+    .notification-item {
+        cursor: pointer;
+        transition: all 0.2s;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .notification-item:hover {
+        background-color: #f8f9fa;
+    }
+    .notification-item.active {
+        background-color: #e8f4ff;
+        border-left: 3px solid #6366f1;
+    }
+    .notification-item.unread {
+        background-color: #fffbf0;
+    }
+    .notification-empty-state {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        text-align: center;
+        color: #6c757d;
+    }
+</style>
+
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex gap-2 notifications-wrapper">
+            <!-- Left Panel - Notification List -->
+            <div class="notifications-info border">
+                <!-- Header -->
+                <div class="d-flex align-items-center justify-content-between w-100 p-3 border-bottom">
+                    <div>
+                        <h5 class="fw-semibold mb-0">Notifications</h5>
+                    </div>
+                    <div class="dropdown ms-2">
+                        <button aria-label="button" class="btn btn-icon btn-light btn-wave waves-light btn-sm" type="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="ti ti-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="@Url.Action("Dashboard", "Notifications")"><i class="ri-dashboard-line me-2"></i>Dashboard</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Index", "Notifications")"><i class="ri-list-check me-2"></i>All Notifications</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="mark-all-read-link"><i class="ri-check-double-line me-2"></i>Mark All as Read</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Filter Tabs by Recipient Type -->
+                <ul class="nav nav-style-1 nav-pills nav-justified p-2 border-bottom d-flex" id="recipientTypeTabs" role="tablist">
+                    <li class="nav-item me-0" role="presentation">
+                        <button class="nav-link active" id="all-tab" data-bs-toggle="tab"
+                                data-bs-target="#all-tab-pane" type="button" role="tab"
+                                data-recipient-type="All">
+                            All<span class="badge bg-secondary ms-1 rounded-pill">@Model.Count</span>
+                        </button>
+                    </li>
+                    <li class="nav-item me-0" role="presentation">
+                        <button class="nav-link" id="employee-tab" data-bs-toggle="tab"
+                                data-bs-target="#employee-tab-pane" type="button" role="tab"
+                                data-recipient-type="Employee">
+                            Direct
+                        </button>
+                    </li>
+                    <li class="nav-item me-0" role="presentation">
+                        <button class="nav-link" id="role-tab" data-bs-toggle="tab"
+                                data-bs-target="#role-tab-pane" type="button" role="tab"
+                                data-recipient-type="Role">
+                            Role
+                        </button>
+                    </li>
+                    <li class="nav-item me-0" role="presentation">
+                        <button class="nav-link" id="station-tab" data-bs-toggle="tab"
+                                data-bs-target="#station-tab-pane" type="button" role="tab"
+                                data-recipient-type="Station">
+                            Station
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="team-tab" data-bs-toggle="tab"
+                                data-bs-target="#team-tab-pane" type="button" role="tab"
+                                data-recipient-type="Team">
+                            Team
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Search Box -->
+                <div class="p-3 border-bottom border-block-end-dashed">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="notification-search" placeholder="Search notifications..." aria-describedby="button-addon2">
+                        <button aria-label="button" class="btn btn-primary" type="button" id="button-addon2"><i class="ri-search-line"></i></button>
+                    </div>
+                </div>
+
+                <!-- Notification List -->
+                <div class="notification-list-scroll" id="notification-list-container">
+                    <ul class="list-unstyled mb-0 mt-2" id="notification-list">
+                        @foreach (var notification in Model)
+                        {
+                            var typeClass = notification.NotificationType switch
+                            {
+                                "Info" => "primary",
+                                "Success" => "success",
+                                "Warning" => "warning",
+                                "Error" => "danger",
+                                "ActionRequired" => "purple",
+                                _ => "secondary"
+                            };
+                            var isUnread = !notification.IsRead;
+
+                            <li class="notification-item @(isUnread ? "unread" : "") px-3 py-2" 
+                                data-notification-id="@notification.NotificationId"
+                                data-recipient-type="@notification.RecipientType">
+                                <div class="d-flex align-items-top">
+                                    <div class="me-2 lh-1">
+                                        <span class="avatar avatar-sm bg-@typeClass-transparent avatar-rounded">
+                                            <i class="@(notification.NotificationType switch
+                                            {
+                                                "Info" => "ri-information-line",
+                                                "Success" => "ri-checkbox-circle-line",
+                                                "Warning" => "ri-alert-line",
+                                                "Error" => "ri-close-circle-line",
+                                                "ActionRequired" => "ri-error-warning-line",
+                                                _ => "ri-notification-line"
+                                            }) fs-16"></i>
+                                        </span>
+                                    </div>
+                                    <div class="flex-fill">
+                                        <div class="d-flex justify-content-between align-items-start mb-1">
+                                            <p class="mb-0 fw-medium @(isUnread ? "text-primary" : "")">
+                                                @if (isUnread)
+                                                {
+                                                    <i class="ri-record-circle-fill text-warning fs-8 me-1"></i>
+                                                }
+                                                @notification.Title
+                                            </p>
+                                            <span class="float-end text-muted fw-normal fs-11">
+                                                @notification.CreatedAt.ToString("h:mm tt")
+                                            </span>
+                                        </div>
+                                        <p class="fs-12 mb-1 text-muted">
+                                            @if (notification.Message.Length > 60)
+                                            {
+                                                @notification.Message.Substring(0, 60)<text>...</text>
+                                            }
+                                            else
+                                            {
+                                                @notification.Message
+                                            }
+                                        </p>
+                                        <div class="d-flex gap-1 align-items-center">
+                                            <span class="badge bg-@typeClass-transparent fs-10">@notification.NotificationType</span>
+                                            <span class="badge bg-light text-dark fs-10">@notification.Category</span>
+                                            @if (!string.IsNullOrEmpty(notification.Priority))
+                                            {
+                                                var priorityClass = notification.Priority switch
+                                                {
+                                                    "Urgent" => "danger",
+                                                    "High" => "warning",
+                                                    "Normal" => "primary",
+                                                    "Low" => "secondary",
+                                                    _ => "secondary"
+                                                };
+                                                <span class="badge bg-@priorityClass fs-10">@notification.Priority</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+
+                    @if (!Model.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="ri-notification-off-line fs-40 text-muted mb-3 d-block"></i>
+                            <p class="text-muted">No notifications</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Right Panel - Notification Detail -->
+            <div class="notification-content">
+                <div id="notification-detail-panel" class="notification-empty-state">
+                    <div>
+                        <i class="ri-notification-3-line fs-60 text-muted mb-3 d-block"></i>
+                        <h5 class="text-muted">Select a notification to view details</h5>
+                        <p class="text-muted fs-13">Click on any notification from the list to see full details</p>
+                    </div>
+                </div>
+
+                <div id="notification-detail-content" class="d-none" style="display: flex; flex-direction: column; height: 100%;">
+                    <!-- Header -->
+                    <div class="border-bottom p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <span id="detail-type-icon" class="avatar avatar-md bg-primary-transparent avatar-rounded">
+                                    <i class="ri-notification-line fs-18"></i>
+                                </span>
+                                <div>
+                                    <h6 id="detail-title" class="mb-0 fw-semibold"></h6>
+                                    <small id="detail-meta" class="text-muted"></small>
+                                </div>
+                            </div>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-success-light" id="mark-as-read-btn" title="Mark as Read">
+                                    <i class="ri-check-line"></i>
+                                </button>
+                                <button type="button" class="btn btn-danger-light" id="delete-notification-btn" title="Delete">
+                                    <i class="ri-delete-bin-line"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="notification-content-body">
+                        <div class="mb-4">
+                            <div class="d-flex gap-2 mb-3">
+                                <span id="detail-type-badge" class="badge bg-primary-transparent"></span>
+                                <span id="detail-category-badge" class="badge bg-light text-dark"></span>
+                                <span id="detail-priority-badge" class="badge bg-primary"></span>
+                            </div>
+
+                            <div class="alert alert-light border mb-4">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="fw-semibold"><i class="ri-user-line me-1"></i>Recipient</span>
+                                    <span id="detail-recipient" class="text-muted"></span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="fw-semibold"><i class="ri-calendar-line me-1"></i>Sent</span>
+                                    <span id="detail-created" class="text-muted"></span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="fw-semibold"><i class="ri-checkbox-circle-line me-1"></i>Status</span>
+                                    <span id="detail-status"></span>
+                                </div>
+                            </div>
+
+                            <h6 class="fw-semibold mb-2">Message</h6>
+                            <div id="detail-message" class="p-3 bg-light rounded"></div>
+
+                            <div id="detail-action-url" class="mt-4 d-none">
+                                <a href="#" id="action-url-link" class="btn btn-primary">
+                                    <i class="ri-external-link-line me-1"></i>View Related Item
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            let currentNotificationId = null;
+            let allNotifications = @Html.Raw(Json.Serialize(Model));
+
+            // Notification item click handler
+            $('.notification-item').on('click', function() {
+                const notificationId = $(this).data('notification-id');
+                loadNotificationDetail(notificationId);
+
+                // Update active state
+                $('.notification-item').removeClass('active');
+                $(this).addClass('active');
+            });
+
+            // Load notification detail
+            function loadNotificationDetail(notificationId) {
+                currentNotificationId = notificationId;
+                const notification = allNotifications.find(n => n.notificationId === notificationId);
+                
+                if (!notification) return;
+
+                // Hide empty state, show content
+                $('#notification-detail-panel').addClass('d-none');
+                $('#notification-detail-content').removeClass('d-none');
+
+                // Get type info
+                const typeInfo = getTypeInfo(notification.notificationType);
+                const priorityInfo = getPriorityInfo(notification.priority);
+
+                // Update header
+                $('#detail-type-icon').removeClass().addClass('avatar avatar-md avatar-rounded ' + typeInfo.bgClass);
+                $('#detail-type-icon i').removeClass().addClass(typeInfo.icon + ' fs-18');
+                $('#detail-title').text(notification.title);
+                $('#detail-meta').text(notification.category + ' • ' + new Date(notification.createdAt).toLocaleString());
+
+                // Update badges
+                $('#detail-type-badge').removeClass().addClass('badge ' + typeInfo.badgeClass).text(notification.notificationType);
+                $('#detail-category-badge').text(notification.category || 'General');
+                $('#detail-priority-badge').removeClass().addClass('badge ' + priorityInfo.badgeClass).text(notification.priority || 'Normal');
+
+                // Update info
+                $('#detail-recipient').html(`<span class="badge bg-info-transparent">${notification.recipientType}</span>`);
+                $('#detail-created').text(new Date(notification.createdAt).toLocaleString());
+                
+                if (notification.isRead) {
+                    const readDate = notification.readAt ? new Date(notification.readAt).toLocaleString() : '';
+                    $('#detail-status').html(`<span class="badge bg-success-transparent"><i class="ri-check-line me-1"></i>Read ${readDate}</span>`);
+                    $('#mark-as-read-btn').prop('disabled', true).addClass('disabled');
+                } else {
+                    $('#detail-status').html(`<span class="badge bg-warning-transparent"><i class="ri-time-line me-1"></i>Unread</span>`);
+                    $('#mark-as-read-btn').prop('disabled', false).removeClass('disabled');
+                }
+
+                // Update message
+                $('#detail-message').text(notification.message);
+
+                // Action URL
+                if (notification.actionUrl) {
+                    $('#detail-action-url').removeClass('d-none');
+                    $('#action-url-link').attr('href', notification.actionUrl);
+                } else {
+                    $('#detail-action-url').addClass('d-none');
+                }
+            }
+
+            // Tab filtering
+            $('button[data-bs-toggle="tab"]').on('click', function() {
+                const recipientType = $(this).data('recipient-type');
+                filterNotifications(recipientType);
+            });
+
+            // Filter notifications by recipient type
+            function filterNotifications(recipientType) {
+                if (recipientType === 'All') {
+                    $('.notification-item').show();
+                } else {
+                    $('.notification-item').each(function() {
+                        const itemType = $(this).data('recipient-type');
+                        if (itemType === recipientType) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+                }
+            }
+
+            // Search functionality
+            $('#notification-search').on('keyup', function() {
+                const searchTerm = $(this).val().toLowerCase();
+                
+                $('.notification-item').each(function() {
+                    const text = $(this).text().toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            });
+
+            // Mark as read
+            $('#mark-as-read-btn').on('click', function() {
+                if (!currentNotificationId) return;
+                
+                const btn = $(this);
+                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+                
+                $.ajax({
+                    url: '@Url.Action("MarkAsRead", "Notifications")',
+                    type: 'POST',
+                    data: { id: currentNotificationId },
+                    success: function(response) {
+                        if (response.success) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success('Notification marked as read');
+                            }
+                            location.reload();
+                        } else {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(response.message);
+                            }
+                            btn.prop('disabled', false).html('<i class="ri-check-line"></i>');
+                        }
+                    },
+                    error: function() {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Error marking notification as read');
+                        }
+                        btn.prop('disabled', false).html('<i class="ri-check-line"></i>');
+                    }
+                });
+            });
+
+            // Delete notification
+            $('#delete-notification-btn').on('click', function() {
+                if (!currentNotificationId) return;
+                
+                if (confirm('Are you sure you want to delete this notification?')) {
+                    const btn = $(this);
+                    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+                    
+                    $.ajax({
+                        url: '@Url.Action("Delete", "Notifications")',
+                        type: 'POST',
+                        data: { id: currentNotificationId },
+                        success: function(response) {
+                            if (response.success) {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.success('Notification deleted');
+                                }
+                                location.reload();
+                            } else {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.error(response.message);
+                                }
+                                btn.prop('disabled', false).html('<i class="ri-delete-bin-line"></i>');
+                            }
+                        },
+                        error: function() {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error('Error deleting notification');
+                            }
+                            btn.prop('disabled', false).html('<i class="ri-delete-bin-line"></i>');
+                        }
+                    });
+                }
+            });
+
+            // Mark all as read
+            $('#mark-all-read-link').on('click', function(e) {
+                e.preventDefault();
+                
+                if (confirm('Mark all notifications as read?')) {
+                    $.ajax({
+                        url: '@Url.Action("MarkAllAsRead", "Notifications")',
+                        type: 'POST',
+                        success: function(response) {
+                            if (response.success) {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.success(response.message);
+                                }
+                                location.reload();
+                            } else {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.error(response.message);
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Helper functions
+            function getTypeInfo(type) {
+                const types = {
+                    'Info': { icon: 'ri-information-line', bgClass: 'bg-primary-transparent', badgeClass: 'bg-primary-transparent' },
+                    'Success': { icon: 'ri-checkbox-circle-line', bgClass: 'bg-success-transparent', badgeClass: 'bg-success-transparent' },
+                    'Warning': { icon: 'ri-alert-line', bgClass: 'bg-warning-transparent', badgeClass: 'bg-warning-transparent' },
+                    'Error': { icon: 'ri-close-circle-line', bgClass: 'bg-danger-transparent', badgeClass: 'bg-danger-transparent' },
+                    'ActionRequired': { icon: 'ri-error-warning-line', bgClass: 'bg-purple-transparent', badgeClass: 'bg-purple-transparent' }
+                };
+                return types[type] || { icon: 'ri-notification-line', bgClass: 'bg-secondary-transparent', badgeClass: 'bg-secondary-transparent' };
+            }
+
+            function getPriorityInfo(priority) {
+                const priorities = {
+                    'Urgent': { badgeClass: 'bg-danger' },
+                    'High': { badgeClass: 'bg-warning' },
+                    'Normal': { badgeClass: 'bg-primary' },
+                    'Low': { badgeClass: 'bg-secondary' }
+                };
+                return priorities[priority] || { badgeClass: 'bg-secondary' };
+            }
+        });
+    </script>
+}

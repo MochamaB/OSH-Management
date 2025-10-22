@@ -1,0 +1,503 @@
+@{
+    ViewData["Title"] = "Notification Preferences";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .preference-card {
+            transition: all 0.3s;
+        }
+
+        .channel-option {
+            padding: 1rem;
+            border: 2px solid var(--default-border);
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+
+        .channel-option:hover {
+            border-color: var(--primary);
+            background-color: rgba(var(--primary-rgb), 0.05);
+        }
+
+        .channel-option.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .channel-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .channel-inapp { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+        .channel-email { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .channel-sms { background: rgba(251, 146, 60, 0.1); color: #fb923c; }
+        .channel-whatsapp { background: rgba(37, 211, 102, 0.1); color: #25d366; }
+
+        .priority-option {
+            cursor: pointer;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--default-border);
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .priority-option:hover {
+            border-color: var(--primary);
+            background-color: rgba(var(--primary-rgb), 0.05);
+        }
+
+        .priority-option.active {
+            border-color: var(--primary);
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+        }
+
+        .custom-switch {
+            width: 48px;
+            height: 24px;
+        }
+
+        .custom-switch input:checked ~ .slider {
+            background-color: var(--primary);
+        }
+
+        .custom-switch .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .custom-switch .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .custom-switch input:checked ~ .slider:before {
+            transform: translateX(24px);
+        }
+
+        .time-input {
+            width: 120px;
+        }
+    </style>
+}
+
+
+
+<div class="row">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">
+                    Customize how you receive notifications
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Category Tabs -->
+                <ul class="nav nav-tabs mb-4" id="categoryTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="employee-tab" data-bs-toggle="tab"
+                                data-bs-target="#employee-pane" type="button" role="tab" data-category="Employee">
+                            <i class="ri-user-line me-2"></i>Employee
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="team-tab" data-bs-toggle="tab"
+                                data-bs-target="#team-pane" type="button" role="tab" data-category="Team">
+                            <i class="ri-team-line me-2"></i>Team
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="incident-tab" data-bs-toggle="tab"
+                                data-bs-target="#incident-pane" type="button" role="tab" data-category="Incident">
+                            <i class="ri-error-warning-line me-2"></i>Incident
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="training-tab" data-bs-toggle="tab"
+                                data-bs-target="#training-pane" type="button" role="tab" data-category="Training">
+                            <i class="ri-book-open-line me-2"></i>Training
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="safety-tab" data-bs-toggle="tab"
+                                data-bs-target="#safety-pane" type="button" role="tab" data-category="Safety">
+                            <i class="ri-shield-check-line me-2"></i>Safety
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="categoryTabContent">
+                    <!-- Employee Tab -->
+                    <div class="tab-pane fade show active" id="employee-pane" role="tabpanel">
+                        <div id="employee-content"></div>
+                    </div>
+                    <!-- Team Tab -->
+                    <div class="tab-pane fade" id="team-pane" role="tabpanel">
+                        <div id="team-content"></div>
+                    </div>
+                    <!-- Incident Tab -->
+                    <div class="tab-pane fade" id="incident-pane" role="tabpanel">
+                        <div id="incident-content"></div>
+                    </div>
+                    <!-- Training Tab -->
+                    <div class="tab-pane fade" id="training-pane" role="tabpanel">
+                        <div id="training-content"></div>
+                    </div>
+                    <!-- Safety Tab -->
+                    <div class="tab-pane fade" id="safety-pane" role="tabpanel">
+                        <div id="safety-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentCategory = 'Employee';
+        let preferences = {};
+
+        $(document).ready(function () {
+            // Load preferences for the first category
+            loadPreferences('Employee');
+
+            // Tab click handler
+            $('#categoryTabs button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+                currentCategory = $(e.target).data('category');
+                loadPreferences(currentCategory);
+            });
+        });
+
+        function loadPreferences(category) {
+            const contentDiv = `#${category.toLowerCase()}-content`;
+            $(contentDiv).html('<div class="text-center p-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3 text-muted">Loading preferences...</p></div>');
+
+            $.ajax({
+                url: '@Url.Action("GetPreferences", "Notifications")',
+                type: 'GET',
+                data: { category: category },
+                success: function (data) {
+                    preferences[category] = data;
+                    renderPreferences(category, data);
+                },
+                error: function () {
+                    $(contentDiv).html('<div class="alert alert-danger"><i class="ri-error-warning-line me-2"></i>Failed to load preferences</div>');
+                }
+            });
+        }
+
+        function renderPreferences(category, pref) {
+            const contentDiv = `#${category.toLowerCase()}-content`;
+            const isCustom = pref.preferenceId > 0;
+
+            const html = `
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <div class="alert ${isCustom ? 'alert-success' : 'alert-light'} border">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="${isCustom ? 'ri-checkbox-circle-line' : 'ri-information-line'} me-2"></i>
+                                    <strong>${isCustom ? 'Custom Preferences Active' : 'Using System Defaults'}</strong>
+                                    <p class="mb-0 mt-1 text-muted small">
+                                        ${isCustom ? 'You have customized your notification preferences for this category.' : 'You are using the default notification settings. Customize them below.'}
+                                    </p>
+                                </div>
+                                ${isCustom ? `<button class="btn btn-sm btn-outline-danger" onclick="resetToDefault('${category}')"><i class="ri-refresh-line me-1"></i>Reset to Default</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Left Column: Channels -->
+                    <div class="col-md-6">
+                        <h6 class="fw-semibold mb-3">Delivery Channels</h6>
+
+                        <!-- In-App -->
+                        <div class="channel-option ${!pref.inAppEnabled ? 'disabled' : ''}">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="channel-icon channel-inapp">
+                                        <i class="ri-notification-3-line"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">In-App Notifications</h6>
+                                        <small class="text-muted">Show notifications in the app bell icon</small>
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input channel-toggle" type="checkbox" 
+                                           id="inapp-${category}" data-channel="inAppEnabled"
+                                           ${pref.inAppEnabled ? 'checked' : ''} disabled>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-info"><i class="ri-information-line me-1"></i>In-App notifications are always enabled</small>
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="channel-option">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="channel-icon channel-email">
+                                        <i class="ri-mail-line"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">Email Notifications</h6>
+                                        <small class="text-muted">Receive notifications via email</small>
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input channel-toggle" type="checkbox" 
+                                           id="email-${category}" data-channel="emailEnabled"
+                                           ${pref.emailEnabled ? 'checked' : ''}>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SMS -->
+                        <div class="channel-option">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="channel-icon channel-sms">
+                                        <i class="ri-message-2-line"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">SMS Notifications</h6>
+                                        <small class="text-muted">Receive text messages for urgent items</small>
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input channel-toggle" type="checkbox" 
+                                           id="sms-${category}" data-channel="smsEnabled"
+                                           ${pref.smsEnabled ? 'checked' : ''}>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-warning"><i class="ri-error-warning-line me-1"></i>SMS charges may apply</small>
+                            </div>
+                        </div>
+
+                        <!-- WhatsApp -->
+                        <div class="channel-option">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="channel-icon channel-whatsapp">
+                                        <i class="ri-whatsapp-line"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">WhatsApp Notifications</h6>
+                                        <small class="text-muted">Receive via WhatsApp Business</small>
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input channel-toggle" type="checkbox" 
+                                           id="whatsapp-${category}" data-channel="whatsAppEnabled"
+                                           ${pref.whatsAppEnabled ? 'checked' : ''}>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-info"><i class="ri-information-line me-1"></i>Requires WhatsApp Business setup</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Settings -->
+                    <div class="col-md-6">
+                        <!-- Priority Filter -->
+                        <h6 class="fw-semibold mb-3">Minimum Priority Level</h6>
+                        <p class="text-muted small mb-3">Only receive notifications at or above this priority level</p>
+                        <div class="row g-2 mb-4">
+                            <div class="col-6 col-md-3">
+                                <div class="priority-option ${pref.minPriority === 'Low' ? 'active' : ''}" data-priority="Low">
+                                    <i class="ri-notification-4-line fs-4 d-block mb-2"></i>
+                                    <strong>Low</strong>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="priority-option ${pref.minPriority === 'Normal' ? 'active' : ''}" data-priority="Normal">
+                                    <i class="ri-notification-3-line fs-4 d-block mb-2"></i>
+                                    <strong>Normal</strong>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="priority-option ${pref.minPriority === 'High' ? 'active' : ''}" data-priority="High">
+                                    <i class="ri-notification-2-line fs-4 d-block mb-2"></i>
+                                    <strong>High</strong>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="priority-option ${pref.minPriority === 'Urgent' ? 'active' : ''}" data-priority="Urgent">
+                                    <i class="ri-alarm-warning-line fs-4 d-block mb-2"></i>
+                                    <strong>Urgent</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quiet Hours -->
+                        <h6 class="fw-semibold mb-3">Quiet Hours</h6>
+                        <p class="text-muted small mb-3">Don't send Email, SMS, or WhatsApp during these hours (In-App always works)</p>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="enableQuietHours-${category}"
+                                   ${pref.quietHoursStart != null ? 'checked' : ''}>
+                            <label class="form-check-label" for="enableQuietHours-${category}">
+                                Enable quiet hours
+                            </label>
+                        </div>
+                        <div id="quietHoursInputs-${category}" class="${pref.quietHoursStart == null ? 'd-none' : ''}">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label class="form-label">Start Time</label>
+                                    <input type="time" class="form-control time-input" id="quietStart-${category}"
+                                           value="${pref.quietHoursStart || '22:00'}">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">End Time</label>
+                                    <input type="time" class="form-control time-input" id="quietEnd-${category}"
+                                           value="${pref.quietHoursEnd || '07:00'}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted">
+                                    <i class="ri-information-line me-1"></i>
+                                    Changes are saved automatically
+                                </small>
+                            </div>
+                            <button class="btn btn-primary btn-wave" onclick="savePreferences('${category}')">
+                                <i class="ri-save-line me-2"></i>Save Preferences
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $(contentDiv).html(html);
+
+            // Setup event handlers for this category
+            setupEventHandlers(category);
+        }
+
+        function setupEventHandlers(category) {
+            // Priority option clicks
+            $(`#${category.toLowerCase()}-content .priority-option`).on('click', function () {
+                $(`#${category.toLowerCase()}-content .priority-option`).removeClass('active');
+                $(this).addClass('active');
+            });
+
+            // Quiet hours toggle
+            $(`#enableQuietHours-${category}`).on('change', function () {
+                if ($(this).is(':checked')) {
+                    $(`#quietHoursInputs-${category}`).removeClass('d-none');
+                } else {
+                    $(`#quietHoursInputs-${category}`).addClass('d-none');
+                }
+            });
+        }
+
+        function savePreferences(category) {
+            const pref = preferences[category];
+            const contentDiv = `#${category.toLowerCase()}-content`;
+
+            // Gather values from UI
+            const preference = {
+                employeeId: 0, // Will be set by server
+                category: category,
+                inAppEnabled: $(`#inapp-${category}`).is(':checked'),
+                emailEnabled: $(`#email-${category}`).is(':checked'),
+                smsEnabled: $(`#sms-${category}`).is(':checked'),
+                whatsAppEnabled: $(`#whatsapp-${category}`).is(':checked'),
+                minPriority: $(`#${category.toLowerCase()}-content .priority-option.active`).data('priority'),
+                quietHoursStart: null,
+                quietHoursEnd: null
+            };
+
+            // Add quiet hours if enabled
+            if ($(`#enableQuietHours-${category}`).is(':checked')) {
+                preference.quietHoursStart = $(`#quietStart-${category}`).val();
+                preference.quietHoursEnd = $(`#quietEnd-${category}`).val();
+            }
+
+            $.ajax({
+                url: '@Url.Action("SavePreference", "Notifications")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(preference),
+                success: function (response) {
+                    if (response.success) {
+                        toastr.success('Preferences saved successfully');
+                        // Reload to show updated status
+                        loadPreferences(category);
+                    } else {
+                        toastr.error(response.message || 'Failed to save preferences');
+                    }
+                },
+                error: function () {
+                    toastr.error('Error saving preferences');
+                }
+            });
+        }
+
+        function resetToDefault(category) {
+            if (!confirm(`Are you sure you want to reset ${category} notifications to system defaults?`)) {
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("ResetPreference", "Notifications")',
+                type: 'POST',
+                data: { category: category },
+                success: function (response) {
+                    if (response.success) {
+                        toastr.success('Preferences reset to defaults');
+                        loadPreferences(category);
+                    } else {
+                        toastr.error(response.message || 'Failed to reset preferences');
+                    }
+                },
+                error: function () {
+                    toastr.error('Error resetting preferences');
+                }
+            });
+        }
+    </script>
+}

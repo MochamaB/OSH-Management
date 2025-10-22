@@ -1,0 +1,343 @@
+@model OSHManagement.Services.Notifications.DTOs.NotificationStatistics
+
+@{
+    ViewData["Title"] = "Notification Dashboard";
+    ViewData["PageTitle"] = "Notification Dashboard";
+    ViewData["Breadcrumbs"] = new List<(string Name, string? Url)>
+    {
+        ("Notifications", null),
+        ("Dashboard", null)
+    };
+}
+
+<!-- Top Statistics Cards -->
+<div class="row">
+    <div class="col-lg-3 col-md-6">
+        <div class="card custom-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div class="lh-1">
+                        <span class="avatar avatar-md bg-primary avatar-rounded">
+                            <i class="ti ti-bell fs-5"></i>
+                        </span>
+                    </div>
+                    <div class="flex-fill">
+                        <span class="text-muted">Total Notifications</span>
+                        <h5 class="d-block fw-semibold mb-0">@Model.TotalNotifications.ToString("N0")</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card custom-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div class="lh-1">
+                        <span class="avatar avatar-md bg-warning avatar-rounded">
+                            <i class="ti ti-bell-ringing fs-5"></i>
+                        </span>
+                    </div>
+                    <div class="flex-fill">
+                        <span class="text-muted">Unread</span>
+                        <h5 class="d-block fw-semibold mb-0">@Model.UnreadNotifications.ToString("N0")</h5>
+                    </div>
+                    <div class="text-end">
+                        @if (Model.UnreadNotifications > 0)
+                        {
+                            <span class="badge bg-warning">@Model.UnreadNotifications</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card custom-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div class="lh-1">
+                        <span class="avatar avatar-md bg-success avatar-rounded">
+                            <i class="ti ti-calendar-event fs-5"></i>
+                        </span>
+                    </div>
+                    <div class="flex-fill">
+                        <span class="text-muted">Today</span>
+                        <h5 class="d-block fw-semibold mb-0">@Model.TodayCount.ToString("N0")</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6">
+        <div class="card custom-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div class="lh-1">
+                        <span class="avatar avatar-md bg-info avatar-rounded">
+                            <i class="ti ti-calendar-week fs-5"></i>
+                        </span>
+                    </div>
+                    <div class="flex-fill">
+                        <span class="text-muted">This Week</span>
+                        <h5 class="d-block fw-semibold mb-0">@Model.ThisWeekCount.ToString("N0")</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Analytics Section -->
+<div class="row">
+    <div class="col-xxl-8">
+        <!-- Notifications by Type Chart -->
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Notifications by Type</div>
+            </div>
+            <div class="card-body">
+                <div id="notification-type-chart" 
+                     data-info="@Model.InfoCount" 
+                     data-success="@Model.SuccessCount" 
+                     data-warning="@Model.WarningCount" 
+                     data-error="@Model.ErrorCount" 
+                     data-action="@Model.ActionRequiredCount"></div>
+            </div>
+        </div>
+
+        <!-- Recent Notifications -->
+        <div class="card custom-card">
+            <div class="card-header justify-content-between">
+                <div class="card-title">Recent Notifications</div>
+                <a href="@Url.Action("Index", "Notifications")" class="btn btn-sm btn-primary-light">
+                    View All <i class="ti ti-arrow-narrow-right"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover text-nowrap">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Priority</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-notifications-tbody">
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                    <span class="ms-2">Loading...</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xxl-4">
+        <!-- Priority Donut Chart -->
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">By Priority</div>
+            </div>
+            <div class="card-body">
+                <div id="priority-donut-chart" 
+                     data-urgent="@Model.UrgentCount" 
+                     data-high="@Model.HighCount" 
+                     data-normal="@Model.NormalCount" 
+                     data-low="@Model.LowCount"
+                     data-total="@Model.TotalNotifications"></div>
+            </div>
+            <div class="card-footer p-0">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div><span class="badge bg-danger me-2">Urgent</span></div>
+                            <span class="fw-semibold">@Model.UrgentCount</span>
+                        </div>
+                    </li>
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div><span class="badge bg-warning me-2">High</span></div>
+                            <span class="fw-semibold">@Model.HighCount</span>
+                        </div>
+                    </li>
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div><span class="badge bg-primary me-2">Normal</span></div>
+                            <span class="fw-semibold">@Model.NormalCount</span>
+                        </div>
+                    </li>
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div><span class="badge bg-secondary me-2">Low</span></div>
+                            <span class="fw-semibold">@Model.LowCount</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Delivery Channels -->
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Delivery Channels</div>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="ti ti-device-desktop text-primary me-1"></i>In-App</span>
+                        <span class="fw-semibold">@Model.InAppCount</span>
+                    </div>
+                    <div class="progress progress-sm">
+                        <div class="progress-bar bg-primary" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="ti ti-mail text-info me-1"></i>Email</span>
+                        <span class="fw-semibold">@Model.EmailSentCount</span>
+                    </div>
+                    <div class="progress progress-sm">
+                        <div class="progress-bar bg-info" style="width: @((Model.InAppCount > 0 ? Model.EmailSentCount * 100.0 / Model.InAppCount : 0))%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="ti ti-device-mobile text-success me-1"></i>SMS</span>
+                        <span class="fw-semibold">@Model.SmsSentCount</span>
+                    </div>
+                    <div class="progress progress-sm">
+                        <div class="progress-bar bg-success" style="width: @((Model.InAppCount > 0 ? Model.SmsSentCount * 100.0 / Model.InAppCount : 0))%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Quick Actions</div>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    @if (Model.UnreadNotifications > 0)
+                    {
+                        <button type="button" class="btn btn-primary" id="mark-all-read-btn">
+                            <i class="ti ti-check me-1"></i>Mark All as Read
+                        </button>
+                    }
+                    <a href="@Url.Action("Index", "Notifications")" class="btn btn-outline-primary">
+                        <i class="ti ti-bell me-1"></i>All Notifications
+                    </a>
+                    <a href="@Url.Action("Preferences", "Notifications")" class="btn btn-outline-secondary">
+                        <i class="ti ti-settings me-1"></i>Preferences
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Categories & Metrics -->
+<div class="row">
+    <div class="col-xxl-6">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Notifications by Category</div>
+            </div>
+            <div class="card-body">
+                @if (Model.ByCategory.Any())
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var category in Model.ByCategory.OrderByDescending(c => c.Value).Take(10))
+                        {
+                            var percentage = Model.TotalNotifications > 0 ? (category.Value * 100.0 / Model.TotalNotifications) : 0;
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <div class="fw-semibold">@category.Key</div>
+                                    <span class="fw-semibold">@category.Value</span>
+                                </div>
+                                <div class="progress progress-xs">
+                                    <div class="progress-bar" style="width: @(percentage)%"></div>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted">No categories available</div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xxl-6">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Time Metrics</div>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-4">
+                        <div class="text-center p-3 border rounded">
+                            <i class="ti ti-calendar-event fs-30 text-success mb-2"></i>
+                            <h4 class="mb-1">@Model.TodayCount</h4>
+                            <p class="text-muted mb-0 fs-12">Today</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="text-center p-3 border rounded">
+                            <i class="ti ti-calendar-week fs-30 text-info mb-2"></i>
+                            <h4 class="mb-1">@Model.ThisWeekCount</h4>
+                            <p class="text-muted mb-0 fs-12">This Week</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="text-center p-3 border rounded">
+                            <i class="ti ti-calendar-month fs-30 text-warning mb-2"></i>
+                            <h4 class="mb-1">@Model.ThisMonthCount</h4>
+                            <p class="text-muted mb-0 fs-12">This Month</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="fw-semibold mb-3">Read vs Unread</h6>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Read</span>
+                        <span>@Model.ReadNotifications</span>
+                    </div>
+                    <div class="progress progress-sm">
+                        <div class="progress-bar bg-success" style="width: @((Model.TotalNotifications > 0 ? Model.ReadNotifications * 100.0 / Model.TotalNotifications : 0))%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Unread</span>
+                        <span>@Model.UnreadNotifications</span>
+                    </div>
+                    <div class="progress progress-sm">
+                        <div class="progress-bar bg-warning" style="width: @((Model.TotalNotifications > 0 ? Model.UnreadNotifications * 100.0 / Model.TotalNotifications : 0))%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/assets/libs/apexcharts/apexcharts.min.js"></script>
+    <script src="~/assets/js/pages/notifications-dashboard.js"></script>
+}

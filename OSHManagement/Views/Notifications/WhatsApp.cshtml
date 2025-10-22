@@ -1,0 +1,72 @@
+@{
+    ViewData["Title"] = "WhatsApp Notifications";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="d-flex align-items-center justify-content-center" style="min-height: 60vh;">
+    <div class="text-center">
+        <div class="mb-4">
+            <i class="ri-whatsapp-line" style="font-size: 6rem; color: #25D366; opacity: 0.3;"></i>
+        </div>
+        <h2 class="fw-semibold mb-3">WhatsApp Notifications</h2>
+        <div class="badge bg-info-transparent mb-4" style="font-size: 1rem; padding: 0.5rem 1rem;">
+            <i class="ri-timer-line me-2"></i>Coming Soon
+        </div>
+        <p class="text-muted fs-15 mb-4" style="max-width: 500px; margin: 0 auto;">
+            WhatsApp Business API integration is coming soon. Stay connected with your team through instant messaging with rich media support.
+        </p>
+        
+        <div class="card custom-card shadow-sm" style="max-width: 600px; margin: 2rem auto;">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Upcoming Features</h6>
+            </div>
+            <div class="card-body text-start">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="ri-check-line text-success me-2"></i>
+                        <strong>Rich Media Messages</strong> - Send images, documents, and videos
+                    </li>
+                    <li class="mb-2">
+                        <i class="ri-check-line text-success me-2"></i>
+                        <strong>Message Templates</strong> - WhatsApp-approved message templates
+                    </li>
+                    <li class="mb-2">
+                        <i class="ri-check-line text-success me-2"></i>
+                        <strong>Interactive Buttons</strong> - Quick reply and action buttons
+                    </li>
+                    <li class="mb-2">
+                        <i class="ri-check-line text-success me-2"></i>
+                        <strong>Read Receipts</strong> - Track when messages are read
+                    </li>
+                    <li class="mb-2">
+                        <i class="ri-check-line text-success me-2"></i>
+                        <strong>Group Messaging</strong> - Send to WhatsApp groups
+                    </li>
+                    <li class="mb-0">
+                        <i class="ri-check-line text-success me-2"></i>
+                        <strong>Chat History</strong> - View conversation history
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="alert alert-light border mt-4" style="max-width: 600px; margin: 0 auto;">
+            <div class="d-flex align-items-center">
+                <i class="ri-information-line fs-4 text-primary me-3"></i>
+                <div class="text-start">
+                    <strong>WhatsApp Business API Required</strong><br>
+                    <small class="text-muted">This feature requires WhatsApp Business API approval and setup. Contact your administrator for more information.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <a href="@Url.Action("Index", "Notifications")" class="btn btn-primary btn-wave">
+                <i class="ri-arrow-left-line me-2"></i>Back to Notifications
+            </a>
+            <a href="@Url.Action("Templates", "Notifications")" class="btn btn-outline-secondary btn-wave ms-2">
+                <i class="ri-file-list-3-line me-2"></i>View Templates
+            </a>
+        </div>
+    </div>
+</div>

@@ -144,10 +144,15 @@ namespace OSHManagement.Models.ViewModels
     }
 
     /// <summary>
-    /// DTO for adding a member to a team
+    /// DTO for adding/updating a member to a team
     /// </summary>
     public class AddTeamMemberDto
     {
+        public int MemberId { get; set; } // 0 for new, >0 for edit
+
+        [Required(ErrorMessage = "Team is required")]
+        public int TeamId { get; set; }
+
         [Required(ErrorMessage = "Employee is required")]
         public string EmployeePayroll { get; set; } = string.Empty;
 

@@ -1,0 +1,62 @@
+@{
+    ViewData["Title"] = "SMS Notifications";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="d-flex align-items-center justify-content-center" style="min-height: 60vh;">
+    <div class="text-center">
+        <div class="mb-4">
+            <i class="ri-message-2-line" style="font-size: 6rem; color: var(--bs-primary); opacity: 0.3;"></i>
+        </div>
+        <h2 class="fw-semibold mb-3">SMS Notifications</h2>
+        <div class="badge bg-warning-transparent mb-4" style="font-size: 1rem; padding: 0.5rem 1rem;">
+            <i class="ri-timer-line me-2"></i>Under Development
+        </div>
+        <p class="text-muted fs-15 mb-4" style="max-width: 500px; margin: 0 auto;">
+            SMS notification delivery is currently under development. This feature will allow you to send and track SMS messages to employees and stakeholders.
+        </p>
+        
+        <div class="card custom-card shadow-sm" style="max-width: 600px; margin: 2rem auto;">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Planned Features</h6>
+            </div>
+            <div class="card-body text-start">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="ri-check-line text-success me-2"></i>
+                        <strong>Bulk SMS Sending</strong> - Send notifications to multiple recipients
+                    </li>
+                    <li class="mb-2">
+                        <i class="ri-check-line text-success me-2"></i>
+                        <strong>Delivery Tracking</strong> - Track message delivery status
+                    </li>
+                    <li class="mb-2">
+                        <i class="ri-check-line text-success me-2"></i>
+                        <strong>SMS Templates</strong> - Pre-defined message templates
+                    </li>
+                    <li class="mb-2">
+                        <i class="ri-check-line text-success me-2"></i>
+                        <strong>Scheduled Messages</strong> - Schedule SMS for future delivery
+                    </li>
+                    <li class="mb-2">
+                        <i class="ri-check-line text-success me-2"></i>
+                        <strong>Cost Tracking</strong> - Monitor SMS credit usage
+                    </li>
+                    <li class="mb-0">
+                        <i class="ri-check-line text-success me-2"></i>
+                        <strong>Two-way Messaging</strong> - Receive and respond to replies
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <a href="@Url.Action("Index", "Notifications")" class="btn btn-primary btn-wave">
+                <i class="ri-arrow-left-line me-2"></i>Back to Notifications
+            </a>
+            <a href="@Url.Action("Templates", "Notifications")" class="btn btn-outline-secondary btn-wave ms-2">
+                <i class="ri-file-list-3-line me-2"></i>View Templates
+            </a>
+        </div>
+    </div>
+</div>

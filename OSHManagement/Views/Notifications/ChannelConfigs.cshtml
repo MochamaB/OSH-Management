@@ -1,0 +1,318 @@
+@model Dictionary<string, List<OSHManagement.Models.NotificationChannelConfig>>
+@{
+    ViewData["Title"] = "Channel Configurations";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .config-card {
+            transition: all 0.3s;
+        }
+
+        .config-item {
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            background: var(--custom-white);
+        }
+
+        .config-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .config-value {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #dee2e6;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+
+        .config-value.encrypted {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+
+        .config-description {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 0.5rem;
+        }
+
+        .required-badge {
+            background: #dc3545;
+            color: white;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .encrypted-badge {
+            background: #ffc107;
+            color: #000;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .channel-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .channel-email { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .channel-sms { background: rgba(251, 146, 60, 0.1); color: #fb923c; }
+        .channel-whatsapp { background: rgba(37, 211, 102, 0.1); color: #25d366; }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.7rem;
+        }
+
+        .status-indicator.configured {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-indicator.incomplete {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+    </style>
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card custom-card">
+          
+            <div class="card-body">
+                @if (!Model.Any())
+                {
+                    <div class="empty-state">
+                        <i class="ri-inbox-line" style="font-size: 4rem; opacity: 0.3;"></i>
+                        <h5 class="mt-3">No Channel Configurations Found</h5>
+                        <p class="text-muted">Channel configurations have not been seeded yet.</p>
+                    </div>
+                }
+                else
+                {
+                    <!-- Channel Tabs -->
+                    <ul class="nav nav-tabs mb-4" id="channelTabs" role="tablist">
+                        @{
+                            var channels = Model.Keys.OrderBy(k => k).ToList();
+                            var firstChannel = channels.FirstOrDefault();
+                        }
+                        
+                        @foreach (var channel in channels)
+                        {
+                            var isActive = channel == firstChannel ? "active" : "";
+                            var iconClass = channel switch
+                            {
+                                "Email" => "ri-mail-line",
+                                "SMS" => "ri-message-2-line",
+                                "WhatsApp" => "ri-whatsapp-line",
+                                _ => "ri-settings-line"
+                            };
+
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link @isActive" id="@(channel.ToLower())-tab" 
+                                        data-bs-toggle="tab" data-bs-target="#@(channel.ToLower())-pane" 
+                                        type="button" role="tab">
+                                    <i class="@iconClass me-2"></i>@channel
+                                </button>
+                            </li>
+                        }
+                    </ul>
+
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="channelTabContent">
+                        @foreach (var channelGroup in Model)
+                        {
+                            var channel = channelGroup.Key;
+                            var configs = channelGroup.Value;
+                            var isActive = channel == firstChannel ? "show active" : "";
+                            
+                            var requiredCount = configs.Count(c => c.IsRequired);
+                            var configuredCount = configs.Count(c => c.IsRequired && !string.IsNullOrEmpty(c.ConfigValue));
+                            var isConfigured = requiredCount > 0 && configuredCount == requiredCount;
+
+                            <div class="tab-pane fade @isActive" id="@(channel.ToLower())-pane" role="tabpanel">
+                                <!-- Channel Header -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="channel-icon channel-@(channel.ToLower())">
+                                                    <i class="@(channel switch 
+                                                    {
+                                                        "Email" => "ri-mail-line",
+                                                        "SMS" => "ri-message-2-line",
+                                                        "WhatsApp" => "ri-whatsapp-line",
+                                                        _ => "ri-settings-line"
+                                                    })"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">@channel Configuration</h6>
+                                                    <p class="text-muted mb-0">
+                                                        @configs.Count configuration @(configs.Count == 1 ? "setting" : "settings")
+                                                        (@requiredCount required)
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-3">
+                                                @if (isConfigured)
+                                                {
+                                                    <div class="status-indicator configured">
+                                                        <i class="ri-checkbox-circle-line"></i>
+                                                        <span>Fully Configured</span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="status-indicator incomplete">
+                                                        <i class="ri-error-warning-line"></i>
+                                                        <span>@(requiredCount - configuredCount) Required Settings Missing</span>
+                                                    </div>
+                                                }
+                                                <a href="@Url.Action("EditChannelConfig", "Notifications", new { channel = channel })" 
+                                                   class="btn btn-primary btn-sm">
+                                                    <i class="ri-pencil-line me-1"></i>Edit Configuration
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Configuration Items -->
+                                <div class="row">
+                                    @foreach (var config in configs)
+                                    {
+                                        <div class="col-md-6">
+                                            <div class="config-item">
+                                                <div class="config-label">
+                                                    <span>@config.ConfigKey</span>
+                                                    @if (config.IsRequired)
+                                                    {
+                                                        <span class="text-danger fs-6">*</span>
+                                                    }
+                                                    @if (config.IsEncrypted)
+                                                    {
+                                                        <span class=" bg-warning-transparent">
+                                                            <i class="ri-lock-line me-1"></i>ENCRYPTED
+                                                        </span>
+                                                    }
+                                                </div>
+
+                                                @if (string.IsNullOrEmpty(config.ConfigValue))
+                                                {
+                                                    <div class="config-value" style="background: #fff3cd; color: #856404;">
+                                                        <i class="ri-alert-line me-1"></i>Not configured
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="config-value @(config.IsEncrypted ? "encrypted" : "")">
+                                                        @if (config.IsEncrypted)
+                                                        {
+                                                            <i class="ri-lock-line me-2"></i>
+                                                            @if (config.ConfigKey.Contains("Password") || config.ConfigKey.Contains("Token") || config.ConfigKey.Contains("Key"))
+                                                            {
+                                                                <span>●●●●●●●●●●●●</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                @config.ConfigValue
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            @config.ConfigValue
+                                                        }
+                                                    </div>
+                                                }
+
+                                                @if (!string.IsNullOrEmpty(config.Description))
+                                                {
+                                                    <div class="form-text mt-1">
+                                                        <i class="ri-information-line me-1"></i>@config.Description
+                                                    </div>
+                                                }
+
+                                                <div class="mt-2">
+                                                    <small class="text-muted">
+                                                      
+                                                        @if (config.UpdatedAt.HasValue)
+                                                        {
+                                                            <span class="ms-2">
+                                                                | Updated: @config.UpdatedAt.Value.ToString("MMM dd, yyyy HH:mm")
+                                                                @if (!string.IsNullOrEmpty(config.UpdatedBy))
+                                                                {
+                                                                    <text> by @config.UpdatedBy</text>
+                                                                }
+                                                            </span>
+                                                        }
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+
+                                @if (configs.Count == 0)
+                                {
+                                    <div class="empty-state">
+                                        <i class="ri-settings-3-line" style="font-size: 3rem; opacity: 0.3;"></i>
+                                        <h6 class="mt-3">No configurations found for @channel</h6>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            @if (Model.Any())
+            {
+                <div class="card-footer">
+                    <div class="text-muted small">
+                        <i class="ri-information-line me-1"></i>
+                        <strong>Note:</strong> Encrypted values are stored securely using ASP.NET Core Data Protection API
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            console.log('Channel Configurations loaded');
+            
+            // Future: Add edit functionality here
+        });
+    </script>
+}

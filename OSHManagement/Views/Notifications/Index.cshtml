@@ -1,0 +1,460 @@
+@using OSHManagement.Extensions
+@model List<OSHManagement.Models.Notification>
+@{
+    ViewData["Title"] = "All Notifications";
+    ViewData["PageTitle"] = "All Notifications";
+    ViewData["Breadcrumbs"] = new List<(string Name, string? Url)>
+    {
+        ("Notifications", null),
+        ("All", null)
+    };
+
+    // Build stat cards
+    var statConfig = new OSHManagement.Models.ViewModels.StatsRowConfig
+    {
+        Titles = new List<string> { "Total", "Unread", "Today", "This Week" },
+        Values = new List<string> {
+            ViewBag.TotalNotifications?.ToString() ?? "0",
+            ViewBag.UnreadCount?.ToString() ?? "0",
+            ViewBag.TodayCount?.ToString() ?? "0",
+            ViewBag.WeekCount?.ToString() ?? "0"
+        },
+        Icons = new List<string> {
+            "ri-notification-line",
+            "ri-notification-badge-line",
+            "ri-calendar-event-line",
+            "ri-calendar-2-line"
+        },
+        ColorThemes = new List<string> { "primary", "warning", "success", "info" },
+        CardType = OSHManagement.Models.ViewModels.CardType.LeftBorderCard
+    };
+    var statCards = statConfig.BuildStatsRow();
+
+    // Build DataTable configuration
+    var tableConfig = new OSHManagement.Models.ViewModels.TableConfig
+    {
+        TableId = "notificationsTable",
+        ActionUrl = "/Notifications/Index",
+        Columns = new List<string> {
+            "#",
+            "Type",
+            "Title & Message",
+            "Category",
+            "Priority",
+            "Created",
+            "Status",
+            "Actions"
+        },
+        SearchPlaceholder = "Search notifications...",
+        SearchValue = ViewBag.CurrentSearch,
+        HeaderActions = new List<OSHManagement.Models.ViewModels.HeaderActionConfig>
+        {
+            new OSHManagement.Models.ViewModels.HeaderActionConfig
+            {
+                Text = "Dashboard",
+                Url = "/Notifications/Dashboard",
+                IconClass = "ri-dashboard-line",
+                ColorClass = "btn-info-light"
+            }
+        },
+        Filters = new List<OSHManagement.Models.ViewModels.FilterConfig>
+        {
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Category",
+                ParameterName = "category",
+                CurrentValue = ViewBag.CurrentCategory,
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Categories", Value = "" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Employee", Value = "Employee" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Team", Value = "Team" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Incident", Value = "Incident" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Hazard", Value = "Hazard" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Risk Assessment", Value = "Risk Assessment" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "OSH Policy", Value = "OSH Policy" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Training", Value = "Training" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Inspection", Value = "Inspection" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "System", Value = "System" }
+                }
+            },
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Priority",
+                ParameterName = "priority",
+                CurrentValue = ViewBag.CurrentPriority,
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Priorities", Value = "" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Urgent", Value = "Urgent" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "High", Value = "High" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Normal", Value = "Normal" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Low", Value = "Low" }
+                }
+            },
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Type",
+                ParameterName = "notificationType",
+                CurrentValue = ViewBag.CurrentType,
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Types", Value = "" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Info", Value = "Info" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Success", Value = "Success" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Warning", Value = "Warning" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Error", Value = "Error" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Action Required", Value = "ActionRequired" }
+                }
+            },
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Status",
+                ParameterName = "isRead",
+                CurrentValue = ViewBag.CurrentStatus,
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Status", Value = "" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Unread Only", Value = "false" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Read Only", Value = "true" }
+                }
+            }
+        }
+    };
+
+    // Calculate row number starting point
+    int startingNumber = ((ViewBag.CurrentPage - 1) * ViewBag.PageSize) + 1;
+
+    // Build table with row data
+    var table = tableConfig.BuildTable(
+        tableContent: @<text>
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                var item = Model[i];
+                var rowNumber = startingNumber + i;
+                var isUnread = !item.IsRead;
+                
+                <tr class="@(isUnread ? "table-active" : "")">
+                    <td class="text-center">
+                        <span class="text-muted fw-medium">@rowNumber</span>
+                    </td>
+                    <td>
+                        @{
+                            var typeIcon = "";
+                            var typeClass = "";
+                            switch (item.NotificationType)
+                            {
+                                case "Info":
+                                    typeIcon = "ri-information-line";
+                                    typeClass = "primary";
+                                    break;
+                                case "Success":
+                                    typeIcon = "ri-checkbox-circle-line";
+                                    typeClass = "success";
+                                    break;
+                                case "Warning":
+                                    typeIcon = "ri-alert-line";
+                                    typeClass = "warning";
+                                    break;
+                                case "Error":
+                                    typeIcon = "ri-close-circle-line";
+                                    typeClass = "danger";
+                                    break;
+                                case "ActionRequired":
+                                    typeIcon = "ri-error-warning-line";
+                                    typeClass = "purple";
+                                    break;
+                                default:
+                                    typeIcon = "ri-notification-line";
+                                    typeClass = "secondary";
+                                    break;
+                            }
+                        }
+                        <div class="d-flex align-items-center">
+                            <span class="avatar avatar-sm bg-@typeClass-transparent me-2">
+                                <i class="@typeIcon fs-18"></i>
+                            </span>
+                            <span class="badge bg-@typeClass-transparent">@item.NotificationType</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            <div class="fw-semibold @(isUnread ? "text-primary" : "")">
+                                @if (isUnread)
+                                {
+                                    <i class="ri-record-circle-fill text-warning fs-10 me-1"></i>
+                                }
+                                @item.Title
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                @if (item.Message.Length > 80)
+                                {
+                                    @item.Message.Substring(0, 80)<text>...</text>
+                                }
+                                else
+                                {
+                                    @item.Message
+                                }
+                            </small>
+                        </div>
+                    </td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(item.Category))
+                        {
+                            <span class="badge bg-light text-dark">@item.Category</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </td>
+                    <td>
+                        @{
+                            var priorityClass = "";
+                            switch (item.Priority)
+                            {
+                                case "Urgent":
+                                    priorityClass = "danger";
+                                    break;
+                                case "High":
+                                    priorityClass = "warning";
+                                    break;
+                                case "Normal":
+                                    priorityClass = "primary";
+                                    break;
+                                case "Low":
+                                    priorityClass = "secondary";
+                                    break;
+                                default:
+                                    priorityClass = "secondary";
+                                    break;
+                            }
+                        }
+                        <span class="badge bg-@priorityClass">@item.Priority</span>
+                    </td>
+                    <td>
+                        <div class="text-muted">
+                            <small class="d-block">@item.CreatedAt.ToString("MMM dd, yyyy")</small>
+                            <small class="d-block">@item.CreatedAt.ToString("hh:mm tt")</small>
+                        </div>
+                    </td>
+                    <td>
+                        @if (item.IsRead)
+                        {
+                            <span class="badge bg-success-transparent">
+                                <i class="ri-check-line me-1"></i>Read
+                            </span>
+                            @if (item.ReadAt.HasValue)
+                            {
+                                <small class="text-muted d-block mt-1">@item.ReadAt.Value.ToString("MMM dd")</small>
+                            }
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning-transparent">
+                                <i class="ri-time-line me-1"></i>Unread
+                            </span>
+                        }
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            @if (!item.IsRead)
+                            {
+                                <button type="button" 
+                                        class="btn btn-success-light mark-read-btn" 
+                                        data-id="@item.NotificationId"
+                                        data-bs-toggle="tooltip" 
+                                        title="Mark as Read">
+                                    <i class="ri-check-line"></i>
+                                </button>
+                            }
+                            @if (!string.IsNullOrEmpty(item.ActionUrl))
+                            {
+                                <a href="@item.ActionUrl" 
+                                   class="btn btn-primary-light"
+                                   data-bs-toggle="tooltip" 
+                                   title="View Details">
+                                    <i class="ri-eye-line"></i>
+                                </a>
+                            }
+                            <button type="button" 
+                                    class="btn btn-danger-light delete-notification-btn" 
+                                    data-id="@item.NotificationId"
+                                    data-title="@item.Title"
+                                    data-bs-toggle="tooltip" 
+                                    title="Delete">
+                                <i class="ri-delete-bin-line"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </text>,
+        currentUrl: Context.Request.Path + Context.Request.QueryString
+    );
+
+    // Enable pagination
+    table.ShowPagination = true;
+    table.CurrentPage = ViewBag.CurrentPage;
+    table.TotalPages = ViewBag.TotalPages;
+    table.TotalRecords = ViewBag.TotalItems;
+    table.PageSize = ViewBag.PageSize;
+}
+
+<!-- Stat Cards Row -->
+<div class="row">
+    @foreach (var card in statCards)
+    {
+        <partial name="~/Views/Shared/Components/StatisticCards/_LeftBorderCard.cshtml" model="card" />
+    }
+</div>
+
+<!-- Bulk Actions Bar -->
+@if (ViewBag.UnreadCount > 0)
+{
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="ri-notification-badge-line fs-18 me-2"></i>
+                        <strong>You have @ViewBag.UnreadCount unread notification@(ViewBag.UnreadCount > 1 ? "s" : "")</strong>
+                    </div>
+                    <button type="button" 
+                            class="btn btn-sm btn-warning" 
+                            id="mark-all-read-btn">
+                        <i class="ri-check-double-line me-1"></i>Mark All as Read
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Main Content -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/_DataTable.cshtml" model="table" />
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Mark as Read functionality
+            $('.mark-read-btn').on('click', function() {
+                var btn = $(this);
+                var notificationId = btn.data('id');
+                
+                btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+                
+                $.ajax({
+                    url: '/Notifications/MarkAsRead',
+                    type: 'POST',
+                    data: { id: notificationId },
+                    success: function(response) {
+                        if (response.success) {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.success('Notification marked as read');
+                            }
+                            // Reload page to update UI
+                            location.reload();
+                        } else {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error(response.message || 'Error marking notification as read');
+                            }
+                            btn.prop('disabled', false).html('<i class="ri-check-line"></i>');
+                        }
+                    },
+                    error: function() {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error('Error marking notification as read');
+                        }
+                        btn.prop('disabled', false).html('<i class="ri-check-line"></i>');
+                    }
+                });
+            });
+
+            // Delete notification functionality
+            $('.delete-notification-btn').on('click', function() {
+                var btn = $(this);
+                var notificationId = btn.data('id');
+                var notificationTitle = btn.data('title');
+                
+                if (confirm('Are you sure you want to delete this notification?\n\n"' + notificationTitle + '"')) {
+                    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+                    
+                    $.ajax({
+                        url: '/Notifications/Delete',
+                        type: 'POST',
+                        data: { id: notificationId },
+                        success: function(response) {
+                            if (response.success) {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.success('Notification deleted successfully');
+                                }
+                                // Reload page to update list
+                                location.reload();
+                            } else {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.error(response.message || 'Error deleting notification');
+                                }
+                                btn.prop('disabled', false).html('<i class="ri-delete-bin-line"></i>');
+                            }
+                        },
+                        error: function() {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error('Error deleting notification');
+                            }
+                            btn.prop('disabled', false).html('<i class="ri-delete-bin-line"></i>');
+                        }
+                    });
+                }
+            });
+
+            // Mark all as read functionality
+            $('#mark-all-read-btn').on('click', function() {
+                if (confirm('Mark all notifications as read?')) {
+                    var btn = $(this);
+                    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Processing...');
+                    
+                    $.ajax({
+                        url: '/Notifications/MarkAllAsRead',
+                        type: 'POST',
+                        success: function(response) {
+                            if (response.success) {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.success(response.message || 'All notifications marked as read');
+                                }
+                                setTimeout(function() {
+                                    location.reload();
+                                }, 1000);
+                            } else {
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.error(response.message || 'Error marking notifications as read');
+                                }
+                                btn.prop('disabled', false).html('<i class="ri-check-double-line me-1"></i>Mark All as Read');
+                            }
+                        },
+                        error: function() {
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error('Error marking notifications as read');
+                            }
+                            btn.prop('disabled', false).html('<i class="ri-check-double-line me-1"></i>Mark All as Read');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

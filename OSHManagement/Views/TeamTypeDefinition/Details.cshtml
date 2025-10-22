@@ -1,0 +1,377 @@
+@model OSHManagement.Models.ViewModels.TeamTypeDefinitionViewModel
+
+@{
+    ViewData["Title"] = Model.TypeName + " - Details";
+    var roles = ViewBag.Roles as List<OSHManagement.Models.TeamRoleDefinition> ?? new List<OSHManagement.Models.TeamRoleDefinition>();
+    var teams = ViewBag.Teams as List<OSHManagement.Models.Team> ?? new List<OSHManagement.Models.Team>();
+}
+
+<!-- Breadcrumb -->
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <div>
+        <p class="fw-semibold fs-18 mb-0">Team Type Details</p>
+        <span class="fs-semibold text-muted">@Model.TypeName</span>
+    </div>
+    <div class="btn-list mt-md-0 mt-2">
+        <a href="@Url.Action("Index")" class="btn btn-light">
+            <i class="ri-arrow-left-line me-1"></i>Back to List
+        </a>
+    </div>
+</div>
+
+<!-- Team Type Information -->
+<div class="row">
+    <div class="col-xl-12">
+        <div class="card custom-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-title">@Model.TypeName</div>
+                <div>
+                    @if (Model.IsSystemType)
+                    {
+                        <span class="badge bg-primary"><i class="ri-shield-check-line me-1"></i>System Type</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-info"><i class="ri-tools-line me-1"></i>Custom Type</span>
+                    }
+
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge bg-success ms-2"><i class="ri-checkbox-circle-line me-1"></i>Active</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary ms-2"><i class="ri-close-circle-line me-1"></i>Inactive</span>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Basic Information -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Basic Information</h6>
+                        <table class="table table-borderless">
+                            <tbody>
+                                <tr>
+                                    <td class="fw-semibold" style="width: 40%">Type Code:</td>
+                                    <td><code class="text-primary">@Model.TypeCode</code></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Description:</td>
+                                    <td>@(Model.Description ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Max Teams Per Station:</td>
+                                    <td>
+                                        @if (Model.MaxTeamsPerStation.HasValue)
+                                        {
+                                            <span class="badge bg-primary-transparent">@Model.MaxTeamsPerStation</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted"><i class="ri-infinity-line"></i> Unlimited</span>
+                                        }
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Statistics</h6>
+                        <table class="table table-borderless">
+                            <tbody>
+                                <tr>
+                                    <td class="fw-semibold" style="width: 40%">Role Definitions:</td>
+                                    <td><span class="badge bg-info-transparent">@Model.RoleCount role(s)</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Active Teams:</td>
+                                    <td><span class="badge bg-success-transparent">@Model.TeamCount team(s)</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-semibold">Created:</td>
+                                    <td>@Model.CreatedAt.ToString("dd MMM yyyy HH:mm")</td>
+                                </tr>
+                                @if (Model.UpdatedAt.HasValue)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">Last Updated:</td>
+                                        <td>@Model.UpdatedAt.Value.ToString("dd MMM yyyy HH:mm")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Member Constraints -->
+                @if (Model.MinMemberCount.HasValue || Model.MaxMemberCount.HasValue || Model.RequiresSectionRepresentation)
+                {
+                    <hr />
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-muted mb-3">Member Constraints</h6>
+                            <table class="table table-borderless">
+                                <tbody>
+                                    @if (Model.MinMemberCount.HasValue)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold" style="width: 30%">Minimum Members:</td>
+                                            <td><span class="badge bg-warning-transparent">@Model.MinMemberCount</span></td>
+                                        </tr>
+                                    }
+                                    @if (Model.MaxMemberCount.HasValue)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">Maximum Members:</td>
+                                            <td><span class="badge bg-danger-transparent">@Model.MaxMemberCount</span></td>
+                                        </tr>
+                                    }
+                                    <tr>
+                                        <td class="fw-semibold">Section Representation:</td>
+                                        <td>
+                                            @if (Model.RequiresSectionRepresentation)
+                                            {
+                                                <span class="badge bg-success"><i class="ri-checkbox-circle-line me-1"></i>Required</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Not Required</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+
+                <!-- Statutory Compliance -->
+                @if (Model.RequiresStatutoryCompliance)
+                {
+                    <hr />
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-muted mb-3"><i class="ri-shield-check-line me-2 text-success"></i>Statutory Compliance Requirements</h6>
+                            <table class="table table-borderless">
+                                <tbody>
+                                    @if (Model.RequiredEmployeeRepRatioPercent.HasValue)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold" style="width: 30%">Employee Rep Ratio:</td>
+                                            <td><span class="badge bg-success-transparent">@Model.RequiredEmployeeRepRatioPercent.Value.ToString("0.##")%</span></td>
+                                        </tr>
+                                    }
+                                    @if (Model.RequiredEmployerRepRatioPercent.HasValue)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">Employer Rep Ratio:</td>
+                                            <td><span class="badge bg-primary-transparent">@Model.RequiredEmployerRepRatioPercent.Value.ToString("0.##")%</span></td>
+                                        </tr>
+                                    }
+                                    @if (Model.MinFemaleRatioPercent.HasValue)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">Min Female Ratio:</td>
+                                            <td><span class="badge bg-info-transparent">@Model.MinFemaleRatioPercent.Value.ToString("0.##")%</span></td>
+                                        </tr>
+                                    }
+                                    @if (Model.MinMaleRatioPercent.HasValue)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">Min Male Ratio:</td>
+                                            <td><span class="badge bg-info-transparent">@Model.MinMaleRatioPercent.Value.ToString("0.##")%</span></td>
+                                        </tr>
+                                    }
+                                    @if (Model.MinMeetingsPerYear.HasValue)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">Min Meetings Per Year:</td>
+                                            <td><span class="badge bg-warning-transparent">@Model.MinMeetingsPerYear</span></td>
+                                        </tr>
+                                    }
+                                    @if (Model.QuorumPercentageValue.HasValue)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">Quorum Percentage:</td>
+                                            <td><span class="badge bg-primary-transparent">@Model.QuorumPercentageValue.Value.ToString("0.##")%</span></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+
+                <!-- Term Management -->
+                @if (Model.DefaultTermMonths.HasValue || Model.MaxConsecutiveTerms.HasValue)
+                {
+                    <hr />
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-muted mb-3">Term Management</h6>
+                            <table class="table table-borderless">
+                                <tbody>
+                                    @if (Model.DefaultTermMonths.HasValue)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold" style="width: 30%">Default Term:</td>
+                                            <td><span class="badge bg-info-transparent">@Model.DefaultTermMonths months (@(Model.DefaultTermMonths / 12.0) years)</span></td>
+                                        </tr>
+                                    }
+                                    @if (Model.MaxConsecutiveTerms.HasValue)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">Max Consecutive Terms:</td>
+                                            <td><span class="badge bg-warning-transparent">@Model.MaxConsecutiveTerms</span></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Role Definitions -->
+<div class="row">
+    <div class="col-xl-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Role Definitions (@roles.Count)</div>
+            </div>
+            <div class="card-body">
+                @if (roles.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Role Name</th>
+                                    <th>Description</th>
+                                    <th>Min</th>
+                                    <th>Max</th>
+                                    <th>Voting</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var role in roles)
+                                {
+                                    <tr>
+                                        <td><strong>@role.RoleName</strong></td>
+                                        <td>@(role.Description ?? "-")</td>
+                                        <td>
+                                            @if (role.MinOccurrences.HasValue)
+                                            {
+                                                <span class="badge bg-warning-transparent">@role.MinOccurrences</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (role.MaxOccurrences.HasValue)
+                                            {
+                                                <span class="badge bg-danger-transparent">@role.MaxOccurrences</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">∞</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (role.RequiresVotingRights)
+                                            {
+                                                <span class="badge bg-success"><i class="ri-checkbox-circle-line"></i></span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary"><i class="ri-close-circle-line"></i></span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (role.IsActive)
+                                            {
+                                                <span class="badge bg-success">Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        <i class="ri-information-line me-2"></i>
+                        No role definitions configured for this team type yet.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Teams -->
+@if (teams.Any())
+{
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card custom-card">
+                <div class="card-header">
+                    <div class="card-title">Teams Using This Type (@teams.Count)</div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Team Name</th>
+                                    <th>Station</th>
+                                    <th>Formation Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var team in teams)
+                                {
+                                    <tr>
+                                        <td><strong>@team.TeamName</strong></td>
+                                        <td>@team.Station.StationName</td>
+                                        <td>@team.FormationDate.ToString("dd MMM yyyy")</td>
+                                        <td>
+                                            @if (team.TeamStatus == "Active")
+                                            {
+                                                <span class="badge bg-success">@team.TeamStatus</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">@team.TeamStatus</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <a href="@Url.Action("Edit", "Team", new { id = team.TeamId })" class="btn btn-sm btn-primary-light">
+                                                <i class="ri-eye-line"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

@@ -1,0 +1,289 @@
+@using OSHManagement.Extensions
+@model List<OSHManagement.Models.ViewModels.TeamRoleDefinitionViewModel>
+@{
+    ViewData["Title"] = "Team Role Definitions";
+
+    // Build stat cards
+    var statConfig = new OSHManagement.Models.ViewModels.StatsRowConfig
+    {
+        Titles = new List<string> { "Total Roles", "OSH Committee", "Risk Assessment", "Investigation" },
+        Values = new List<string> {
+            Model.Count.ToString(),
+            Model.Count(r => r.TeamType == "OSH Committee").ToString(),
+            Model.Count(r => r.TeamType == "Risk Assessment").ToString(),
+            Model.Count(r => r.TeamType == "Investigation").ToString()
+        },
+        Icons = new List<string> {
+            "ri-user-settings-line",
+            "ri-shield-check-line",
+            "ri-alert-line",
+            "ri-search-line"
+        },
+        ColorThemes = new List<string> { "primary", "success", "warning", "danger" },
+        CardType = OSHManagement.Models.ViewModels.CardType.LeftBorderCard
+    };
+    var statCards = statConfig.BuildStatsRow();
+
+    // Build DataTable configuration
+    var tableConfig = new OSHManagement.Models.ViewModels.TableConfig
+    {
+        TableId = "roleDefinitionsTable",
+        ActionUrl = "/TeamRoleDefinition/Index",
+        Columns = new List<string> {
+            "Role Name",
+            "Team Type",
+            "Description",
+            "Voting Rights",
+            "Min/Max",
+            "Usage",
+            "Status",
+            "Actions"
+        },
+        SearchPlaceholder = "Search role definitions...",
+        CreateButtonText = "Create Role Definition",
+        CreateButtonUrl = "/TeamRoleDefinition/Create",
+        Filters = new List<OSHManagement.Models.ViewModels.FilterConfig>
+        {
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Team Type",
+                ParameterName = "teamType",
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Types", Value = "" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "OSH Committee", Value = "OSH Committee" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Risk Assessment", Value = "Risk Assessment" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Investigation", Value = "Investigation" }
+                }
+            }
+        }
+    };
+
+    // Build table with row data
+    var table = tableConfig.BuildTable(
+        tableContent: @<text>
+            @foreach (var role in Model)
+            {
+                // Team type badge colors and icons
+                var typeClass = role.TeamType switch
+                {
+                    "OSH Committee" => "success",
+                    "Risk Assessment" => "warning",
+                    "Investigation" => "danger",
+                    _ => "secondary"
+                };
+
+                var typeIcon = role.TeamType switch
+                {
+                    "OSH Committee" => "ri-shield-check-line",
+                    "Risk Assessment" => "ri-alert-line",
+                    "Investigation" => "ri-search-line",
+                    _ => "ri-group-line"
+                };
+
+                // Status badge
+                var statusClass = role.IsActive ? "success" : "secondary";
+                var statusText = role.IsActive ? "Active" : "Inactive";
+
+                // Usage count color coding
+                var usageClass = role.UsageCount > 0 ? "text-primary fw-semibold" : "text-muted";
+
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar avatar-sm bg-@typeClass-transparent me-2">
+                                <i class="ri-user-star-line fs-16"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold">@role.RoleName</div>
+                                @if (role.RequiredQualifications != null)
+                                {
+                                    <div class="text-muted fs-11">
+                                        <i class="ri-award-line me-1"></i>@(role.RequiredQualifications.Length > 30 ? role.RequiredQualifications.Substring(0, 30) + "..." : role.RequiredQualifications)
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-@typeClass-transparent">
+                            <i class="@typeIcon me-1"></i>@role.TeamType
+                        </span>
+                    </td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(role.Description))
+                        {
+                            <span class="text-muted">@(role.Description.Length > 50 ? role.Description.Substring(0, 50) + "..." : role.Description)</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted fst-italic">No description</span>
+                        }
+                    </td>
+                    <td>
+                        @if (role.RequiresVotingRights)
+                        {
+                            <span class="badge bg-info-transparent">
+                                <i class="ri-checkbox-circle-line me-1"></i>Required
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-light text-muted">
+                                <i class="ri-close-circle-line me-1"></i>Optional
+                            </span>
+                        }
+                    </td>
+                    <td>
+                        @if (role.MinOccurrences.HasValue || role.MaxOccurrences.HasValue)
+                        {
+                            <div class="text-dark">
+                                @if (role.MinOccurrences.HasValue && role.MaxOccurrences.HasValue)
+                                {
+                                    <span>@role.MinOccurrences - @role.MaxOccurrences</span>
+                                }
+                                else if (role.MinOccurrences.HasValue)
+                                {
+                                    <span>Min: @role.MinOccurrences</span>
+                                }
+                                else if (role.MaxOccurrences.HasValue)
+                                {
+                                    <span>Max: @role.MaxOccurrences</span>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="text-muted fst-italic">No limit</span>
+                        }
+                    </td>
+                    <td>
+                        <span class="@usageClass">
+                            <i class="ri-team-line me-1"></i>@role.UsageCount
+                        </span>
+                        @if (role.UsageCount > 0)
+                        {
+                            <small class="text-muted d-block">member@(role.UsageCount == 1 ? "" : "s")</small>
+                        }
+                    </td>
+                    <td>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input status-toggle" type="checkbox"
+                                   data-id="@role.TeamRoleDefinitionId"
+                                   data-name="@role.RoleName"
+                                   @(role.IsActive ? "checked" : "")>
+                            <label class="form-check-label">
+                                <span class="badge bg-@statusClass-transparent">@statusText</span>
+                            </label>
+                        </div>
+                    </td>
+                    <td>
+                        @{
+                            var rowActions = new OSHManagement.Models.ViewModels.RowActionConfig
+                            {
+                                EditUrl = $"/TeamRoleDefinition/Edit/{{id}}",
+                                DeleteUrl = $"/TeamRoleDefinition/Delete/{{id}}",
+                                DeleteItemName = role.RoleName,
+                                ShowView = false,
+                                ShowEdit = true,
+                                ShowDelete = role.UsageCount == 0
+                            };
+                            var actions = OSHManagement.Extensions.DataTableExtensions.BuildRowActions(role.TeamRoleDefinitionId, "/TeamRoleDefinition", rowActions);
+                        }
+                        <partial name="~/Views/Shared/Components/_ActionButtons.cshtml" model="actions" />
+                    </td>
+                </tr>
+            }
+        </text>,
+        currentUrl: Context.Request.Path + Context.Request.QueryString
+    );
+}
+
+<!-- Stat Cards Row -->
+<div class="row">
+    @foreach (var card in statCards)
+    {
+        <partial name="~/Views/Shared/Components/StatisticCards/_LeftBorderCard.cshtml" model="card" />
+    }
+</div>
+
+<!-- Main Content -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/_DataTable.cshtml" model="table" />
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="alert alert-info" role="alert">
+                <h5 class="alert-heading">
+                    <i class="ri-information-line me-2"></i>No Role Definitions Found
+                </h5>
+                <p class="mb-0">
+                    There are no team role definitions yet. Click "Create Role Definition" to set up roles for your teams.
+                </p>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Handle status toggle
+            $('.status-toggle').on('change', function () {
+                var checkbox = $(this);
+                var id = checkbox.data('id');
+                var roleName = checkbox.data('name');
+                var isActive = checkbox.is(':checked');
+
+                $.ajax({
+                    url: '@Url.Action("ToggleActive", "TeamRoleDefinition")',
+                    type: 'POST',
+                    data: {
+                        id: id,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            // Update badge
+                            var badge = checkbox.next('label').find('.badge');
+                            if (response.isActive) {
+                                badge.removeClass('bg-secondary-transparent').addClass('bg-success-transparent').text('Active');
+                            } else {
+                                badge.removeClass('bg-success-transparent').addClass('bg-secondary-transparent').text('Inactive');
+                            }
+                        } else {
+                            toastr.error(response.message);
+                            // Revert checkbox
+                            checkbox.prop('checked', !isActive);
+                        }
+                    },
+                    error: function () {
+                        toastr.error('An error occurred while updating the role status.');
+                        // Revert checkbox
+                        checkbox.prop('checked', !isActive);
+                    }
+                });
+            });
+
+            // Add anti-forgery token to delete forms if not present
+            $('form[action*="/TeamRoleDefinition/Delete"]').each(function () {
+                if ($(this).find('input[name="__RequestVerificationToken"]').length === 0) {
+                    var token = $('input[name="__RequestVerificationToken"]').first().val();
+                    if (token) {
+                        $(this).append('<input type="hidden" name="__RequestVerificationToken" value="' + token + '" />');
+                    }
+                }
+            });
+        });
+    </script>
+}
+
+<!-- Anti-forgery token for AJAX -->
+@Html.AntiForgeryToken()

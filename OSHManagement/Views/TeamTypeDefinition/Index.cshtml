@@ -1,0 +1,246 @@
+@model List<OSHManagement.Models.ViewModels.TeamTypeDefinitionViewModel>
+@using OSHManagement.Extensions
+
+@{
+    ViewData["Title"] = "Team Type Definitions";
+
+    // Stats configuration
+    var statConfig = new OSHManagement.Models.ViewModels.StatsRowConfig
+    {
+        Titles = new List<string> {
+            "Total Types",
+            "System Types",
+            "Custom Types",
+            "Total Roles"
+        },
+        Values = new List<string> {
+            Model.Count.ToString(),
+            Model.Count(t => t.IsSystemType).ToString(),
+            Model.Count(t => !t.IsSystemType).ToString(),
+            Model.Sum(t => t.RoleCount).ToString()
+        },
+        Icons = new List<string> {
+            "ri-list-check",
+            "ri-shield-check-line",
+            "ri-tools-line",
+            "ri-user-settings-line"
+        },
+        ColorThemes = new List<string> { "primary", "success", "info", "warning" },
+        CardType = OSHManagement.Models.ViewModels.CardType.LeftBorderCard
+    };
+
+    // Build stat cards (FIXED)
+    var statCards = statConfig.BuildStatsRow();
+
+    // Table configuration (UPDATED with missing properties)
+    var tableConfig = new OSHManagement.Models.ViewModels.TableConfig
+    {
+        TableId = "teamTypesTable",
+        ActionUrl = "/TeamTypeDefinition/Index",
+        Columns = new List<string> {
+            "Type", "Code", "Description", "Compliance", "Max Per Station", 
+            "Roles", "Teams", "Status", "Actions"
+        },
+        SearchPlaceholder = "Search team types...",
+        CreateButtonText = "Create Team Type",
+        CreateButtonUrl = "/TeamTypeDefinition/Create",
+        Filters = new List<OSHManagement.Models.ViewModels.FilterConfig>()
+    };
+
+    var table = tableConfig.BuildTable(
+        tableContent: @<text>
+            @foreach (var teamType in Model)
+            {
+                <tr>
+                    <td>
+                        @if (teamType.IsSystemType)
+                        {
+                            <i class="ri-shield-check-line me-2 text-primary"></i>
+                        }
+                        else
+                        {
+                            <i class="ri-tools-line me-2 text-info"></i>
+                        }
+                        <strong>@teamType.TypeName</strong>
+                        @if (teamType.IsSystemType)
+                        {
+                            <span class="badge bg-primary-transparent ms-2">System</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-info-transparent ms-2">Custom</span>
+                        }
+                    </td>
+                    <td><code class="text-primary">@teamType.TypeCode</code></td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(teamType.Description))
+                        {
+                            @(teamType.Description.Length > 80 ? teamType.Description.Substring(0, 80) + "..." : teamType.Description)
+                        }
+                        else
+                        {
+                            <span class="text-muted">No description</span>
+                        }
+                    </td>
+                    <td>
+                        @if (teamType.RequiresStatutoryCompliance)
+                        {
+                            <span class="badge bg-success"><i class="ri-checkbox-circle-line me-1"></i>Required</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Not Required</span>
+                        }
+                    </td>
+                    <td>
+                        @if (teamType.MaxTeamsPerStation.HasValue)
+                        {
+                            <span class="badge bg-primary-transparent">@teamType.MaxTeamsPerStation</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted"><i class="ri-infinity-line"></i> Unlimited</span>
+                        }
+                    </td>
+                    <td>
+                        @if (teamType.RoleCount > 0)
+                        {
+                            <span class="badge bg-info-transparent">@teamType.RoleCount role@(teamType.RoleCount > 1 ? "s" : "")</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">0 roles</span>
+                        }
+                    </td>
+                    <td>
+                        @if (teamType.TeamCount > 0)
+                        {
+                            <span class="badge bg-success-transparent">@teamType.TeamCount team@(teamType.TeamCount > 1 ? "s" : "")</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">No teams</span>
+                        }
+                    </td>
+                    <td>
+                        @if (teamType.IsActive)
+                        {
+                            <span class="badge bg-success"><i class="ri-checkbox-circle-line me-1"></i>Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary"><i class="ri-close-circle-line me-1"></i>Inactive</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <a href="@Url.Action("Details", new { id = teamType.TeamTypeDefinitionId })"
+                               class="btn btn-sm btn-primary-light"
+                               title="View Details">
+                                <i class="ri-eye-line"></i>
+                            </a>
+                            @if (!teamType.IsSystemType)
+                            {
+                                <button type="button"
+                                        class="btn btn-sm @(teamType.IsActive ? "btn-warning-light" : "btn-success-light") toggle-status-btn"
+                                        data-id="@teamType.TeamTypeDefinitionId"
+                                        data-name="@teamType.TypeName"
+                                        title="@(teamType.IsActive ? "Deactivate" : "Activate")">
+                                    <i class="@(teamType.IsActive ? "ri-close-circle-line" : "ri-checkbox-circle-line")"></i>
+                                </button>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </text>,
+        currentUrl: Context.Request.Path + Context.Request.QueryString
+    );
+}
+
+<!-- Stats Row (FIXED) -->
+<div class="row">
+    @foreach (var card in statCards)
+    {
+        <partial name="~/Views/Shared/Components/StatisticCards/_LeftBorderCard.cshtml" model="card" />
+    }
+</div>
+
+<!-- Main Card -->
+<div class="row">
+    <div class="col-xl-12">
+        <div class="card custom-card">
+           
+            <div class="card-body">
+                <!-- ... your existing alert and content ... -->
+
+                @if (!Model.Any())
+                {
+                    <div class="alert alert-warning" role="alert">
+                        <i class="ri-alert-line me-2"></i>
+                        No team type definitions found. Please run the database seed scripts to create standard team types.
+                    </div>
+                }
+                else
+                {
+                    <!-- FIXED: Use partial instead of Html.Raw -->
+                    <partial name="~/Views/Shared/Components/_DataTable.cshtml" model="table" />
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @if (Model.Any())
+    {
+        <script>
+            $(document).ready(function() {
+                // Handle toggle status
+                $(document).on('click', '.toggle-status-btn', function() {
+                    const typeId = $(this).data('id');
+                    const typeName = $(this).data('name');
+                    const $btn = $(this);
+
+                    if (confirm(`Are you sure you want to toggle the status of '${typeName}'?`)) {
+                        $.ajax({
+                            url: '/TeamTypeDefinition/ToggleActive/' + typeId,
+                            type: 'POST',
+                            headers: {
+                                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    toastr.success(response.message);
+
+                                    // Update button
+                                    if (response.isActive) {
+                                        $btn.removeClass('btn-success-light').addClass('btn-warning-light');
+                                        $btn.find('i').removeClass('ri-checkbox-circle-line').addClass('ri-close-circle-line');
+                                        $btn.attr('title', 'Deactivate');
+                                    } else {
+                                        $btn.removeClass('btn-warning-light').addClass('btn-success-light');
+                                        $btn.find('i').removeClass('ri-close-circle-line').addClass('ri-checkbox-circle-line');
+                                        $btn.attr('title', 'Activate');
+                                    }
+
+                                    // Reload table
+                                    setTimeout(function() {
+                                        location.reload();
+                                    }, 1000);
+                                } else {
+                                    toastr.error(response.message);
+                                }
+                            },
+                            error: function() {
+                                toastr.error('An error occurred while toggling the team type status.');
+                            }
+                        });
+                    }
+                });
+            });
+        </script>
+    }
+}
+<!-- Anti-forgery token for AJAX (ADDED) -->
+@Html.AntiForgeryToken()

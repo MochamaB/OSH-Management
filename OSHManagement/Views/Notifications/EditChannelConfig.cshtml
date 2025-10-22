@@ -1,0 +1,211 @@
+@model List<OSHManagement.Models.NotificationChannelConfig>
+@{
+    ViewData["Title"] = "Edit Channel Configuration";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    
+    var channel = ViewBag.Channel as string ?? "Email";
+    var channelIcon = channel switch
+    {
+        "Email" => "ri-mail-line",
+        "SMS" => "ri-message-2-line",
+        "WhatsApp" => "ri-whatsapp-line",
+        _ => "ri-settings-line"
+    };
+}
+
+<div class="row">
+    <div class="col-xl-12">
+        <div class="card custom-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-title">
+                    <i class="@channelIcon me-2"></i>Edit @channel Configuration
+                </div>
+                <a href="@Url.Action("ChannelConfigs", "Notifications")" class="btn btn-sm btn-light">
+                    <i class="ri-arrow-left-line me-1"></i>Back to Configurations
+                </a>
+            </div>
+            <div class="card-body">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="ri-checkbox-circle-line me-2"></i>@TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="ri-error-warning-line me-2"></i>@TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <form method="post" action="@Url.Action("SaveChannelConfig", "Notifications")" id="channelConfigForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="channel" value="@channel" />
+
+                    @if (!Model.Any())
+                    {
+                        <div class="alert alert-warning">
+                            <i class="ri-alert-line me-2"></i>No configurations found for this channel.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row">
+                            @foreach (var config in Model.OrderBy(c => c.DisplayOrder))
+                            {
+                                <div class="col-md-6 mb-4">
+                                    @if (config.ConfigKey.Equals("EnableSsl", StringComparison.OrdinalIgnoreCase) || 
+                                         config.ConfigKey.Equals("Enabled", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <!-- Checkbox field - no form-floating -->
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" 
+                                                   type="checkbox" 
+                                                   id="config_@config.ConfigKey" 
+                                                   name="configs[@config.ConfigKey]" 
+                                                   value="true"
+                                                   @(config.ConfigValue?.ToLower() == "true" ? "checked" : "") />
+                                            <label class="form-check-label" for="config_@config.ConfigKey">
+                                                @config.ConfigKey
+                                                @if (config.IsRequired)
+                                                {
+                                                    <span class="text-danger">*</span>
+                                                }
+                                            </label>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(config.Description))
+                                        {
+                                            <div class="form-text">
+                                                <i class="ri-information-line me-1"></i>@config.Description
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <!-- Standard fields with form-floating -->
+                                        <div class="form-floating">
+                                            @if (config.ConfigKey.Contains("Password") || config.ConfigKey.Contains("Token") || config.ConfigKey.Contains("Key"))
+                                            {
+                                                <!-- Password field -->
+                                                <input type="password" 
+                                                       class="form-control" 
+                                                       id="config_@config.ConfigKey" 
+                                                       name="configs[@config.ConfigKey]" 
+                                                       value="@config.ConfigValue"
+                                                       placeholder="@config.ConfigKey"
+                                                       @(config.IsRequired ? "required" : "") />
+                                            }
+                                            else if (config.ConfigKey.Contains("Port"))
+                                            {
+                                                <!-- Number field -->
+                                                <input type="number" 
+                                                       class="form-control" 
+                                                       id="config_@config.ConfigKey" 
+                                                       name="configs[@config.ConfigKey]" 
+                                                       value="@config.ConfigValue"
+                                                       placeholder="@config.ConfigKey"
+                                                       @(config.IsRequired ? "required" : "") />
+                                            }
+                                            else
+                                            {
+                                                <!-- Text field -->
+                                                <input type="text" 
+                                                       class="form-control" 
+                                                       id="config_@config.ConfigKey" 
+                                                       name="configs[@config.ConfigKey]" 
+                                                       value="@config.ConfigValue"
+                                                       placeholder="@config.ConfigKey"
+                                                       maxlength="500"
+                                                       @(config.IsRequired ? "required" : "") />
+                                            }
+                                            
+                                            <label for="config_@config.ConfigKey">
+                                                @config.ConfigKey
+                                                @if (config.IsRequired)
+                                                {
+                                                    <span class="text-danger">*</span>
+                                                }
+                                                @if (config.IsEncrypted)
+                                                {
+                                                    <span class="badge bg-warning-transparent ms-2">
+                                                        <i class="ri-lock-line"></i> Encrypted
+                                                    </span>
+                                                }
+                                            </label>
+                                        </div>
+                                        
+                                        @if (!string.IsNullOrEmpty(config.Description))
+                                        {
+                                            <div class="form-text">
+                                                <i class="ri-information-line me-1"></i>@config.Description
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="ri-save-line me-2"></i>Save Configuration
+                            </button>
+                            <button type="button" class="btn btn-success" id="testConnectionBtn">
+                                <i class="ri-shield-check-line me-2"></i>Test Connection
+                            </button>
+                            <a href="@Url.Action("ChannelConfigs", "Notifications")" class="btn btn-light">
+                                Cancel
+                            </a>
+                        </div>
+                    }
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Test Connection
+            $('#testConnectionBtn').on('click', function() {
+                var btn = $(this);
+                btn.prop('disabled', true);
+                btn.html('<span class="spinner-border spinner-border-sm me-2"></span>Testing...');
+
+                $.ajax({
+                    url: '@Url.Action("TestChannelConfig", "Notifications")',
+                    type: 'POST',
+                    data: { channel: '@channel' },
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success(response.message, 'Connection Test Successful');
+                        } else {
+                            toastr.error(response.message, 'Connection Test Failed');
+                        }
+                    },
+                    error: function() {
+                        toastr.error('An error occurred while testing the connection', 'Error');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false);
+                        btn.html('<i class="ri-shield-check-line me-2"></i>Test Connection');
+                    }
+                });
+            });
+
+            // Form validation feedback
+            $('#channelConfigForm').on('submit', function(e) {
+                var form = this;
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toastr.error('Please fill in all required fields', 'Validation Error');
+                }
+                form.classList.add('was-validated');
+            });
+        });
+    </script>
+}

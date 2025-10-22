@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using OSHManagement.Data;
 using OSHManagement.Models.ViewModels;
 using OSHManagement.Services;
+using OSHManagement.Services.Notifications;
 using OSHManagement.Extensions;
 using FluentValidation.AspNetCore;
 
@@ -17,6 +18,7 @@ namespace OSHManagement.Controllers
         private readonly IEmployeeService _employeeService;
         private readonly IScopeFilterService _scopeFilterService;
         private readonly IPasswordHashService _passwordHashService;
+        private readonly IEmployeeNotificationService _employeeNotifications;
 
         public EmployeeController(
             OshDbContext context,
@@ -25,6 +27,7 @@ namespace OSHManagement.Controllers
             IOrganizationalHierarchyService orgHierarchyService,
             IEmployeeService employeeService,
             IPasswordHashService passwordHashService,
+            IEmployeeNotificationService employeeNotifications,
             ILogger<EmployeeController> logger)
             : base(context, scopeFilter, logger)
         {
@@ -33,6 +36,7 @@ namespace OSHManagement.Controllers
             _employeeService = employeeService;
             _scopeFilterService = scopeFilter;
             _passwordHashService = passwordHashService;
+            _employeeNotifications = employeeNotifications;
         }
 
         // GET: Employee/Index
@@ -313,6 +317,17 @@ namespace OSHManagement.Controllers
                     }
 
                     await _context.SaveChangesAsync();
+
+                    // ✅ Send notification to HR Managers and Station users
+                    var station = await _context.Stations.FindAsync(employee.StationId);
+                    if (station != null)
+                    {
+                        await _employeeNotifications.NotifyEmployeeCreatedAsync(
+                            employee,
+                            station,
+                            User.Identity?.Name ?? "System"
+                        );
+                    }
 
                     TempData["Success"] = $"Employee '{model.FirstName} {model.LastName}' has been created successfully with payroll number {model.PayrollNo}.";
                     return RedirectToAction(nameof(Index));

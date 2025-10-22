@@ -33,6 +33,17 @@ namespace OSHManagement.Models
         public bool IsVotingMember { get; set; }
         public bool IsActive { get; set; } = true;
 
+        // Term Management (NEW)
+        public DateTime? TermEndDate { get; set; }
+        public int TermNumber { get; set; } = 1;
+        public bool IsElected { get; set; } = false;
+
+        [MaxLength(100)]
+        public string? ElectionReference { get; set; }
+
+        [MaxLength(100)]
+        public string? AppointmentLetterRef { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
 

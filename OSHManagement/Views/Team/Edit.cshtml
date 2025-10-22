@@ -92,12 +92,33 @@
                 Title = "Configuration",
                 Icon = "ri-settings-3-line",
                 Content = @<text>
-                    <div class="row">
+                    @{
+                        var roleDefinitions = ViewBag.RoleDefinitions as List<dynamic> ?? new List<dynamic>();
+                        var calculatedMinimum = ViewBag.CalculatedMinimum ?? 0;
+                        var sectionCount = ViewBag.SectionCount ?? 0;
+                        var totalMembers = currentMembers.Count;
+                    }
+
+                    <!-- Team-Level Settings -->
+                    <div class="row mb-4">
+                        <div class="col-12 mb-3">
+                            <h6 class="fw-semibold text-primary">
+                                <i class="ri-settings-3-line me-2"></i>Team-Level Settings
+                            </h6>
+                            <p class="text-muted fs-12">Configure overall team capacity and requirements</p>
+                        </div>
+
                         <div class="col-md-6 mb-3">
                             <label asp-for="RequiredMemberCount" class="form-label"></label>
-                            <input asp-for="RequiredMemberCount" type="number" class="form-control" min="1" />
+                            <input asp-for="RequiredMemberCount" type="number" class="form-control" min="@calculatedMinimum" />
                             <span asp-validation-for="RequiredMemberCount" class="text-danger"></span>
-                            <div class="form-text">Minimum members required for team validation</div>
+                            <div class="form-text">
+                                Minimum members required
+                                @if (calculatedMinimum > 0)
+                                {
+                                    <span class="text-warning">(Role minimum: @calculatedMinimum)</span>
+                                }
+                            </div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label asp-for="MaxMemberCount" class="form-label"></label>
@@ -110,22 +131,233 @@
                                 <input asp-for="RequiresSectionRepresentation" class="form-check-input" type="checkbox" />
                                 <label asp-for="RequiresSectionRepresentation" class="form-check-label"></label>
                             </div>
-                            <div class="form-text">Requires members from different sections</div>
+                            <div class="form-text">Team must have members from different sections</div>
+                        </div>
+                    </div>
+
+                    <!-- Role Requirements Summary -->
+                    <div class="row mb-4">
+                        <div class="col-12 mb-3">
+                            <h6 class="fw-semibold text-primary">
+                                <i class="ri-user-star-line me-2"></i>Role Requirements for @Model.TeamType
+                            </h6>
+                            <p class="text-muted fs-12">Based on active role definitions for this team type</p>
                         </div>
 
                         <div class="col-12">
-                            <div class="alert alert-info border-0">
-                                <i class="ri-information-line me-2"></i>
-                                <strong>Current Status:</strong> @currentMembers.Count member(s) currently in team
-                                @if (Model.RequiredMemberCount.HasValue)
-                                {
-                                    <span>(Minimum: @Model.RequiredMemberCount)</span>
-                                }
-                                @if (Model.MaxMemberCount.HasValue)
-                                {
-                                    <span>(Maximum: @Model.MaxMemberCount)</span>
-                                }
+                            @if (roleDefinitions.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Role</th>
+                                                <th class="text-center">Current</th>
+                                                <th class="text-center">Min</th>
+                                                <th class="text-center">Max</th>
+                                                <th class="text-center">Voting</th>
+                                                <th class="text-center">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var role in roleDefinitions)
+                                            {
+                                                var isFilled = role.MinOccurrences.HasValue && role.CurrentCount >= role.MinOccurrences;
+                                                var isOverfilled = role.MaxOccurrences.HasValue && role.CurrentCount > role.MaxOccurrences;
+                                                var statusClass = isOverfilled ? "danger" : (isFilled ? "success" : "warning");
+                                                var statusIcon = isOverfilled ? "ri-error-warning-line" : (isFilled ? "ri-checkbox-circle-line" : "ri-alert-line");
+                                                var statusText = isOverfilled ? "Over capacity" : (isFilled ? "Met" : "Needs filling");
+
+                                                <tr>
+                                                    <td>
+                                                        <strong>@role.RoleName</strong>
+                                                        @if (!string.IsNullOrEmpty(role.Description))
+                                                        {
+                                                            <br /><small class="text-muted">@role.Description</small>
+                                                        }
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-@statusClass-transparent fs-13">@role.CurrentCount</span>
+                                                    </td>
+                                                    <td class="text-center">@(role.MinOccurrences?.ToString() ?? "—")</td>
+                                                    <td class="text-center">@(role.MaxOccurrences?.ToString() ?? "—")</td>
+                                                    <td class="text-center">
+                                                        @if (role.RequiresVotingRights)
+                                                        {
+                                                            <i class="ri-checkbox-circle-fill text-success"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="ri-close-circle-fill text-muted"></i>
+                                                        }
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-@statusClass-transparent">
+                                                            <i class="@statusIcon me-1"></i>@statusText
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot class="table-light">
+                                            <tr>
+                                                <td><strong>Total</strong></td>
+                                                <td class="text-center"><strong>@totalMembers</strong></td>
+                                                <td class="text-center"><strong>@calculatedMinimum</strong></td>
+                                                <td class="text-center">—</td>
+                                                <td class="text-center">—</td>
+                                                <td class="text-center">—</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning border-0">
+                                    <i class="ri-alert-line me-2"></i>
+                                    No role definitions found for <strong>@Model.TeamType</strong>.
+                                    <a href="/TeamRoleDefinition/Index?teamType=@Model.TeamType" class="alert-link">Create role definitions</a> to enable role-based validation.
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Current Compliance -->
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <h6 class="fw-semibold text-primary">
+                                <i class="ri-check-double-line me-2"></i>Current Compliance
+                            </h6>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="card border">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar avatar-md bg-primary-transparent me-3">
+                                            <i class="ri-team-line fs-18"></i>
+                                        </div>
+                                        <div class="flex-fill">
+                                            <h6 class="mb-1">Team Size</h6>
+                                            <div class="d-flex align-items-center">
+                                                <span class="fs-20 fw-semibold me-2">@totalMembers</span>
+                                                @if (Model.MaxMemberCount.HasValue)
+                                                {
+                                                    <span class="text-muted">/ @Model.MaxMemberCount</span>
+                                                }
+                                            </div>
+                                            @if (Model.RequiredMemberCount.HasValue)
+                                            {
+                                                var meetsMinimum = totalMembers >= Model.RequiredMemberCount.Value;
+                                                <small class="text-@(meetsMinimum ? "success" : "danger")">
+                                                    <i class="ri-@(meetsMinimum ? "checkbox" : "close")-circle-line me-1"></i>
+                                                    Required: @Model.RequiredMemberCount
+                                                </small>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+
+                        @if (Model.RequiresSectionRepresentation)
+                        {
+                            <div class="col-md-6 mb-3">
+                                <div class="card border">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar avatar-md bg-info-transparent me-3">
+                                                <i class="ri-git-branch-line fs-18"></i>
+                                            </div>
+                                            <div class="flex-fill">
+                                                <h6 class="mb-1">Section Diversity</h6>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="fs-20 fw-semibold me-2">@sectionCount</span>
+                                                    <span class="text-muted">sections</span>
+                                                </div>
+                                                <small class="text-@(sectionCount >= 2 ? "success" : "warning")">
+                                                    <i class="ri-@(sectionCount >= 2 ? "checkbox" : "alert")-circle-line me-1"></i>
+                                                    @(sectionCount >= 2 ? "Diverse representation" : "Need more sections")
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Validation Messages -->
+                        <div class="col-12">
+                            @{
+                                var hasErrors = false;
+                                var hasWarnings = false;
+                            }
+
+                            @if (Model.RequiredMemberCount.HasValue && totalMembers < Model.RequiredMemberCount.Value)
+                            {
+                                hasErrors = true;
+                                <div class="alert alert-danger border-0">
+                                    <i class="ri-error-warning-line me-2"></i>
+                                    <strong>Error:</strong> Team has @totalMembers members but requires minimum @Model.RequiredMemberCount
+                                </div>
+                            }
+
+                            @if (Model.MaxMemberCount.HasValue && totalMembers > Model.MaxMemberCount.Value)
+                            {
+                                hasErrors = true;
+                                <div class="alert alert-danger border-0">
+                                    <i class="ri-error-warning-line me-2"></i>
+                                    <strong>Error:</strong> Team has @totalMembers members but maximum is @Model.MaxMemberCount
+                                </div>
+                            }
+
+                            @if (calculatedMinimum > 0 && Model.RequiredMemberCount.HasValue && Model.RequiredMemberCount.Value < calculatedMinimum)
+                            {
+                                hasWarnings = true;
+                                <div class="alert alert-warning border-0">
+                                    <i class="ri-alert-line me-2"></i>
+                                    <strong>Warning:</strong> Required member count (@Model.RequiredMemberCount) is less than role-based minimum (@calculatedMinimum)
+                                </div>
+                            }
+
+                            @foreach (var role in roleDefinitions)
+                            {
+                                if (role.MinOccurrences.HasValue && role.CurrentCount < role.MinOccurrences)
+                                {
+                                    hasWarnings = true;
+                                    <div class="alert alert-warning border-0">
+                                        <i class="ri-alert-line me-2"></i>
+                                        <strong>Warning:</strong> Role "@role.RoleName" has @role.CurrentCount member(s) but requires minimum @role.MinOccurrences
+                                    </div>
+                                }
+
+                                if (role.MaxOccurrences.HasValue && role.CurrentCount > role.MaxOccurrences)
+                                {
+                                    hasErrors = true;
+                                    <div class="alert alert-danger border-0">
+                                        <i class="ri-error-warning-line me-2"></i>
+                                        <strong>Error:</strong> Role "@role.RoleName" has @role.CurrentCount member(s) but maximum is @role.MaxOccurrences
+                                    </div>
+                                }
+                            }
+
+                            @if (Model.RequiresSectionRepresentation && sectionCount < 2)
+                            {
+                                hasWarnings = true;
+                                <div class="alert alert-warning border-0">
+                                    <i class="ri-alert-line me-2"></i>
+                                    <strong>Warning:</strong> Team requires section representation but only has members from @sectionCount section(s)
+                                </div>
+                            }
+
+                            @if (!hasErrors && !hasWarnings)
+                            {
+                                <div class="alert alert-success border-0">
+                                    <i class="ri-checkbox-circle-line me-2"></i>
+                                    <strong>All checks passed!</strong> Team configuration meets all requirements.
+                                </div>
+                            }
                         </div>
                     </div>
                 </text>
@@ -138,18 +370,60 @@
                 Title = "Team Members",
                 Icon = "ri-team-line",
                 Content = @<text>
+                    @{
+                        var roleDefinitions = ViewBag.RoleDefinitions as List<dynamic> ?? new List<dynamic>();
+                    }
+
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h6 class="mb-0">Current Members (@currentMembers.Count)</h6>
-                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="openAddMemberModal()">
                             <i class="ri-user-add-line me-1"></i>Add Member
                         </button>
                     </div>
 
+                    <!-- Role Compliance Summary -->
+                    @if (roleDefinitions.Any())
+                    {
+                        <div class="card border mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">Role Compliance</h6>
+                                <div class="row g-2">
+                                    @foreach (var role in roleDefinitions)
+                                    {
+                                        var isFilled = role.MinOccurrences.HasValue && role.CurrentCount >= role.MinOccurrences;
+                                        var isOverfilled = role.MaxOccurrences.HasValue && role.CurrentCount > role.MaxOccurrences;
+                                        var statusClass = isOverfilled ? "danger" : (isFilled ? "success" : "warning");
+
+                                        <div class="col-md-4 col-sm-6">
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar avatar-sm bg-@statusClass-transparent me-2">
+                                                    <i class="ri-user-star-line"></i>
+                                                </div>
+                                                <div class="flex-fill">
+                                                    <div class="fs-12 text-muted">@role.RoleName</div>
+                                                    <div class="fw-semibold">
+                                                        @role.CurrentCount
+                                                        @if (role.MinOccurrences.HasValue || role.MaxOccurrences.HasValue)
+                                                        {
+                                                            <span class="text-muted fs-11">
+                                                                (@(role.MinOccurrences?.ToString() ?? "0")-@(role.MaxOccurrences?.ToString() ?? "∞"))
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+
                     @if (currentMembers.Any())
                     {
                         <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead>
+                            <table class="table table-bordered" id="teamMembersTable">
+                                <thead class="table-light">
                                     <tr>
                                         <th>Employee</th>
                                         <th>Role</th>
@@ -162,31 +436,44 @@
                                 <tbody>
                                     @foreach (var member in currentMembers)
                                     {
-                                        <tr>
+                                        <tr data-member-id="@member.MemberId" data-role-id="@member.TeamRoleDefinitionId">
                                             <td>
-                                                <strong>@member.EmployeeName</strong><br>
-                                                <small class="text-muted">@member.EmployeePayroll</small>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar avatar-sm bg-primary-transparent me-2">
+                                                        <i class="ri-user-line"></i>
+                                                    </div>
+                                                    <div>
+                                                        <strong>@member.EmployeeName</strong><br>
+                                                        <small class="text-muted">@member.EmployeePayroll</small>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td>
-                                                <span class="badge bg-primary">@member.MemberRole</span>
+                                                <span class="badge bg-primary-transparent">
+                                                    <i class="ri-user-star-line me-1"></i>@member.MemberRole
+                                                </span>
                                             </td>
                                             <td>@(member.SectionId != null ? "Section assigned" : "—")</td>
                                             <td>@((DateTime)member.AppointmentDate).ToString("dd/MM/yyyy")</td>
-                                            <td>
+                                            <td class="text-center">
                                                 @if (member.IsVotingMember)
                                                 {
-                                                    <i class="ri-checkbox-circle-fill text-success"></i>
+                                                    <span class="badge bg-success-transparent">
+                                                        <i class="ri-checkbox-circle-line me-1"></i>Yes
+                                                    </span>
                                                 }
                                                 else
                                                 {
-                                                    <i class="ri-close-circle-fill text-muted"></i>
+                                                    <span class="badge bg-light text-muted">
+                                                        <i class="ri-close-circle-line me-1"></i>No
+                                                    </span>
                                                 }
                                             </td>
                                             <td>
-                                                <button type="button" class="btn btn-sm btn-light" onclick="editMember(@member.MemberId)">
+                                                <button type="button" class="btn btn-sm btn-light" onclick="editMember(@member.MemberId)" title="Edit">
                                                     <i class="ri-edit-line"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-danger" onclick="removeMember(@member.MemberId)">
+                                                <button type="button" class="btn btn-sm btn-danger" onclick="removeMember(@member.MemberId, '@member.EmployeeName')" title="Remove">
                                                     <i class="ri-user-unfollow-line"></i>
                                                 </button>
                                             </td>
@@ -213,71 +500,198 @@
                 Title = $"{Model.TeamType} Settings",
                 Icon = "ri-file-settings-line",
                 Content = @<text>
-                    <div class="alert alert-info border-0 mb-3">
+                    <div class="alert alert-info border-0 mb-3 alert-permanent">
                         <i class="ri-information-line me-2"></i>
-                        <strong>Team Type:</strong> @Model.TeamType
+                        <strong>Team Type:</strong> @Model.TeamType - Configure operational and compliance settings specific to this team type.
                     </div>
 
-                    @if (Model.TeamType == "OSH Committee" && ViewBag.OshCommitteeConfig != null)
+                    @if (Model.TeamType == "OSH Committee")
                     {
                         var config = ViewBag.OshCommitteeConfig;
+                        var hasConfig = config != null;
+
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <h6 class="fw-semibold">OSH Committee Configuration</h6>
+                                <h6 class="fw-semibold text-primary">
+                                    <i class="ri-shield-check-line me-2"></i>OSH Committee Configuration
+                                </h6>
+                                <p class="text-muted fs-12">Training, meetings, and inspection requirements</p>
                             </div>
+
+                            <input type="hidden" name="OshConfig.ConfigId" value="@(hasConfig ? config.ConfigId : 0)" />
+                            <input type="hidden" name="OshConfig.TeamId" value="@Model.TeamId" />
+
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Committee Trained</label>
-                                <div>@(config.IsCommitteeTrained ? "Yes" : "No")</div>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input"
+                                           name="OshConfig.IsCommitteeTrained"
+                                           id="isCommitteeTrained"
+                                           @(hasConfig && config.IsCommitteeTrained ? "checked" : "") />
+                                    <label class="form-check-label" for="isCommitteeTrained">Committee Trained</label>
+                                </div>
+                                <div class="form-text">Has the committee received OSH training?</div>
                             </div>
+
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Training Date</label>
-                                <div>@(config.TrainingDate?.ToString("dd/MM/yyyy") ?? "—")</div>
+                                <label for="trainingDate" class="form-label">Training Date</label>
+                                <input type="date" class="form-control"
+                                       name="OshConfig.TrainingDate"
+                                       id="trainingDate"
+                                       value="@(hasConfig && config.TrainingDate.HasValue ? config.TrainingDate.Value.ToString("yyyy-MM-dd") : "")" />
                             </div>
+
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Has Meeting Schedule</label>
-                                <div>@(config.HasMeetingSchedule ? "Yes" : "No")</div>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input"
+                                           name="OshConfig.HasMeetingSchedule"
+                                           id="hasMeetingSchedule"
+                                           @(hasConfig && config.HasMeetingSchedule ? "checked" : "") />
+                                    <label class="form-check-label" for="hasMeetingSchedule">Has Meeting Schedule</label>
+                                </div>
+                                <div class="form-text">Does the committee have a regular meeting schedule?</div>
                             </div>
+
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Inspection Frequency</label>
-                                <div>@(config.InspectionFrequency ?? "—")</div>
+                                <label for="inspectionFrequency" class="form-label">Inspection Frequency</label>
+                                <select class="form-select" name="OshConfig.InspectionFrequency" id="inspectionFrequency">
+                                    <option value="">-- Select Frequency --</option>
+                                    <option value="Weekly" @@(hasConfig && config.InspectionFrequency == "Weekly" ? "selected" : "")>Weekly</option>
+                                    <option value="Monthly" @@(hasConfig && config.InspectionFrequency == "Monthly" ? "selected" : "")>Monthly</option>
+                                    <option value="Quarterly" @@(hasConfig && config.InspectionFrequency == "Quarterly" ? "selected" : "")>Quarterly</option>
+                                    <option value="Annually" @@(hasConfig && config.InspectionFrequency == "Annually" ? "selected" : "")>Annually</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="lastInspectionDate" class="form-label">Last Inspection Date</label>
+                                <input type="date" class="form-control"
+                                       name="OshConfig.LastInspectionDate"
+                                       id="lastInspectionDate"
+                                       value="@(hasConfig && config.LastInspectionDate.HasValue ? config.LastInspectionDate.Value.ToString("yyyy-MM-dd") : "")" />
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="nextInspectionDate" class="form-label">Next Inspection Date</label>
+                                <input type="date" class="form-control"
+                                       name="OshConfig.NextInspectionDate"
+                                       id="nextInspectionDate"
+                                       value="@(hasConfig && config.NextInspectionDate.HasValue ? config.NextInspectionDate.Value.ToString("yyyy-MM-dd") : "")" />
                             </div>
                         </div>
                     }
-                    else if (Model.TeamType == "Risk Assessment" && ViewBag.RiskAssessmentConfig != null)
+                    else if (Model.TeamType == "Risk Assessment")
                     {
                         var config = ViewBag.RiskAssessmentConfig;
+                        var hasConfig = config != null;
+
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <h6 class="fw-semibold">Risk Assessment Configuration</h6>
+                                <h6 class="fw-semibold text-primary">
+                                    <i class="ri-alert-line me-2"></i>Risk Assessment Configuration
+                                </h6>
+                                <p class="text-muted fs-12">Assessment frequency and team qualifications</p>
                             </div>
+
+                            <input type="hidden" name="RiskConfig.ConfigId" value="@(hasConfig ? config.ConfigId : 0)" />
+                            <input type="hidden" name="RiskConfig.TeamId" value="@Model.TeamId" />
+
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Assessment Frequency</label>
-                                <div>@(config.AssessmentFrequency ?? "—")</div>
+                                <label for="assessmentFrequency" class="form-label">Assessment Frequency</label>
+                                <select class="form-select" name="RiskConfig.AssessmentFrequency" id="assessmentFrequency">
+                                    <option value="">-- Select Frequency --</option>
+                                    <option value="Monthly" @@(hasConfig && config.AssessmentFrequency == "Monthly" ? "selected" : "")>Monthly</option>
+                                    <option value="Quarterly" @@(hasConfig && config.AssessmentFrequency == "Quarterly" ? "selected" : "")>Quarterly</option>
+                                    <option value="Semi-Annually" @@(hasConfig && config.AssessmentFrequency == "Semi-Annually" ? "selected" : "")>Semi-Annually</option>
+                                    <option value="Annually" @@@(hasConfig && config.AssessmentFrequency == "As-Needed" ? "selected" : "")>As-Needed</option>
+                                </select>
                             </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="lastAssessmentDate" class="form-label">Last Assessment Date</label>
+                                <input type="date" class="form-control"
+                                       name="RiskConfig.LastAssessmentDate"
+                                       id="lastAssessmentDate"
+                                       value="@(hasConfig && config.LastAssessmentDate.HasValue ? config.LastAssessmentDate.Value.ToString("yyyy-MM-dd") : "")" />
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="nextAssessmentDate" class="form-label">Next Assessment Date</label>
+                                <input type="date" class="form-control"
+                                       name="RiskConfig.NextAssessmentDate"
+                                       id="nextAssessmentDate"
+                                       value="@(hasConfig && config.NextAssessmentDate.HasValue ? config.NextAssessmentDate.Value.ToString("yyyy-MM-dd") : "")" />
+                            </div>
+
                             <div class="col-12 mb-3">
-                                <label class="form-label">Team Qualifications</label>
-                                <div>@(config.TeamQualifications ?? "—")</div>
+                                <label for="teamQualifications" class="form-label">Team Qualifications</label>
+                                <textarea class="form-control"
+                                          name="RiskConfig.TeamQualifications"
+                                          id="teamQualifications"
+                                          rows="3"
+                                          maxlength="500"
+                                          placeholder="Describe the qualifications and expertise of team members">@(hasConfig ? config.TeamQualifications : "")</textarea>
+                                <div class="form-text">Optional: List relevant certifications, training, or experience</div>
                             </div>
                         </div>
                     }
-                    else if (Model.TeamType == "Investigation" && ViewBag.IncidentInvestigationConfig != null)
+                    else if (Model.TeamType == "Investigation")
                     {
                         var config = ViewBag.IncidentInvestigationConfig;
+                        var hasConfig = config != null;
+
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <h6 class="fw-semibold">Investigation Team Configuration</h6>
+                                <h6 class="fw-semibold text-primary">
+                                    <i class="ri-search-line me-2"></i>Investigation Team Configuration
+                                </h6>
+                                <p class="text-muted fs-12">Response time, scope, and team expertise</p>
                             </div>
+
+                            <input type="hidden" name="InvestigationConfig.ConfigId" value="@(hasConfig ? config.ConfigId : 0)" />
+                            <input type="hidden" name="InvestigationConfig.TeamId" value="@Model.TeamId" />
+
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Response Time</label>
-                                <div>@config.ResponseTimeHours hours</div>
+                                <label for="responseTimeHours" class="form-label">Response Time (Hours)</label>
+                                <input type="number" class="form-control"
+                                       name="InvestigationConfig.ResponseTimeHours"
+                                       id="responseTimeHours"
+                                       min="1"
+                                       max="168"
+                                       value="@(hasConfig ? config.ResponseTimeHours : 24)" />
+                                <div class="form-text">Time to respond to incident (1-168 hours)</div>
                             </div>
-                            <div class="col-12 mb-3">
-                                <label class="form-label">Investigation Scope</label>
-                                <div>@(config.InvestigationScope ?? "—")</div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="escalationThreshold" class="form-label">Escalation Threshold</label>
+                                <select class="form-select" name="InvestigationConfig.EscalationThreshold" id="escalationThreshold">
+                                    <option value="">-- Select Threshold --</option>
+                                    <option value="Minor" @@(hasConfig && config.EscalationThreshold == "Minor" ? "selected" : "")>Minor Incidents</option>
+                                    <option value="Moderate" @@(hasConfig && config.EscalationThreshold == "Moderate" ? "selected" : "")>Moderate Incidents</option>
+                                    <option value="Serious" @@(hasConfig && config.EscalationThreshold == "Serious" ? "selected" : "")>Serious Incidents</option>
+                                    <option value="Critical" @@(hasConfig && config.EscalationThreshold == "Critical" ? "selected" : "")>Critical Incidents Only</option>
+                                </select>
                             </div>
+
                             <div class="col-12 mb-3">
-                                <label class="form-label">Team Expertise</label>
-                                <div>@(config.TeamExpertise ?? "—")</div>
+                                <label for="investigationScope" class="form-label">Investigation Scope</label>
+                                <textarea class="form-control"
+                                          name="InvestigationConfig.InvestigationScope"
+                                          id="investigationScope"
+                                          rows="3"
+                                          maxlength="500"
+                                          placeholder="Define the scope of investigations this team handles">@(hasConfig ? config.InvestigationScope : "")</textarea>
+                                <div class="form-text">Optional: Describe types of incidents and investigation depth</div>
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                <label for="teamExpertise" class="form-label">Team Expertise</label>
+                                <textarea class="form-control"
+                                          name="InvestigationConfig.TeamExpertise"
+                                          id="teamExpertise"
+                                          rows="3"
+                                          maxlength="500"
+                                          placeholder="Describe the expertise and specializations of team members">@(hasConfig ? config.TeamExpertise : "")</textarea>
+                                <div class="form-text">Optional: List relevant skills, certifications, or experience</div>
                             </div>
                         </div>
                     }
@@ -285,14 +699,9 @@
                     {
                         <div class="alert alert-secondary border-0">
                             <i class="ri-file-list-line me-2"></i>
-                            No additional configuration for this team type.
+                            No additional operational configuration required for team type: <strong>@Model.TeamType</strong>
                         </div>
                     }
-
-                    <div class="alert alert-warning border-0 mt-3">
-                        <i class="ri-alert-line me-2"></i>
-                        Type-specific settings can only be changed when creating a new team. To modify these settings, contact system administrator.
-                    </div>
                 </text>
             },
 
@@ -372,19 +781,102 @@
     </div>
 </form>
 
-<!-- Add Member Modal (Placeholder) -->
-<div class="modal fade" id="addMemberModal" tabindex="-1" aria-hidden="true">
+<!-- Add/Edit Member Modal -->
+<div class="modal fade" id="memberModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Add Team Member</h5>
+                <h5 class="modal-title" id="memberModalTitle">Add Team Member</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted">Member management functionality will be implemented in the next phase.</p>
+                <form id="memberForm">
+                    <input type="hidden" id="memberId" name="memberId" value="0" />
+                    <input type="hidden" id="teamId" name="teamId" value="@Model.TeamId" />
+
+                    <!-- Role Selection -->
+                    <div class="mb-3">
+                        <label for="roleId" class="form-label">Role <span class="text-danger">*</span></label>
+                        <select class="form-select" id="roleId" name="roleId" required>
+                            <option value="">-- Select Role --</option>
+                        </select>
+                        <div id="roleInfo" class="mt-2" style="display: none;">
+                            <div class="alert alert-info alert-permanent mb-0">
+                                <div class="d-flex align-items-start">
+                                    <i class="ri-information-line me-2 mt-1"></i>
+                                    <div class="flex-fill">
+                                        <div id="roleDescription" class="mb-1"></div>
+                                        <div id="roleRequirements" class="fs-12"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Employee Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Employee <span class="text-danger">*</span></label>
+                        <input type="hidden" id="employeePayroll" name="employeePayroll" required />
+
+                        <!-- Search Filter -->
+                        <div class="mb-2">
+                            <input type="text" class="form-control" id="employeeSearch" placeholder="Search by name or payroll number..." />
+                        </div>
+
+                        <!-- Employee List -->
+                        <div id="employeeListContainer" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--bs-border-color); border-radius: 0.375rem; padding: 0.5rem 1.5rem;">
+                            <div class="text-center text-muted py-3">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mb-0 mt-2">Loading employees...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="appointmentDate" class="form-label">Appointment Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="appointmentDate" name="appointmentDate" required />
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="sectionId" class="form-label">Section</label>
+                            <select class="form-select" id="sectionId" name="sectionId">
+                                <option value="">-- No Section --</option>
+                            </select>
+                            <div class="form-text">Optional: Assign member to specific section</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="isVotingMember" name="isVotingMember" />
+                            <label class="form-check-label" for="isVotingMember">
+                                Voting Rights
+                            </label>
+                        </div>
+                        <div class="form-text">Grant this member voting rights in team decisions</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="educationLevel" class="form-label">Education Level</label>
+                            <input type="text" class="form-control" id="educationLevel" name="educationLevel" maxlength="50" placeholder="e.g., Bachelor's Degree" />
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="relevantExperience" class="form-label">Relevant Experience</label>
+                            <input type="text" class="form-control" id="relevantExperience" name="relevantExperience" maxlength="200" placeholder="Years of experience, certifications, etc." />
+                        </div>
+                    </div>
+                </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveMember()">
+                    <i class="ri-save-line me-1"></i>Save Member
+                </button>
             </div>
         </div>
     </div>
@@ -394,15 +886,385 @@
     <partial name="_ValidationScriptsPartial" />
 
     <script>
-        function editMember(memberId) {
-            alert('Edit member functionality will be implemented in the next phase.');
+        const teamId = @Model.TeamId;
+        const teamType = '@Model.TeamType';
+        const stationId = @Model.StationId;
+        let roleDefinitions = [];
+        let employeeSearchTimeout;
+
+        $(document).ready(function() {
+            // Load role definitions, sections, and employees
+            loadRoleDefinitions();
+            loadSections();
+            loadEmployees();
+        });
+
+        // Load available roles for this team type
+        function loadRoleDefinitions() {
+            $.ajax({
+                url: '/Team/GetAvailableRoles',
+                type: 'GET',
+                data: { teamId: teamId, teamType: teamType },
+                success: function(data) {
+                    roleDefinitions = data;
+                    populateRoleDropdown();
+                },
+                error: function() {
+                    toastr.error('Failed to load role definitions');
+                }
+            });
         }
 
-        function removeMember(memberId) {
-            if (confirm('Are you sure you want to remove this member from the team?')) {
-                // TODO: Implement member removal
-                alert('Member removal functionality will be implemented in the next phase.');
+        // Populate role dropdown with current counts
+        function populateRoleDropdown() {
+            const roleSelect = $('#roleId');
+            roleSelect.empty().append('<option value="">-- Select Role --</option>');
+
+            roleDefinitions.forEach(function(role) {
+                const currentCount = role.currentCount || 0;
+                const maxCount = role.maxOccurrences || '∞';
+                const isDisabled = role.maxOccurrences && currentCount >= role.maxOccurrences;
+
+                let optionText = `${role.roleName} (${currentCount}/${maxCount})`;
+
+                if (isDisabled) {
+                    optionText += ' - Full';
+                } else if (role.minOccurrences && currentCount < role.minOccurrences) {
+                    optionText += ' ⚠️ Required';
+                }
+
+                const option = $('<option></option>')
+                    .val(role.teamRoleDefinitionId)
+                    .text(optionText)
+                    .prop('disabled', isDisabled)
+                    .data('role', role);
+
+                roleSelect.append(option);
+            });
+        }
+
+        // Handle role selection
+        $('#roleId').on('change', function() {
+            const selectedOption = $(this).find('option:selected');
+            const role = selectedOption.data('role');
+
+            if (role) {
+                // Auto-check voting rights if role requires it
+                $('#isVotingMember').prop('checked', role.requiresVotingRights);
+
+                // Show role information
+                let infoHtml = '';
+                if (role.description) {
+                    infoHtml += `<strong>${role.roleName}:</strong> ${role.description}<br>`;
+                }
+
+                let requirements = [];
+                if (role.requiresVotingRights) {
+                    requirements.push('Voting rights required');
+                }
+                if (role.requiredQualifications) {
+                    requirements.push(role.requiredQualifications);
+                }
+                if (role.minOccurrences) {
+                    requirements.push(`Min: ${role.minOccurrences} member(s)`);
+                }
+                if (role.maxOccurrences) {
+                    requirements.push(`Max: ${role.maxOccurrences} member(s)`);
+                }
+
+                if (requirements.length > 0) {
+                    infoHtml += requirements.join(' • ');
+                }
+
+                if (infoHtml) {
+                    $('#roleDescription').html(infoHtml);
+                    $('#roleInfo').show();
+                } else {
+                    $('#roleInfo').hide();
+                }
+            } else {
+                $('#roleInfo').hide();
             }
+        });
+
+        // Load sections for the team's station
+        function loadSections() {
+            $.ajax({
+                url: '/Team/GetSectionsByStation',
+                type: 'GET',
+                data: { stationId: stationId },
+                success: function(data) {
+                    const sectionSelect = $('#sectionId');
+                    sectionSelect.empty().append('<option value="">-- No Section --</option>');
+
+                    data.forEach(function(section) {
+                        sectionSelect.append($('<option></option>')
+                            .val(section.sectionId)
+                            .text(section.sectionName));
+                    });
+                },
+                error: function() {
+                    console.error('Failed to load sections');
+                }
+            });
+        }
+
+        // Load all employees for this station
+        let allEmployees = [];
+        let existingMemberPayrolls = [];
+
+        function loadEmployees() {
+            $.ajax({
+                url: '/Team/SearchEmployees',
+                type: 'GET',
+                data: {
+                    stationId: stationId,
+                    searchTerm: '', // Empty = get all
+                    teamId: teamId
+                },
+                success: function(data) {
+                    allEmployees = data;
+                    displayEmployees();
+                },
+                error: function() {
+                    $('#employeeListContainer').html('<div class="alert alert-danger mb-0"><i class="ri-error-warning-line me-2"></i>Failed to load employees</div>');
+                }
+            });
+
+            // Also load existing team members to mark them as disabled
+            $.ajax({
+                url: '/Team/GetTeamMembers',
+                type: 'GET',
+                data: { teamId: teamId },
+                success: function(data) {
+                    existingMemberPayrolls = data.map(m => m.employeePayroll);
+                    displayEmployees();
+                }
+            });
+        }
+
+        function displayEmployees() {
+            if (allEmployees.length === 0) return;
+
+            const container = $('#employeeListContainer');
+            container.empty();
+
+            if (allEmployees.length === 0) {
+                container.html('<div class="text-center text-muted py-3">No employees found at this station</div>');
+                return;
+            }
+
+            // Group by department
+            const grouped = {};
+            allEmployees.forEach(emp => {
+                const dept = emp.departmentName || 'No Department';
+                if (!grouped[dept]) grouped[dept] = [];
+                grouped[dept].push(emp);
+            });
+
+            let html = '';
+            Object.keys(grouped).sort().forEach(dept => {
+                html += `<div class="mb-3">`;
+                html += `<div class="fw-semibold text-muted mb-2" style="font-size: 0.85rem;"><i class="ri-building-2-line me-1"></i>${dept}</div>`;
+
+                grouped[dept].forEach(emp => {
+                    const isInTeam = existingMemberPayrolls.includes(emp.payrollNo);
+                    const disabled = isInTeam ? 'disabled' : '';
+                    const disabledClass = isInTeam ? 'opacity-50' : '';
+                    const badgeHtml = isInTeam ? '<span class="badge bg-secondary ms-2">Already in team</span>' : '';
+
+                    html += `
+                        <div class="form-check mb-2 employee-radio-wrapper ${disabledClass}">
+                            <input class="form-check-input employee-radio"
+                                   type="radio"
+                                   name="employeeRadio"
+                                   value="${emp.payrollNo}"
+                                   id="emp_${emp.payrollNo}"
+                                   data-name="${emp.fullName}"
+                                   data-designation="${emp.designation || ''}"
+                                   ${disabled}>
+                            <label class="form-check-label w-100" for="emp_${emp.payrollNo}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-medium">${emp.fullName}</span>
+                                        <small class="text-muted d-block">${emp.payrollNo}${emp.designation ? ' • ' + emp.designation : ''}</small>
+                                    </div>
+                                    ${badgeHtml}
+                                </div>
+                            </label>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            });
+
+            container.html(html);
+
+            // Handle selection
+            $('.employee-radio').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('#employeePayroll').val($(this).val());
+                }
+            });
+        }
+
+        // Employee search filter
+        $('#employeeSearch').on('keyup', function() {
+            const searchTerm = $(this).val().toLowerCase();
+
+            $('.employee-radio-wrapper').each(function() {
+                const name = $(this).find('.fw-medium').text().toLowerCase();
+                const payroll = $(this).find('.text-muted').text().toLowerCase();
+
+                if (name.includes(searchTerm) || payroll.includes(searchTerm)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+
+        // Open modal for adding member
+        function openAddMemberModal() {
+            $('#memberModalTitle').text('Add Team Member');
+            $('#memberForm')[0].reset();
+            $('#memberId').val('0');
+            $('#appointmentDate').val(new Date().toISOString().split('T')[0]);
+            $('#employeePayroll').val('');
+            $('.employee-radio').prop('checked', false);
+            $('#employeeSearch').val('');
+            $('#roleInfo').hide();
+
+            const modal = new bootstrap.Modal(document.getElementById('memberModal'));
+            modal.show();
+        }
+
+        // Edit member
+        function editMember(memberId) {
+            $.ajax({
+                url: '/Team/GetMemberDetails',
+                type: 'GET',
+                data: { memberId: memberId },
+                success: function(data) {
+                    $('#memberModalTitle').text('Edit Team Member');
+                    $('#memberId').val(data.memberId);
+                    $('#roleId').val(data.teamRoleDefinitionId).trigger('change');
+                    $('#employeePayroll').val(data.employeePayroll);
+                    $('#appointmentDate').val(data.appointmentDate.split('T')[0]);
+                    $('#sectionId').val(data.sectionId || '');
+                    $('#isVotingMember').prop('checked', data.isVotingMember);
+                    $('#educationLevel').val(data.educationLevel || '');
+                    $('#relevantExperience').val(data.relevantExperience || '');
+
+                    // Show selected employee
+                    $('#selectedEmployeeName').text(data.employeeName);
+                    $('#selectedEmployeePayroll').text(data.employeePayroll);
+                    $('#selectedEmployee').show();
+
+                    const modal = new bootstrap.Modal(document.getElementById('memberModal'));
+                    modal.show();
+                },
+                error: function() {
+                    toastr.error('Failed to load member details');
+                }
+            });
+        }
+
+        // Save member (add or update)
+        function saveMember() {
+            const form = $('#memberForm')[0];
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const memberData = {
+                memberId: parseInt($('#memberId').val()),
+                teamId: teamId,
+                teamRoleDefinitionId: parseInt($('#roleId').val()),
+                employeePayroll: $('#employeePayroll').val(),
+                appointmentDate: $('#appointmentDate').val(),
+                sectionId: $('#sectionId').val() ? parseInt($('#sectionId').val()) : null,
+                isVotingMember: $('#isVotingMember').is(':checked'),
+                educationLevel: $('#educationLevel').val(),
+                relevantExperience: $('#relevantExperience').val()
+            };
+
+            const isEdit = memberData.memberId > 0;
+            const url = isEdit ? '/Team/UpdateMember' : '/Team/AddMember';
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(memberData),
+                headers: {
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        bootstrap.Modal.getInstance(document.getElementById('memberModal')).hide();
+                        location.reload(); // Reload to refresh member list and compliance
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON?.message || 'An error occurred while saving the member';
+                    toastr.error(error);
+                }
+            });
+        }
+
+        // Remove member
+        function removeMember(memberId, memberName) {
+            if (!confirm(`Are you sure you want to remove ${memberName} from this team?`)) {
+                return;
+            }
+
+            $.ajax({
+                url: '/Team/RemoveMember',
+                type: 'POST',
+                data: {
+                    memberId: memberId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        location.reload(); // Reload to refresh member list and compliance
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON?.message || 'An error occurred while removing the member';
+                    toastr.error(error);
+                }
+            });
         }
     </script>
+
+    <style>
+        .employee-radio-wrapper {
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s;
+        }
+
+        .employee-radio-wrapper:hover:not(.opacity-50) {
+            background-color: var(--bs-light);
+        }
+
+        .employee-radio-wrapper .form-check-input:checked ~ label {
+            color: var(--bs-primary);
+            font-weight: 500;
+        }
+
+        .employee-radio-wrapper.opacity-50 {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
 }

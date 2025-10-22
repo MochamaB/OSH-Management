@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using OSHManagement.Data;
 using OSHManagement.Services;
+using OSHManagement.Services.Notifications;
+using OSHManagement.Services.Notifications.Channels;
+using OSHManagement.Services.Security;
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -82,6 +85,23 @@ builder.Services.AddScoped<IScopeFilterService, ScopeFilterService>();
 builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<IOrganizationalHierarchyService, OrganizationalHierarchyService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+
+// Register security services
+builder.Services.AddDataProtection(); // ASP.NET Core Data Protection API
+builder.Services.AddSingleton<IEncryptionService, DataProtectionEncryptionService>();
+
+// Register notification services
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<INotificationEventPublisher, NotificationEventPublisher>();
+builder.Services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
+builder.Services.AddScoped<INotificationPreferenceService, NotificationPreferenceService>();
+builder.Services.AddScoped<IChannelConfigService, ChannelConfigService>();
+builder.Services.AddScoped<INotificationChannelService, InAppNotificationService>();
+builder.Services.AddScoped<INotificationChannelService, EmailNotificationService>();
+
+// Register specialized notification services (domain-specific)
+builder.Services.AddScoped<IEmployeeNotificationService, EmployeeNotificationService>();
+builder.Services.AddScoped<ITeamNotificationService, TeamNotificationService>();
 
 // Add memory cache for reference data (Categories, Roles)
 builder.Services.AddMemoryCache();

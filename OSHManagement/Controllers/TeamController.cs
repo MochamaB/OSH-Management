@@ -6,6 +6,7 @@ using OSHManagement.Models;
 using OSHManagement.Models.Enums;
 using OSHManagement.Models.ViewModels;
 using OSHManagement.Services;
+using OSHManagement.Services.Notifications;
 
 namespace OSHManagement.Controllers
 {
@@ -14,16 +15,19 @@ namespace OSHManagement.Controllers
     {
         private readonly IScopeFilterService _scopeFilterService;
         private readonly IEmployeeService _employeeService;
+        private readonly ITeamNotificationService _teamNotifications;
 
         public TeamController(
             OshDbContext context,
             IScopeFilterService scopeFilter,
             IEmployeeService employeeService,
+            ITeamNotificationService teamNotifications,
             ILogger<TeamController> logger)
             : base(context, scopeFilter, logger)
         {
             _scopeFilterService = scopeFilter;
             _employeeService = employeeService;
+            _teamNotifications = teamNotifications;
         }
 
         // GET: Team/Index
@@ -431,6 +435,46 @@ namespace OSHManagement.Controllers
                     tm.IsVotingMember
                 }).ToList();
 
+            // Load role definitions for this team type
+            var roleDefinitions = await _context.TeamRoleDefinitions
+                .Where(trd => trd.TeamType == team.TeamType && trd.IsActive)
+                .OrderBy(trd => trd.DisplayOrder)
+                .ToListAsync();
+
+            // Calculate current counts in memory (after materializing the query)
+            var roleDefinitionsWithCounts = roleDefinitions.Select(trd => new
+            {
+                trd.TeamRoleDefinitionId,
+                trd.RoleName,
+                trd.Description,
+                trd.MinOccurrences,
+                trd.MaxOccurrences,
+                trd.RequiresVotingRights,
+                trd.RequiredQualifications,
+                CurrentCount = team.TeamMembers.Count(tm => tm.TeamRoleDefinitionId == trd.TeamRoleDefinitionId && tm.IsActive)
+            }).ToList();
+
+            ViewBag.RoleDefinitions = roleDefinitionsWithCounts;
+
+            // Calculate role-based minimums and compliance
+            var calculatedMinimum = roleDefinitions
+                .Where(r => r.MinOccurrences.HasValue)
+                .Sum(r => r.MinOccurrences.Value);
+
+            ViewBag.CalculatedMinimum = calculatedMinimum;
+
+            // Check section representation
+            if (team.RequiresSectionRepresentation)
+            {
+                var sectionCount = team.TeamMembers
+                    .Where(tm => tm.IsActive && tm.SectionId != null)
+                    .Select(tm => tm.SectionId)
+                    .Distinct()
+                    .Count();
+
+                ViewBag.SectionCount = sectionCount;
+            }
+
             // Pass type-specific config
             if (team.TeamType == "OSH Committee" && team.OshCommitteeConfig != null)
             {
@@ -451,7 +495,7 @@ namespace OSHManagement.Controllers
         // POST: Team/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, EditTeamViewModel model)
+        public async Task<IActionResult> Edit(int id, EditTeamViewModel model, IFormCollection form)
         {
             if (id != model.TeamId)
             {
@@ -467,7 +511,11 @@ namespace OSHManagement.Controllers
                     var teamsQuery = _context.Teams.AsQueryable();
                     teamsQuery = _scopeFilterService.ApplyScope(teamsQuery, CurrentScope);
 
-                    var team = await teamsQuery.FirstOrDefaultAsync(t => t.TeamId == id);
+                    var team = await teamsQuery
+                        .Include(t => t.OshCommitteeConfig)
+                        .Include(t => t.RiskAssessmentConfig)
+                        .Include(t => t.IncidentInvestigationConfig)
+                        .FirstOrDefaultAsync(t => t.TeamId == id);
 
                     if (team == null)
                     {
@@ -496,6 +544,20 @@ namespace OSHManagement.Controllers
                     team.RequiresSectionRepresentation = model.RequiresSectionRepresentation;
                     team.UpdatedAt = DateTime.UtcNow;
 
+                    // Handle type-specific configs
+                    if (team.TeamType == "OSH Committee")
+                    {
+                        await UpdateOshCommitteeConfig(team, form);
+                    }
+                    else if (team.TeamType == "Risk Assessment")
+                    {
+                        await UpdateRiskAssessmentConfig(team, form);
+                    }
+                    else if (team.TeamType == "Investigation")
+                    {
+                        await UpdateInvestigationConfig(team, form);
+                    }
+
                     _context.Teams.Update(team);
                     await _context.SaveChangesAsync();
 
@@ -511,6 +573,100 @@ namespace OSHManagement.Controllers
 
             await LoadEditViewData(model.StationId);
             return View(model);
+        }
+
+        private async Task UpdateOshCommitteeConfig(Team team, IFormCollection form)
+        {
+            var configId = int.TryParse(form["OshConfig.ConfigId"], out var id) ? id : 0;
+
+            if (configId == 0)
+            {
+                // Create new config
+                team.OshCommitteeConfig = new OshCommitteeConfig
+                {
+                    TeamId = team.TeamId,
+                    IsCommitteeTrained = form["OshConfig.IsCommitteeTrained"].Contains("true"),
+                    TrainingDate = DateTime.TryParse(form["OshConfig.TrainingDate"], out var td) ? td : (DateTime?)null,
+                    HasMeetingSchedule = form["OshConfig.HasMeetingSchedule"].Contains("true"),
+                    InspectionFrequency = form["OshConfig.InspectionFrequency"].ToString(),
+                    LastInspectionDate = DateTime.TryParse(form["OshConfig.LastInspectionDate"], out var lid) ? lid : (DateTime?)null,
+                    NextInspectionDate = DateTime.TryParse(form["OshConfig.NextInspectionDate"], out var nid) ? nid : (DateTime?)null,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.OshCommitteeConfigs.Add(team.OshCommitteeConfig);
+            }
+            else if (team.OshCommitteeConfig != null)
+            {
+                // Update existing config
+                team.OshCommitteeConfig.IsCommitteeTrained = form["OshConfig.IsCommitteeTrained"].Contains("true");
+                team.OshCommitteeConfig.TrainingDate = DateTime.TryParse(form["OshConfig.TrainingDate"], out var td) ? td : (DateTime?)null;
+                team.OshCommitteeConfig.HasMeetingSchedule = form["OshConfig.HasMeetingSchedule"].Contains("true");
+                team.OshCommitteeConfig.InspectionFrequency = form["OshConfig.InspectionFrequency"].ToString();
+                team.OshCommitteeConfig.LastInspectionDate = DateTime.TryParse(form["OshConfig.LastInspectionDate"], out var lid) ? lid : (DateTime?)null;
+                team.OshCommitteeConfig.NextInspectionDate = DateTime.TryParse(form["OshConfig.NextInspectionDate"], out var nid) ? nid : (DateTime?)null;
+                team.OshCommitteeConfig.UpdatedAt = DateTime.UtcNow;
+                _context.OshCommitteeConfigs.Update(team.OshCommitteeConfig);
+            }
+        }
+
+        private async Task UpdateRiskAssessmentConfig(Team team, IFormCollection form)
+        {
+            var configId = int.TryParse(form["RiskConfig.ConfigId"], out var id) ? id : 0;
+
+            if (configId == 0)
+            {
+                // Create new config
+                team.RiskAssessmentConfig = new RiskAssessmentConfig
+                {
+                    TeamId = team.TeamId,
+                    AssessmentFrequency = form["RiskConfig.AssessmentFrequency"].ToString(),
+                    LastAssessmentDate = DateTime.TryParse(form["RiskConfig.LastAssessmentDate"], out var lad) ? lad : (DateTime?)null,
+                    NextAssessmentDate = DateTime.TryParse(form["RiskConfig.NextAssessmentDate"], out var nad) ? nad : (DateTime?)null,
+                    TeamQualifications = form["RiskConfig.TeamQualifications"].ToString(),
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.RiskAssessmentConfigs.Add(team.RiskAssessmentConfig);
+            }
+            else if (team.RiskAssessmentConfig != null)
+            {
+                // Update existing config
+                team.RiskAssessmentConfig.AssessmentFrequency = form["RiskConfig.AssessmentFrequency"].ToString();
+                team.RiskAssessmentConfig.LastAssessmentDate = DateTime.TryParse(form["RiskConfig.LastAssessmentDate"], out var lad) ? lad : (DateTime?)null;
+                team.RiskAssessmentConfig.NextAssessmentDate = DateTime.TryParse(form["RiskConfig.NextAssessmentDate"], out var nad) ? nad : (DateTime?)null;
+                team.RiskAssessmentConfig.TeamQualifications = form["RiskConfig.TeamQualifications"].ToString();
+                team.RiskAssessmentConfig.UpdatedAt = DateTime.UtcNow;
+                _context.RiskAssessmentConfigs.Update(team.RiskAssessmentConfig);
+            }
+        }
+
+        private async Task UpdateInvestigationConfig(Team team, IFormCollection form)
+        {
+            var configId = int.TryParse(form["InvestigationConfig.ConfigId"], out var id) ? id : 0;
+
+            if (configId == 0)
+            {
+                // Create new config
+                team.IncidentInvestigationConfig = new IncidentInvestigationConfig
+                {
+                    TeamId = team.TeamId,
+                    ResponseTimeHours = int.TryParse(form["InvestigationConfig.ResponseTimeHours"], out var rth) ? rth : 24,
+                    EscalationThreshold = form["InvestigationConfig.EscalationThreshold"].ToString(),
+                    InvestigationScope = form["InvestigationConfig.InvestigationScope"].ToString(),
+                    TeamExpertise = form["InvestigationConfig.TeamExpertise"].ToString(),
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.IncidentInvestigationConfigs.Add(team.IncidentInvestigationConfig);
+            }
+            else if (team.IncidentInvestigationConfig != null)
+            {
+                // Update existing config
+                team.IncidentInvestigationConfig.ResponseTimeHours = int.TryParse(form["InvestigationConfig.ResponseTimeHours"], out var rth) ? rth : 24;
+                team.IncidentInvestigationConfig.EscalationThreshold = form["InvestigationConfig.EscalationThreshold"].ToString();
+                team.IncidentInvestigationConfig.InvestigationScope = form["InvestigationConfig.InvestigationScope"].ToString();
+                team.IncidentInvestigationConfig.TeamExpertise = form["InvestigationConfig.TeamExpertise"].ToString();
+                team.IncidentInvestigationConfig.UpdatedAt = DateTime.UtcNow;
+                _context.IncidentInvestigationConfigs.Update(team.IncidentInvestigationConfig);
+            }
         }
 
         private async Task LoadCreateViewData()
@@ -613,6 +769,394 @@ namespace OSHManagement.Controllers
 
             ViewBag.FrequencyOptions = TeamEnumExtensions.GetFrequencyValues();
             ViewBag.EducationLevels = TeamEnumExtensions.GetEducationLevelValues();
+        }
+
+        // ========== MEMBER MANAGEMENT ENDPOINTS ==========
+
+        // GET: Team/GetAvailableRoles
+        [HttpGet]
+        public async Task<IActionResult> GetAvailableRoles(int teamId, string teamType)
+        {
+            try
+            {
+                // Get current member counts
+                var memberCounts = await _context.TeamMembers
+                    .Where(tm => tm.TeamId == teamId && tm.IsActive)
+                    .GroupBy(tm => tm.TeamRoleDefinitionId)
+                    .Select(g => new { RoleId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.RoleId, x => x.Count);
+
+                // Get role definitions for this team type
+                var roles = await _context.TeamRoleDefinitions
+                    .Where(trd => trd.TeamType == teamType && trd.IsActive)
+                    .OrderBy(trd => trd.DisplayOrder)
+                    .Select(trd => new
+                    {
+                        trd.TeamRoleDefinitionId,
+                        trd.RoleName,
+                        trd.Description,
+                        trd.MinOccurrences,
+                        trd.MaxOccurrences,
+                        trd.RequiresVotingRights,
+                        trd.RequiredQualifications,
+                        CurrentCount = memberCounts.ContainsKey(trd.TeamRoleDefinitionId) ? memberCounts[trd.TeamRoleDefinitionId] : 0
+                    })
+                    .ToListAsync();
+
+                return Json(roles);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading available roles");
+                return StatusCode(500, new { message = "Error loading roles" });
+            }
+        }
+
+        // GET: Team/SearchEmployees
+        [HttpGet]
+        public async Task<IActionResult> SearchEmployees(int stationId, string? searchTerm, int teamId)
+        {
+            try
+            {
+                // Get employees already in this team
+                var existingMembers = await _context.TeamMembers
+                    .Where(tm => tm.TeamId == teamId && tm.IsActive)
+                    .Select(tm => tm.EmployeePayroll)
+                    .ToListAsync();
+
+                // Build query for employees at this station
+                var query = _context.Employees
+                    .Where(e => e.StationId == stationId);
+
+                // Apply search filter if provided
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    query = query.Where(e =>
+                        e.FirstName.Contains(searchTerm) ||
+                        e.LastName.Contains(searchTerm) ||
+                        e.PayrollNo.Contains(searchTerm));
+                }
+
+                var employees = await query
+                    .OrderBy(e => e.FirstName)
+                    .ThenBy(e => e.LastName)
+                    .Select(e => new
+                    {
+                        e.PayrollNo,
+                        FullName = e.FirstName + " " + e.LastName,
+                        e.Designation,
+                        DepartmentName = e.Department != null ? e.Department.DepartmentName : null
+                    })
+                    .ToListAsync();
+
+                return Json(employees);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching employees");
+                return StatusCode(500, new { message = "Error searching employees" });
+            }
+        }
+
+        // GET: Team/GetTeamMembers
+        [HttpGet]
+        public async Task<IActionResult> GetTeamMembers(int teamId)
+        {
+            try
+            {
+                var members = await _context.TeamMembers
+                    .Where(tm => tm.TeamId == teamId && tm.IsActive)
+                    .Select(tm => new
+                    {
+                        tm.MemberId,
+                        tm.EmployeePayroll
+                    })
+                    .ToListAsync();
+
+                return Json(members);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading team members");
+                return StatusCode(500, new { message = "Error loading team members" });
+            }
+        }
+
+        // GET: Team/GetSectionsByStation
+        [HttpGet]
+        public async Task<IActionResult> GetSectionsByStation(int stationId)
+        {
+            try
+            {
+                var sections = await _context.Sections
+                    .Where(s => s.StationId == stationId)
+                    .OrderBy(s => s.SectionName)
+                    .Select(s => new { s.SectionId, s.SectionName })
+                    .ToListAsync();
+
+                return Json(sections);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading sections");
+                return StatusCode(500, new { message = "Error loading sections" });
+            }
+        }
+
+        // POST: Team/AddMember
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddMember([FromBody] AddTeamMemberDto dto)
+        {
+            try
+            {
+                // Validate team exists
+                var team = await _context.Teams
+                    .Include(t => t.TeamMembers.Where(tm => tm.IsActive))
+                    .FirstOrDefaultAsync(t => t.TeamId == dto.TeamId);
+
+                if (team == null)
+                {
+                    return Json(new { success = false, message = "Team not found" });
+                }
+
+                // Validate employee exists
+                var employee = await _context.Employees
+                    .FirstOrDefaultAsync(e => e.PayrollNo == dto.EmployeePayroll);
+
+                if (employee == null)
+                {
+                    return Json(new { success = false, message = "Employee not found" });
+                }
+
+                // Check if employee is already in team
+                var exists = await _context.TeamMembers
+                    .AnyAsync(tm => tm.TeamId == dto.TeamId &&
+                                   tm.EmployeePayroll == dto.EmployeePayroll &&
+                                   tm.IsActive);
+
+                if (exists)
+                {
+                    return Json(new { success = false, message = "Employee is already a member of this team" });
+                }
+
+                // Validate role capacity
+                var roleDefinition = await _context.TeamRoleDefinitions
+                    .FirstOrDefaultAsync(trd => trd.TeamRoleDefinitionId == dto.TeamRoleDefinitionId);
+
+                if (roleDefinition == null)
+                {
+                    return Json(new { success = false, message = "Invalid role selected" });
+                }
+
+                if (roleDefinition.MaxOccurrences.HasValue)
+                {
+                    var currentCount = team.TeamMembers.Count(tm => tm.TeamRoleDefinitionId == dto.TeamRoleDefinitionId);
+                    if (currentCount >= roleDefinition.MaxOccurrences.Value)
+                    {
+                        return Json(new { success = false, message = $"Role '{roleDefinition.RoleName}' is at maximum capacity ({roleDefinition.MaxOccurrences})" });
+                    }
+                }
+
+                // Validate team capacity
+                if (team.MaxMemberCount.HasValue)
+                {
+                    var currentTeamSize = team.TeamMembers.Count;
+                    if (currentTeamSize >= team.MaxMemberCount.Value)
+                    {
+                        return Json(new { success = false, message = $"Team is at maximum capacity ({team.MaxMemberCount} members)" });
+                    }
+                }
+
+                // Create new team member
+                var newMember = new TeamMember
+                {
+                    TeamId = dto.TeamId,
+                    EmployeePayroll = dto.EmployeePayroll,
+                    TeamRoleDefinitionId = dto.TeamRoleDefinitionId,
+                    SectionId = dto.SectionId,
+                    AppointmentDate = dto.AppointmentDate,
+                    IsVotingMember = dto.IsVotingMember,
+                    EducationLevel = dto.EducationLevel,
+                    RelevantExperience = dto.RelevantExperience,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.TeamMembers.Add(newMember);
+                await _context.SaveChangesAsync();
+
+                // ✅ Send notification to new member and existing team members
+                await _teamNotifications.NotifyMemberAddedAsync(
+                    team,
+                    employee,
+                    roleDefinition.RoleName,
+                    User.Identity?.Name ?? "System"
+                );
+
+                return Json(new { success = true, message = $"{employee.FirstName} {employee.LastName} added to team as {roleDefinition.RoleName}" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding team member");
+                return Json(new { success = false, message = "An error occurred while adding the member" });
+            }
+        }
+
+        // GET: Team/GetMemberDetails
+        [HttpGet]
+        public async Task<IActionResult> GetMemberDetails(int memberId)
+        {
+            try
+            {
+                var member = await _context.TeamMembers
+                    .Include(tm => tm.Employee)
+                    .Where(tm => tm.MemberId == memberId)
+                    .Select(tm => new
+                    {
+                        tm.MemberId,
+                        tm.TeamRoleDefinitionId,
+                        tm.EmployeePayroll,
+                        EmployeeName = tm.Employee.FirstName + " " + tm.Employee.LastName,
+                        tm.AppointmentDate,
+                        tm.SectionId,
+                        tm.IsVotingMember,
+                        tm.EducationLevel,
+                        tm.RelevantExperience
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (member == null)
+                {
+                    return NotFound(new { message = "Member not found" });
+                }
+
+                return Json(member);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading member details");
+                return StatusCode(500, new { message = "Error loading member details" });
+            }
+        }
+
+        // POST: Team/UpdateMember
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateMember([FromBody] AddTeamMemberDto dto)
+        {
+            try
+            {
+                var member = await _context.TeamMembers
+                    .Include(tm => tm.Employee)
+                    .Include(tm => tm.Team)
+                    .FirstOrDefaultAsync(tm => tm.MemberId == dto.MemberId);
+
+                if (member == null)
+                {
+                    return Json(new { success = false, message = "Member not found" });
+                }
+
+                // If role changed, validate new role capacity
+                if (member.TeamRoleDefinitionId != dto.TeamRoleDefinitionId)
+                {
+                    var roleDefinition = await _context.TeamRoleDefinitions
+                        .FirstOrDefaultAsync(trd => trd.TeamRoleDefinitionId == dto.TeamRoleDefinitionId);
+
+                    if (roleDefinition != null && roleDefinition.MaxOccurrences.HasValue)
+                    {
+                        var currentCount = await _context.TeamMembers
+                            .CountAsync(tm => tm.TeamId == member.TeamId &&
+                                            tm.TeamRoleDefinitionId == dto.TeamRoleDefinitionId &&
+                                            tm.IsActive &&
+                                            tm.MemberId != dto.MemberId);
+
+                        if (currentCount >= roleDefinition.MaxOccurrences.Value)
+                        {
+                            return Json(new { success = false, message = $"Role '{roleDefinition.RoleName}' is at maximum capacity" });
+                        }
+                    }
+                }
+
+                // Update member details
+                member.TeamRoleDefinitionId = dto.TeamRoleDefinitionId;
+                member.SectionId = dto.SectionId;
+                member.AppointmentDate = dto.AppointmentDate;
+                member.IsVotingMember = dto.IsVotingMember;
+                member.EducationLevel = dto.EducationLevel;
+                member.RelevantExperience = dto.RelevantExperience;
+                member.UpdatedAt = DateTime.UtcNow;
+
+                _context.TeamMembers.Update(member);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Member updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating team member");
+                return Json(new { success = false, message = "An error occurred while updating the member" });
+            }
+        }
+
+        // POST: Team/RemoveMember
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveMember(int memberId)
+        {
+            try
+            {
+                var member = await _context.TeamMembers
+                    .Include(tm => tm.Employee)
+                    .Include(tm => tm.TeamRoleDefinition)
+                    .Include(tm => tm.Team)
+                    .FirstOrDefaultAsync(tm => tm.MemberId == memberId);
+
+                if (member == null)
+                {
+                    return Json(new { success = false, message = "Member not found" });
+                }
+
+                // Check if removing this member would violate minimum requirements
+                if (member.TeamRoleDefinition != null && member.TeamRoleDefinition.MinOccurrences.HasValue)
+                {
+                    var currentCount = await _context.TeamMembers
+                        .CountAsync(tm => tm.TeamId == member.TeamId &&
+                                        tm.TeamRoleDefinitionId == member.TeamRoleDefinitionId &&
+                                        tm.IsActive);
+
+                    if (currentCount <= member.TeamRoleDefinition.MinOccurrences.Value)
+                    {
+                        return Json(new {
+                            success = false,
+                            message = $"Cannot remove member. Role '{member.TeamRoleDefinition.RoleName}' requires minimum {member.TeamRoleDefinition.MinOccurrences} member(s)"
+                        });
+                    }
+                }
+
+                // Soft delete (set IsActive = false)
+                member.IsActive = false;
+                member.DepartureDate = DateTime.UtcNow;
+                member.UpdatedAt = DateTime.UtcNow;
+
+                _context.TeamMembers.Update(member);
+                await _context.SaveChangesAsync();
+
+                // ✅ Send notification to removed member and remaining team members
+                await _teamNotifications.NotifyMemberRemovedAsync(
+                    member.Team,
+                    member.Employee,
+                    "Removed by admin",
+                    User.Identity?.Name ?? "System"
+                );
+
+                return Json(new { success = true, message = $"{member.Employee.FirstName} {member.Employee.LastName} removed from team" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing team member");
+                return Json(new { success = false, message = "An error occurred while removing the member" });
+            }
         }
     }
 }

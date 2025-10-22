@@ -1,0 +1,178 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.TeamRoleDefinitionViewModel
+@{
+    ViewData["Title"] = "Create Team Role Definition";
+
+    // Build team type options
+    var teamTypeOptions = new List<OSHManagement.Models.ViewModels.FormSelectOption>
+    {
+        new OSHManagement.Models.ViewModels.FormSelectOption { Text = "-- Select Team Type --", Value = "", Selected = true }
+    };
+
+    if (ViewBag.TeamTypes != null)
+    {
+        foreach (var teamType in (IEnumerable<string>)ViewBag.TeamTypes)
+        {
+            teamTypeOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
+            {
+                Text = teamType,
+                Value = teamType
+            });
+        }
+    }
+
+    // Configure form
+    var formConfig = new OSHManagement.Models.ViewModels.FormConfig
+    {
+        FormId = "createRoleDefinitionForm",
+        ActionUrl = "/TeamRoleDefinition/Create",
+        Method = "POST",
+        FormType = OSHManagement.Models.ViewModels.FormType.FloatingLabelForm,
+        CardTitle = "Create New Team Role Definition",
+
+        FieldsPerRow = 2,
+        FieldColumnClass = "col-md-6",
+
+        Fields = new List<OSHManagement.Models.ViewModels.FormFieldConfig>
+        {
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "TeamType",
+                PropertyName = nameof(TeamRoleDefinitionViewModel.TeamType),
+                Label = "Team Type",
+                Type = OSHManagement.Models.ViewModels.FieldType.Select,
+                Required = true,
+                Options = teamTypeOptions,
+                ValidationMessage = "Team type is required",
+                CustomCssClass = "col-md-6"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "RoleName",
+                PropertyName = nameof(TeamRoleDefinitionViewModel.RoleName),
+                Label = "Role Name",
+                Type = OSHManagement.Models.ViewModels.FieldType.Text,
+                Required = true,
+                Placeholder = "e.g., Chairperson, Secretary, etc.",
+                MaxLength = 50,
+                ValidationMessage = "Role name is required",
+                CustomCssClass = "col-md-6"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "Description",
+                PropertyName = nameof(TeamRoleDefinitionViewModel.Description),
+                Label = "Description",
+                Type = OSHManagement.Models.ViewModels.FieldType.Textarea,
+                Placeholder = "Brief description of the role responsibilities",
+                MaxLength = 500,
+                Rows = 3,
+                CustomCssClass = "col-md-12"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "RequiredQualifications",
+                PropertyName = nameof(TeamRoleDefinitionViewModel.RequiredQualifications),
+                Label = "Required Qualifications",
+                Type = OSHManagement.Models.ViewModels.FieldType.Textarea,
+                Placeholder = "List any required qualifications, certifications, or training",
+                MaxLength = 500,
+                Rows = 2,
+                HelpText = "Optional: Specify qualifications needed for this role",
+                CustomCssClass = "col-md-12"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "MinOccurrences",
+                PropertyName = nameof(TeamRoleDefinitionViewModel.MinOccurrences),
+                Label = "Minimum Occurrences",
+                Type = OSHManagement.Models.ViewModels.FieldType.Number,
+                Placeholder = "Minimum required",
+                HelpText = "Optional: Minimum number of members in this role",
+                CustomAttributes = new Dictionary<string, string> { { "min", "1" }, { "max", "100" } },
+                CustomCssClass = "col-md-6"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "MaxOccurrences",
+                PropertyName = nameof(TeamRoleDefinitionViewModel.MaxOccurrences),
+                Label = "Maximum Occurrences",
+                Type = OSHManagement.Models.ViewModels.FieldType.Number,
+                Placeholder = "Maximum allowed",
+                HelpText = "Optional: Maximum number of members in this role",
+                CustomAttributes = new Dictionary<string, string> { { "min", "1" }, { "max", "100" } },
+                CustomCssClass = "col-md-6"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "DisplayOrder",
+                PropertyName = nameof(TeamRoleDefinitionViewModel.DisplayOrder),
+                Label = "Display Order",
+                Type = OSHManagement.Models.ViewModels.FieldType.Number,
+                Required = true,
+                Placeholder = "0",
+                Value = "0",
+                HelpText = "Order in which this role appears in lists (0 = first)",
+                CustomAttributes = new Dictionary<string, string> { { "min", "0" }, { "max", "1000" } },
+                CustomCssClass = "col-md-6"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "RequiresVotingRights",
+                PropertyName = nameof(TeamRoleDefinitionViewModel.RequiresVotingRights),
+                Label = "Requires Voting Rights",
+                Type = OSHManagement.Models.ViewModels.FieldType.Checkbox,
+                DefaultValue = "true",
+                HelpText = "Check if this role requires voting rights in team decisions",
+                CustomCssClass = "col-md-6"
+            },
+            new OSHManagement.Models.ViewModels.FormFieldConfig
+            {
+                Name = "IsActive",
+                PropertyName = nameof(TeamRoleDefinitionViewModel.IsActive),
+                Label = "Active",
+                Type = OSHManagement.Models.ViewModels.FieldType.Checkbox,
+                DefaultValue = "true",
+                HelpText = "Check to make this role available for use immediately",
+                CustomCssClass = "col-md-12"
+            }
+        },
+
+        SubmitButtonText = "Create Role Definition",
+        SubmitButtonClass = "btn btn-primary",
+        CancelButtonText = "Cancel",
+        CancelUrl = "/TeamRoleDefinition/Index",
+        WrapInCard = true
+    };
+
+    var form = formConfig.BuildForm();
+}
+
+<!-- Render Form -->
+<div class="row">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/Forms/_FloatingLabelForm.cshtml" model="form" />
+    </div>
+</div>
+
+<!-- Info Panel -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <div class="alert alert-info alert-permanent">
+            <h6 class="alert-heading">
+                <i class="ri-information-line me-2"></i>Role Definition Guidelines
+            </h6>
+            <ul class="mb-0 ps-3">
+                <li><strong>Team Type:</strong> Select the type of team this role applies to</li>
+                <li><strong>Role Name:</strong> Must be unique within the selected team type</li>
+                <li><strong>Min/Max Occurrences:</strong> Optional limits on how many team members can have this role</li>
+                <li><strong>Voting Rights:</strong> Check if this role should have voting rights by default</li>
+                <li><strong>Display Order:</strong> Lower numbers appear first in role selection lists</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

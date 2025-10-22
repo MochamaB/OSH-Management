@@ -9,9 +9,17 @@ namespace OSHManagement.Models
 
         public int StationId { get; set; }
 
-        [Required]
+        /// <summary>
+        /// Foreign key to TeamTypeDefinition (NEW architecture)
+        /// </summary>
+        public int? TeamTypeDefinitionId { get; set; }
+
+        /// <summary>
+        /// Old TeamType string - DEPRECATED, kept for backward compatibility during migration
+        /// Use TeamTypeDefinition navigation property instead
+        /// </summary>
         [MaxLength(50)]
-        public string TeamType { get; set; } = string.Empty;
+        public string? TeamType { get; set; }
 
         [Required]
         [MaxLength(100)]
@@ -20,6 +28,10 @@ namespace OSHManagement.Models
         [MaxLength(500)]
         public string? TeamDescription { get; set; }
 
+        /// <summary>
+        /// DEPRECATED: These constraints are now defined in TeamTypeDefinition
+        /// Kept for backward compatibility during migration
+        /// </summary>
         public int? RequiredMemberCount { get; set; }
         public int? MaxMemberCount { get; set; }
         public bool RequiresSectionRepresentation { get; set; }
@@ -36,6 +48,7 @@ namespace OSHManagement.Models
 
         // Navigation properties
         public Station Station { get; set; } = null!;
+        public TeamTypeDefinition? TeamTypeDefinition { get; set; }
         public ICollection<TeamMember> TeamMembers { get; set; } = new List<TeamMember>();
         public ICollection<Hazard> Hazards { get; set; } = new List<Hazard>();
         public ICollection<CommitteeIssue> CommitteeIssues { get; set; } = new List<CommitteeIssue>();

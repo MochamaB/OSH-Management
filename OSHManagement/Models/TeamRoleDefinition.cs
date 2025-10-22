@@ -11,12 +11,17 @@ namespace OSHManagement.Models
         public int TeamRoleDefinitionId { get; set; }
 
         /// <summary>
-        /// The type of team this role applies to
-        /// Examples: "OSH Committee", "Investigation", "Risk Assessment"
+        /// Foreign key to TeamTypeDefinition (NEW architecture)
         /// </summary>
-        [Required]
+        public int? TeamTypeDefinitionId { get; set; }
+
+        /// <summary>
+        /// The type of team this role applies to - DEPRECATED
+        /// Use TeamTypeDefinition navigation property instead
+        /// Examples: "OshCommittee", "Investigation", "RiskAssessment"
+        /// </summary>
         [MaxLength(50)]
-        public string TeamType { get; set; } = string.Empty;
+        public string? TeamType { get; set; }
 
         /// <summary>
         /// The name of the role
@@ -60,6 +65,22 @@ namespace OSHManagement.Models
         /// </summary>
         public int DisplayOrder { get; set; } = 0;
 
+        // Role Classification (NEW - for statutory compliance)
+        /// <summary>
+        /// Whether this role represents employee interests (for OSH Committee compliance)
+        /// </summary>
+        public bool IsEmployeeRepresentative { get; set; } = false;
+
+        /// <summary>
+        /// Whether this role represents employer/management interests
+        /// </summary>
+        public bool IsEmployerRepresentative { get; set; } = false;
+
+        /// <summary>
+        /// Whether this is an ex-officio (non-voting advisory) role
+        /// </summary>
+        public bool IsExOfficio { get; set; } = false;
+
         /// <summary>
         /// Whether this role definition is active
         /// </summary>
@@ -69,6 +90,7 @@ namespace OSHManagement.Models
         public DateTime? UpdatedAt { get; set; }
 
         // Navigation properties
+        public TeamTypeDefinition? TeamTypeDefinition { get; set; }
         public ICollection<TeamMember> TeamMembers { get; set; } = new List<TeamMember>();
     }
 }

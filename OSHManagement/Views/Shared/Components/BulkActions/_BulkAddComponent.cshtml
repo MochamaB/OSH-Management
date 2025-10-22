@@ -44,7 +44,7 @@
                 }
                 
                 @* Dynamic Rows Container *@
-                <div id="@(Model.ComponentId)_rowsContainer" class="mb-4">
+                <div id="@(Model.ComponentId)_rowsContainer" class="mb-4" style="border-top:var(--default-border); ">
                     <!-- Rows will be added here by JavaScript -->
                 </div>
                 
@@ -115,8 +115,8 @@ else
 
 @* Row Template (hidden, cloned by JavaScript) *@
 <template id="@(Model.ComponentId)_rowTemplate">
-    <div class="bulk-add-row card mb-3" data-row-index="{{index}}">
-        <div class="card-body">
+    <div class="bulk-add-row card mb-0 " data-row-index="{{index}}" style="border:none">
+        <div class="card-body mb-0">
             <div class="row align-items-center g-3">
                 <div class="col-auto">
                     <span class="row-number badge bg-primary fs-14">{{number}}</span>

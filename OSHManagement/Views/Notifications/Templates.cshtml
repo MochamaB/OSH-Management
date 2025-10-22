@@ -1,0 +1,591 @@
+@model List<OSHManagement.Models.NotificationTemplate>
+@{
+    ViewData["Title"] = "Notification Templates";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .templates-wrapper {
+            height: calc(100vh - 180px);
+            min-height: 600px;
+        }
+
+        .templates-sidebar {
+            width: 380px;
+            background: var(--body-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .template-list-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .template-content {
+            flex: 1;
+            background: var(--body-bg);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .template-content-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .template-item {
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid transparent;
+        }
+
+        .template-item:hover {
+            background-color: rgba(var(--primary-rgb), 0.05);
+            border-color: rgba(var(--primary-rgb), 0.2);
+        }
+
+        .template-item.active {
+            background-color: rgba(var(--primary-rgb), 0.1);
+            border-color: var(--primary);
+            border-left-width: 3px;
+        }
+
+        .template-item.inactive {
+            opacity: 0.5;
+        }
+
+        .template-empty-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+        }
+
+        .filter-chip {
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 0.4rem 0.8rem;
+            border-radius: 1rem;
+            font-size: 0.8125rem;
+            border: 1px solid var(--default-border);
+            background: var(--body-bg);
+        }
+
+        .filter-chip:hover {
+            background-color: rgba(var(--primary-rgb), 0.1);
+            border-color: var(--primary);
+        }
+
+        .filter-chip.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .channel-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .channel-inapp { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+        .channel-email { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .channel-sms { background: rgba(251, 146, 60, 0.1); color: #fb923c; }
+        .channel-whatsapp { background: rgba(37, 211, 102, 0.1); color: #25d366; }
+
+        .template-variable {
+            background: rgba(var(--primary-rgb), 0.1);
+            color: var(--primary);
+            padding: 0.15rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .search-box {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--body-bg);
+            padding: 1rem;
+            border-bottom: 1px solid var(--default-border);
+        }
+    </style>
+}
+
+<div class="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2 mb-4">
+   
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary btn-wave" onclick="refreshTemplates()">
+            <i class="ri-refresh-line me-1"></i> Refresh
+        </button>
+        <button class="btn btn-primary btn-wave" data-bs-toggle="modal" data-bs-target="#createTemplateModal">
+            <i class="ri-add-line me-1"></i> Create Template
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex gap-3 templates-wrapper">
+            <!-- Left Panel - Template List -->
+            <div class="templates-sidebar border">
+                <!-- Search & Filters -->
+                <div class="search-box">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="searchTemplates" placeholder="Search templates...">
+                        <button class="btn btn-light" type="button">
+                            <i class="ri-search-line"></i>
+                        </button>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold mb-2" style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">
+                            Category
+                        </label>
+                        <div class="d-flex flex-wrap gap-2" id="categoryFilters">
+                            <span class="filter-chip active" data-filter="all" data-type="category">
+                                <i class="ri-apps-line me-1"></i>All
+                            </span>
+                            <span class="filter-chip" data-filter="Employee" data-type="category">
+                                <i class="ri-user-line me-1"></i>Employee
+                            </span>
+                            <span class="filter-chip" data-filter="Team" data-type="category">
+                                <i class="ri-team-line me-1"></i>Team
+                            </span>
+                            <span class="filter-chip" data-filter="Incident" data-type="category">
+                                <i class="ri-error-warning-line me-1"></i>Incident
+                            </span>
+                            <span class="filter-chip" data-filter="Training" data-type="category">
+                                <i class="ri-book-open-line me-1"></i>Training
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Channel Filter -->
+                    <div>
+                        <label class="form-label fw-semibold mb-2" style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">
+                            Channel
+                        </label>
+                        <div class="d-flex flex-wrap gap-2" id="channelFilters">
+                            <span class="filter-chip active" data-filter="all" data-type="channel">
+                                <i class="ri-broadcast-line me-1"></i>All
+                            </span>
+                            <span class="filter-chip" data-filter="InApp" data-type="channel">
+                                <i class="ri-notification-3-line me-1"></i>In-App
+                            </span>
+                            <span class="filter-chip" data-filter="Email" data-type="channel">
+                                <i class="ri-mail-line me-1"></i>Email
+                            </span>
+                            <span class="filter-chip" data-filter="SMS" data-type="channel">
+                                <i class="ri-message-2-line me-1"></i>SMS
+                            </span>
+                            <span class="filter-chip" data-filter="WhatsApp" data-type="channel">
+                                <i class="ri-whatsapp-line me-1"></i>WhatsApp
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Template List -->
+                <div class="template-list-scroll" id="templateList">
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var template in Model)
+                        {
+                            <div class="template-item @(template.IsActive ? "" : "inactive")" 
+                                 data-template-id="@template.TemplateId"
+                                 data-category="@template.Category"
+                                 data-channel="@template.Channel">
+                                <div class="d-flex align-items-start gap-2">
+                                    <div class="channel-icon channel-@template.Channel.ToLower()">
+                                        @switch (template.Channel)
+                                        {
+                                            case "InApp":
+                                                <i class="ri-notification-3-line"></i>
+                                                break;
+                                            case "Email":
+                                                <i class="ri-mail-line"></i>
+                                                break;
+                                            case "SMS":
+                                                <i class="ri-message-2-line"></i>
+                                                break;
+                                            case "WhatsApp":
+                                                <i class="ri-whatsapp-line"></i>
+                                                break;
+                                        }
+                                    </div>
+                                    <div class="flex-fill">
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <h6 class="mb-0 fw-semibold">@template.TemplateName</h6>
+                                            @if (!template.IsActive)
+                                            {
+                                                <span class="badge bg-secondary-transparent">Inactive</span>
+                                            }
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <span class="badge bg-light text-dark">@template.Category</span>
+                                            <span class="badge bg-light text-dark">@template.Channel</span>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(template.Description))
+                                        {
+                                            <p class="text-muted mb-0" style="font-size: 0.8125rem; line-height: 1.4;">
+                                                @template.Description
+                                            </p>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="template-empty-state p-4">
+                            <div>
+                                <i class="ri-file-list-3-line fs-1 text-muted mb-3"></i>
+                                <p class="text-muted">No templates found</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Right Panel - Template Details -->
+            <div class="template-content border">
+                <div class="template-empty-state" id="emptyState">
+                    <div>
+                        <i class="ri-file-list-3-line fs-1 text-muted mb-3"></i>
+                        <h5 class="text-muted mb-2">Select a template to view details</h5>
+                        <p class="text-muted">Click on a template from the list to see its configuration</p>
+                    </div>
+                </div>
+
+                <div class="template-content-body d-none" id="templateDetails">
+                    <!-- Template details will be loaded here dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let allTemplates = @Html.Raw(Json.Serialize(Model));
+        let currentCategory = 'all';
+        let currentChannel = 'all';
+        let searchTerm = '';
+
+        $(document).ready(function () {
+            setupEventListeners();
+            
+            // Load first template if exists
+            if (allTemplates && allTemplates.length > 0) {
+                loadTemplateDetails(allTemplates[0].templateId);
+            }
+        });
+
+        function setupEventListeners() {
+            // Template item click
+            $('.template-item').on('click', function () {
+                const templateId = $(this).data('template-id');
+                $('.template-item').removeClass('active');
+                $(this).addClass('active');
+                loadTemplateDetails(templateId);
+            });
+
+            // Category filter click
+            $('#categoryFilters .filter-chip').on('click', function () {
+                $('#categoryFilters .filter-chip').removeClass('active');
+                $(this).addClass('active');
+                currentCategory = $(this).data('filter');
+                filterTemplates();
+            });
+
+            // Channel filter click
+            $('#channelFilters .filter-chip').on('click', function () {
+                $('#channelFilters .filter-chip').removeClass('active');
+                $(this).addClass('active');
+                currentChannel = $(this).data('filter');
+                filterTemplates();
+            });
+
+            // Search
+            $('#searchTemplates').on('keyup', function () {
+                searchTerm = $(this).val().toLowerCase();
+                filterTemplates();
+            });
+        }
+
+        function filterTemplates() {
+            $('.template-item').each(function () {
+                const $item = $(this);
+                const category = $item.data('category');
+                const channel = $item.data('channel');
+                const text = $item.text().toLowerCase();
+
+                let showItem = true;
+
+                // Apply category filter
+                if (currentCategory !== 'all' && category !== currentCategory) {
+                    showItem = false;
+                }
+
+                // Apply channel filter
+                if (currentChannel !== 'all' && channel !== currentChannel) {
+                    showItem = false;
+                }
+
+                // Apply search filter
+                if (searchTerm && !text.includes(searchTerm)) {
+                    showItem = false;
+                }
+
+                if (showItem) {
+                    $item.show();
+                } else {
+                    $item.hide();
+                }
+            });
+
+            // Show empty state if no templates visible
+            const visibleCount = $('.template-item:visible').length;
+            if (visibleCount === 0) {
+                $('#templateList').append(`
+                    <div class="template-empty-state p-4" id="noResults">
+                        <div>
+                            <i class="ri-search-line fs-1 text-muted mb-3"></i>
+                            <p class="text-muted">No templates match your filters</p>
+                        </div>
+                    </div>
+                `);
+            } else {
+                $('#noResults').remove();
+            }
+        }
+
+        function loadTemplateDetails(templateId) {
+            const template = allTemplates.find(t => t.templateId === templateId);
+            if (!template) return;
+
+            $('#emptyState').addClass('d-none');
+            $('#templateDetails').removeClass('d-none');
+
+            // Build channel icon
+            let channelIcon = '';
+            let channelClass = '';
+            switch (template.channel) {
+                case 'InApp':
+                    channelIcon = 'ri-notification-3-line';
+                    channelClass = 'channel-inapp';
+                    break;
+                case 'Email':
+                    channelIcon = 'ri-mail-line';
+                    channelClass = 'channel-email';
+                    break;
+                case 'SMS':
+                    channelIcon = 'ri-message-2-line';
+                    channelClass = 'channel-sms';
+                    break;
+                case 'WhatsApp':
+                    channelIcon = 'ri-whatsapp-line';
+                    channelClass = 'channel-whatsapp';
+                    break;
+            }
+
+            // Extract variables from templates
+            const subjectVars = extractVariables(template.subjectTemplate);
+            const bodyVars = extractVariables(template.bodyTemplate);
+            const allVars = [...new Set([...subjectVars, ...bodyVars])];
+
+            const html = `
+                <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="channel-icon ${channelClass}" style="width: 48px; height: 48px; font-size: 1.5rem;">
+                            <i class="${channelIcon}"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-1">${template.templateName}</h4>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary-transparent">${template.category}</span>
+                                <span class="badge bg-secondary-transparent">${template.channel}</span>
+                                ${template.isActive 
+                                    ? '<span class="badge bg-success-transparent">Active</span>' 
+                                    : '<span class="badge bg-danger-transparent">Inactive</span>'}
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-icon btn-primary btn-wave" onclick="editTemplate(${template.templateId})" title="Edit Template">
+                            <i class="ri-edit-line"></i>
+                        </button>
+                        <button class="btn btn-icon btn-outline-danger btn-wave ms-2" onclick="deleteTemplate(${template.templateId})" title="Delete Template">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>
+                    </div>
+                </div>
+
+                ${template.description ? `
+                <div class="alert alert-light mb-4">
+                    <div class="d-flex align-items-start">
+                        <i class="ri-information-line fs-5 me-2 text-primary"></i>
+                        <div>
+                            <strong>Description</strong>
+                            <p class="mb-0 mt-1">${template.description}</p>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="card custom-card mb-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="ri-text me-2"></i>Subject Template
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="p-3 bg-light border rounded">
+                            <code class="text-dark">${highlightVariables(template.subjectTemplate)}</code>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card custom-card mb-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="ri-file-text-line me-2"></i>Body Template
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="p-3 bg-light border rounded" style="white-space: pre-wrap;">
+                            <code class="text-dark">${highlightVariables(template.bodyTemplate)}</code>
+                        </div>
+                    </div>
+                </div>
+
+                ${allVars.length > 0 ? `
+                <div class="card custom-card mb-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="ri-braces-line me-2"></i>Template Variables
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">The following variables can be used in this template:</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            ${allVars.map(v => `<span class="template-variable">{${v}}</span>`).join('')}
+                        </div>
+                        <div class="alert alert-info mt-3 mb-0">
+                            <small>
+                                <i class="ri-lightbulb-line me-1"></i>
+                                These variables will be automatically replaced with actual data when sending notifications.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card custom-card">
+                            <div class="card-body">
+                                <label class="text-muted mb-1">Template ID</label>
+                                <div class="fw-semibold">${template.templateId}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card custom-card">
+                            <div class="card-body">
+                                <label class="text-muted mb-1">Status</label>
+                                <div class="fw-semibold">
+                                    ${template.isActive 
+                                        ? '<span class="text-success"><i class="ri-checkbox-circle-fill me-1"></i>Active</span>' 
+                                        : '<span class="text-danger"><i class="ri-close-circle-fill me-1"></i>Inactive</span>'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card custom-card">
+                            <div class="card-body">
+                                <label class="text-muted mb-1">Created Date</label>
+                                <div class="fw-semibold">${formatDate(template.createdAt)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card custom-card">
+                            <div class="card-body">
+                                <label class="text-muted mb-1">Last Updated</label>
+                                <div class="fw-semibold">${template.updatedAt ? formatDate(template.updatedAt) : 'Never'}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $('#templateDetails').html(html);
+        }
+
+        function extractVariables(template) {
+            if (!template) return [];
+            const regex = /{([^}]+)}/g;
+            const matches = [];
+            let match;
+            while ((match = regex.exec(template)) !== null) {
+                matches.push(match[1]);
+            }
+            return matches;
+        }
+
+        function highlightVariables(template) {
+            if (!template) return '';
+            return template.replace(/{([^}]+)}/g, '<span class="template-variable">{$1}</span>');
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function refreshTemplates() {
+            location.reload();
+        }
+
+        function editTemplate(templateId) {
+            toastr.info('Edit functionality coming soon');
+            // TODO: Implement edit modal
+        }
+
+        function deleteTemplate(templateId) {
+            if (confirm('Are you sure you want to delete this template?')) {
+                // TODO: Implement delete functionality
+                toastr.warning('Delete functionality coming soon');
+            }
+        }
+    </script>
+}

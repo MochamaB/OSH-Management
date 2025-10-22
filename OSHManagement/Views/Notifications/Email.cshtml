@@ -1,0 +1,712 @@
+@{
+    ViewData["Title"] = "Email Notifications";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .mail-container {
+            height: calc(100vh - 150px);
+            overflow: hidden;
+        }
+
+        .mail-sidebar {
+            height: 100%;
+            overflow-y: auto;
+            border-right: 1px solid var(--default-border);
+            background-color: var(--body-bg);
+        }
+
+        .mail-list-container {
+            height: 100%;
+            overflow-y: auto;
+            border-right: 1px solid var(--default-border);
+        }
+
+        .mail-menu-icon {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+        }
+
+        .mail-menu-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .mail-main-nav li {
+            margin-bottom: 0.25rem;
+        }
+
+        .mail-main-nav li a {
+            display: block;
+            padding: 0.625rem 1rem;
+            color: var(--default-text-color);
+            text-decoration: none;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+        }
+
+        .mail-main-nav li a:hover,
+        .mail-main-nav li.active a {
+            background-color: rgba(var(--primary-rgb), 0.1);
+            color: var(--primary);
+        }
+
+        .mail-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--default-border);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .mail-item:hover {
+            background-color: rgba(var(--primary-rgb), 0.05);
+        }
+
+        .mail-item.unread {
+            background-color: rgba(var(--primary-rgb), 0.03);
+        }
+
+        .mail-item.unread .mail-subject {
+            font-weight: 600;
+        }
+
+        .mail-starred i {
+            color: #ffc107;
+            cursor: pointer;
+        }
+
+        .mail-starred:not(.true) i {
+            color: var(--default-text-color);
+            opacity: 0.3;
+        }
+
+        .mail-starred:hover i {
+            opacity: 1;
+        }
+
+        .mail-subject {
+            font-size: 0.9375rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .mail-preview {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .mail-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .mail-info-offcanvas {
+            width: 45% !important;
+        }
+
+        @@media (max-width: 992px) {
+            .mail-info-offcanvas {
+                width: 80% !important;
+            }
+        }
+
+        .channel-badge {
+            font-size: 0.625rem;
+            padding: 0.15rem 0.5rem;
+        }
+
+        .recipient-type-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.6rem;
+        }
+
+        .delivery-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-pending { background-color: #ffc107; }
+        .status-sent { background-color: #28a745; }
+        .status-failed { background-color: #dc3545; }
+        .status-queued { background-color: #17a2b8; }
+    </style>
+}
+
+<div class="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2 mb-4">
+    
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary btn-wave" id="refreshEmails">
+            <i class="ri-refresh-line me-1"></i> Refresh
+        </button>
+        <button class="btn btn-primary btn-wave" data-bs-toggle="modal" data-bs-target="#composeModal">
+            <i class="ri-mail-add-line me-1"></i> Compose
+        </button>
+    </div>
+</div>
+
+<div class="row mail-container">
+    <!-- Left Sidebar: Recipients/Filters -->
+    <div class="col-xxl-3 col-xl-4 col-lg-4">
+        <div class="card custom-card overflow-hidden h-100">
+            <div class="card-body p-0">
+                <div class="mail-sidebar">
+                    <div class="p-3">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="searchEmails" placeholder="Search emails...">
+                            <button class="btn btn-light" type="button">
+                                <i class="ri-search-line"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <ul class="list-unstyled mail-main-nav px-3" id="mail-filters">
+                        <li class="px-0 pt-0">
+                            <span class="fs-11 text-muted op-7 fw-medium">FILTERS</span>
+                        </li>
+                        <li class="active filter-item" data-filter="all">
+                            <a href="javascript:void(0);">
+                                <div class="d-flex gap-2 align-items-center">
+                                    <div class="lh-1">
+                                        <span class="mail-menu-icon">
+                                            <i class="ri-mail-line fs-16"></i>
+                                        </span>
+                                    </div>
+                                    <span class="flex-fill text-nowrap">All Emails</span>
+                                    <span class="badge bg-primary" id="count-all">0</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="filter-item" data-filter="sent">
+                            <a href="javascript:void(0);">
+                                <div class="d-flex gap-2 align-items-center">
+                                    <div class="lh-1">
+                                        <span class="mail-menu-icon">
+                                            <i class="ri-mail-send-line fs-16"></i>
+                                        </span>
+                                    </div>
+                                    <span class="flex-fill text-nowrap">Sent</span>
+                                    <span class="badge bg-success" id="count-sent">0</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="filter-item" data-filter="pending">
+                            <a href="javascript:void(0);">
+                                <div class="d-flex gap-2 align-items-center">
+                                    <div class="lh-1">
+                                        <span class="mail-menu-icon">
+                                            <i class="ri-time-line fs-16"></i>
+                                        </span>
+                                    </div>
+                                    <span class="flex-fill text-nowrap">Pending</span>
+                                    <span class="badge bg-warning" id="count-pending">0</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="filter-item" data-filter="failed">
+                            <a href="javascript:void(0);">
+                                <div class="d-flex gap-2 align-items-center">
+                                    <div class="lh-1">
+                                        <span class="mail-menu-icon">
+                                            <i class="ri-error-warning-line fs-16"></i>
+                                        </span>
+                                    </div>
+                                    <span class="flex-fill text-nowrap">Failed</span>
+                                    <span class="badge bg-danger" id="count-failed">0</span>
+                                </div>
+                            </a>
+                        </li>
+
+                        <li class="px-0 pt-3">
+                            <span class="fs-11 text-muted op-7 fw-medium">RECIPIENTS</span>
+                        </li>
+                        <li class="filter-item" data-filter="employee">
+                            <a href="javascript:void(0);">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2 lh-1">
+                                        <i class="ri-user-line fs-16 text-primary"></i>
+                                    </span>
+                                    <span class="flex-fill text-nowrap">Direct</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="filter-item" data-filter="role">
+                            <a href="javascript:void(0);">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2 lh-1">
+                                        <i class="ri-shield-user-line fs-16 text-success"></i>
+                                    </span>
+                                    <span class="flex-fill text-nowrap">Role-Based</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="filter-item" data-filter="station">
+                            <a href="javascript:void(0);">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2 lh-1">
+                                        <i class="ri-building-line fs-16 text-info"></i>
+                                    </span>
+                                    <span class="flex-fill text-nowrap">Station</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="filter-item" data-filter="team">
+                            <a href="javascript:void(0);">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2 lh-1">
+                                        <i class="ri-team-line fs-16 text-warning"></i>
+                                    </span>
+                                    <span class="flex-fill text-nowrap">Team</span>
+                                </div>
+                            </a>
+                        </li>
+
+                        <li class="px-0 pt-3">
+                            <span class="fs-11 text-muted op-7 fw-medium">CATEGORIES</span>
+                        </li>
+                        <li class="filter-item" data-category="Employee">
+                            <a href="javascript:void(0);">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2 lh-1">
+                                        <i class="ri-circle-fill fs-10 text-primary"></i>
+                                    </span>
+                                    <span class="flex-fill text-nowrap">Employee</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="filter-item" data-category="Team">
+                            <a href="javascript:void(0);">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2 lh-1">
+                                        <i class="ri-circle-fill fs-10 text-success"></i>
+                                    </span>
+                                    <span class="flex-fill text-nowrap">Team</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="filter-item" data-category="Incident">
+                            <a href="javascript:void(0);">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2 lh-1">
+                                        <i class="ri-circle-fill fs-10 text-danger"></i>
+                                    </span>
+                                    <span class="flex-fill text-nowrap">Incident</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="filter-item" data-category="Training">
+                            <a href="javascript:void(0);">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2 lh-1">
+                                        <i class="ri-circle-fill fs-10 text-warning"></i>
+                                    </span>
+                                    <span class="flex-fill text-nowrap">Training</span>
+                                </div>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Middle Column: Email List Preview -->
+    <div class="col-xxl-9 col-xl-8 col-lg-8">
+        <div class="card custom-card overflow-hidden h-100">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="card-title mb-0">Email List</h6>
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm" id="sortBy" style="width: auto;">
+                        <option value="date">Date</option>
+                        <option value="subject">Subject</option>
+                        <option value="status">Status</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="mail-list-container" id="emailList">
+                    <div class="text-center p-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Loading emails...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Email Details Offcanvas -->
+<div class="offcanvas offcanvas-end mail-info-offcanvas" tabindex="-1" id="emailOffcanvas">
+    <div class="offcanvas-body p-0">
+        <div class="mails-information">
+            <div class="mail-info-header d-flex flex-wrap gap-2 align-items-center p-3 border-bottom">
+                <div class="flex-fill">
+                    <button class="btn btn-icon btn-light" id="printEmail" data-bs-toggle="tooltip" title="Print">
+                        <i class="ri-printer-line"></i>
+                    </button>
+                    <button class="btn btn-icon btn-light ms-1" id="markAsRead" data-bs-toggle="tooltip" title="Mark as read">
+                        <i class="ri-mail-open-line"></i>
+                    </button>
+                    <button class="btn btn-icon btn-light ms-1" id="retryEmail" data-bs-toggle="tooltip" title="Retry Send">
+                        <i class="ri-refresh-line"></i>
+                    </button>
+                    <button class="btn btn-icon btn-light ms-1" id="deleteEmail" data-bs-toggle="tooltip" title="Delete">
+                        <i class="ri-delete-bin-line"></i>
+                    </button>
+                </div>
+                <button type="button" class="btn-close btn btn-sm btn-icon border" data-bs-dismiss="offcanvas"></button>
+            </div>
+
+            <div class="mail-info-body p-4" id="emailDetailsContent">
+                <!-- Email details will be loaded here dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentFilter = 'all';
+        let currentCategory = null;
+        let allEmails = [];
+
+        $(document).ready(function () {
+            loadEmails();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Filter click handler
+            $('.filter-item').on('click', function () {
+                $('.filter-item').removeClass('active');
+                $(this).addClass('active');
+                
+                currentFilter = $(this).data('filter');
+                currentCategory = $(this).data('category') || null;
+                
+                filterEmails();
+            });
+
+            // Search functionality
+            $('#searchEmails').on('keyup', function () {
+                const searchTerm = $(this).val().toLowerCase();
+                filterEmails(searchTerm);
+            });
+
+            // Sort functionality
+            $('#sortBy').on('change', function () {
+                sortEmails($(this).val());
+            });
+
+            // Refresh button
+            $('#refreshEmails').on('click', function () {
+                loadEmails();
+            });
+
+            // Initialize tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        }
+
+        function loadEmails() {
+            $.ajax({
+                url: '@Url.Action("GetEmailNotifications", "Notifications")',
+                type: 'GET',
+                success: function (data) {
+                    allEmails = data;
+                    updateCounts();
+                    filterEmails();
+                },
+                error: function () {
+                    $('#emailList').html(`
+                        <div class="text-center p-5">
+                            <i class="ri-error-warning-line fs-1 text-danger mb-3"></i>
+                            <p class="text-danger">Error loading emails</p>
+                            <button class="btn btn-sm btn-primary" onclick="loadEmails()">Retry</button>
+                        </div>
+                    `);
+                }
+            });
+        }
+
+        function updateCounts() {
+            $('#count-all').text(allEmails.length);
+            $('#count-sent').text(allEmails.filter(e => e.deliveryStatus === 'Sent').length);
+            $('#count-pending').text(allEmails.filter(e => e.deliveryStatus === 'Pending' || e.deliveryStatus === 'Queued').length);
+            $('#count-failed').text(allEmails.filter(e => e.deliveryStatus === 'Failed').length);
+        }
+
+        function filterEmails(searchTerm = '') {
+            let filtered = allEmails;
+
+            // Apply status filter
+            if (currentFilter !== 'all') {
+                if (currentFilter === 'pending') {
+                    filtered = filtered.filter(e => e.deliveryStatus === 'Pending' || e.deliveryStatus === 'Queued');
+                } else if (currentFilter === 'sent') {
+                    filtered = filtered.filter(e => e.deliveryStatus === 'Sent' || e.deliveryStatus === 'Delivered');
+                } else if (currentFilter === 'failed') {
+                    filtered = filtered.filter(e => e.deliveryStatus === 'Failed');
+                } else {
+                    // Recipient type filter
+                    filtered = filtered.filter(e => e.recipientType.toLowerCase() === currentFilter);
+                }
+            }
+
+            // Apply category filter
+            if (currentCategory) {
+                filtered = filtered.filter(e => e.category === currentCategory);
+            }
+
+            // Apply search filter
+            if (searchTerm) {
+                filtered = filtered.filter(e =>
+                    e.subject.toLowerCase().includes(searchTerm) ||
+                    e.message.toLowerCase().includes(searchTerm) ||
+                    e.recipientEmail.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            renderEmailList(filtered);
+        }
+
+        function sortEmails(sortBy) {
+            // Implementation for sorting
+            filterEmails();
+        }
+
+        function renderEmailList(emails) {
+            if (emails.length === 0) {
+                $('#emailList').html(`
+                    <div class="text-center p-5">
+                        <i class="ri-inbox-line fs-1 text-muted mb-3"></i>
+                        <p class="text-muted">No emails found</p>
+                    </div>
+                `);
+                return;
+            }
+
+            let html = '';
+            emails.forEach(email => {
+                const statusClass = `status-${email.deliveryStatus.toLowerCase()}`;
+                const statusIcon = getStatusIcon(email.deliveryStatus);
+                
+                html += `
+                    <div class="mail-item ${email.isRead ? '' : 'unread'}" data-email-id="${email.notificationId}" data-delivery-id="${email.deliveryId}">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="flex-shrink-0">
+                                <span class="avatar avatar-sm avatar-rounded">
+                                    <i class="ri-mail-line fs-16"></i>
+                                </span>
+                            </div>
+                            <div class="flex-fill overflow-hidden">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <div class="flex-fill">
+                                        <span class="fw-semibold mail-subject text-truncate d-block">${email.subject}</span>
+                                    </div>
+                                    <span class="mail-time">${formatDate(email.createdAt)}</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="recipient-type-badge badge bg-${getRecipientColor(email.recipientType)}">${email.recipientType}</span>
+                                    <span class="channel-badge badge bg-light text-dark">${email.category || 'General'}</span>
+                                    <span class="delivery-status">
+                                        <span class="status-dot ${statusClass}"></span>
+                                        <span class="fs-11 text-muted">${email.deliveryStatus}</span>
+                                    </span>
+                                </div>
+                                <div class="mail-preview">${email.message}</div>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="ri-user-line"></i> ${email.recipientEmail || 'Multiple recipients'}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            $('#emailList').html(html);
+
+            // Attach click handlers
+            $('.mail-item').on('click', function () {
+                const emailId = $(this).data('email-id');
+                const deliveryId = $(this).data('delivery-id');
+                loadEmailDetails(emailId, deliveryId);
+            });
+        }
+
+        function loadEmailDetails(notificationId, deliveryId) {
+            $.ajax({
+                url: '@Url.Action("GetEmailDetails", "Notifications")',
+                type: 'GET',
+                data: { notificationId: notificationId, deliveryId: deliveryId },
+                success: function (email) {
+                    renderEmailDetails(email);
+                    
+                    // Show offcanvas
+                    const offcanvas = new bootstrap.Offcanvas(document.getElementById('emailOffcanvas'));
+                    offcanvas.show();
+                },
+                error: function () {
+                    toastr.error('Error loading email details');
+                }
+            });
+        }
+
+        function renderEmailDetails(email) {
+            const statusClass = `status-${email.deliveryStatus.toLowerCase()}`;
+            const html = `
+                <div class="d-sm-flex d-block align-items-center justify-content-between mb-4">
+                    <div>
+                        <h5 class="mb-0">${email.subject}</h5>
+                    </div>
+                    <div class="float-end">
+                        <span class="fs-13 fw-medium text-muted">${formatDateTime(email.createdAt)}</span>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 mb-4">
+                    <div class="me-1">
+                        <span class="avatar avatar-md avatar-rounded">
+                            <i class="ri-mail-line fs-18"></i>
+                        </span>
+                    </div>
+                    <div class="flex-fill">
+                        <h6 class="mb-0 fw-medium">OSH Management System</h6>
+                        <span class="text-muted fs-12">to: ${email.recipientEmail || 'Multiple recipients'}</span>
+                    </div>
+                    <div class="delivery-status">
+                        <span class="status-dot ${statusClass}"></span>
+                        <span class="badge bg-${getStatusBadgeColor(email.deliveryStatus)}">${email.deliveryStatus}</span>
+                    </div>
+                </div>
+
+                <div class="alert alert-light border">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <strong>Recipient Type:</strong>
+                            <span class="badge bg-${getRecipientColor(email.recipientType)} ms-2">${email.recipientType}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Category:</strong> ${email.category || 'General'}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Priority:</strong> 
+                            <span class="badge bg-${getPriorityColor(email.priority)}">${email.priority}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Sent At:</strong> ${email.sentAt ? formatDateTime(email.sentAt) : 'Not sent yet'}
+                        </div>
+                        ${email.retryCount > 0 ? `
+                        <div class="col-md-12">
+                            <strong>Retry Count:</strong> <span class="text-warning">${email.retryCount}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <div class="main-mail-content mb-4">
+                    <p class="text-muted">${email.message.replace(/\n/g, '<br>')}</p>
+                </div>
+
+                ${email.actionUrl ? `
+                <div class="mb-4">
+                    <a href="${email.actionUrl}" class="btn btn-primary btn-wave">
+                        <i class="ri-external-link-line me-1"></i> View Related Item
+                    </a>
+                </div>
+                ` : ''}
+
+                ${email.errorMessage ? `
+                <div class="alert alert-danger">
+                    <h6 class="alert-heading mb-2">Delivery Error</h6>
+                    <p class="mb-0">${email.errorMessage}</p>
+                </div>
+                ` : ''}
+            `;
+
+            $('#emailDetailsContent').html(html);
+        }
+
+        function getRecipientColor(type) {
+            const colors = {
+                'Employee': 'primary',
+                'Role': 'success',
+                'Station': 'info',
+                'Department': 'warning',
+                'Team': 'secondary'
+            };
+            return colors[type] || 'secondary';
+        }
+
+        function getStatusBadgeColor(status) {
+            const colors = {
+                'Pending': 'warning',
+                'Queued': 'info',
+                'Sent': 'success',
+                'Delivered': 'success',
+                'Failed': 'danger'
+            };
+            return colors[status] || 'secondary';
+        }
+
+        function getPriorityColor(priority) {
+            const colors = {
+                'Urgent': 'danger',
+                'High': 'warning',
+                'Normal': 'info',
+                'Low': 'secondary'
+            };
+            return colors[priority] || 'secondary';
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'Pending': 'ri-time-line',
+                'Queued': 'ri-time-line',
+                'Sent': 'ri-check-line',
+                'Delivered': 'ri-check-double-line',
+                'Failed': 'ri-error-warning-line'
+            };
+            return icons[status] || 'ri-mail-line';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            
+            if (hours < 1) return 'Just now';
+            if (hours < 24) return hours + 'h ago';
+            if (hours < 48) return 'Yesterday';
+            
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    </script>
+}
