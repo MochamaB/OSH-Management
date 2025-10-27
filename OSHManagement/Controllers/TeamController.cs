@@ -42,6 +42,7 @@ namespace OSHManagement.Controllers
             // THEN apply includes (only for scoped data)
             query = query
                 .Include(t => t.Station)
+                .Include(t => t.TeamTypeDefinition)
                 .Include(t => t.TeamMembers.Where(tm => tm.IsActive));
 
             // Apply search filter
@@ -55,10 +56,10 @@ namespace OSHManagement.Controllers
                 );
             }
 
-            // Apply team type filter
+            // Apply team type filter (using TeamTypeDefinitionId or TypeCode)
             if (!string.IsNullOrWhiteSpace(teamType))
             {
-                query = query.Where(t => t.TeamType == teamType);
+                query = query.Where(t => t.TeamTypeDefinition != null && t.TeamTypeDefinition.TypeCode == teamType);
             }
 
             // Apply station filter
@@ -83,7 +84,7 @@ namespace OSHManagement.Controllers
             {
                 TeamId = t.TeamId,
                 TeamName = t.TeamName,
-                TeamType = t.TeamType,
+                TeamType = t.TeamTypeDefinition?.TypeName ?? t.TeamType ?? "Unknown",
                 TeamDescription = t.TeamDescription,
                 StationName = t.Station.StationName,
                 StationId = t.StationId,
@@ -91,9 +92,9 @@ namespace OSHManagement.Controllers
                 FormationDate = t.FormationDate,
                 DisbandDate = t.DisbandDate,
                 ActiveMemberCount = t.TeamMembers.Count(tm => tm.IsActive),
-                MaxMemberCount = t.MaxMemberCount,
-                RequiredMemberCount = t.RequiredMemberCount,
-                RequiresSectionRepresentation = t.RequiresSectionRepresentation,
+                MaxMemberCount = t.TeamTypeDefinition?.MaxMemberCount ?? t.MaxMemberCount,
+                RequiredMemberCount = t.TeamTypeDefinition?.MinMemberCount ?? t.RequiredMemberCount,
+                RequiresSectionRepresentation = t.TeamTypeDefinition?.RequiresSectionRepresentation ?? t.RequiresSectionRepresentation,
                 CreatedAt = t.CreatedAt,
                 UpdatedAt = t.UpdatedAt
             }).ToList();
@@ -130,18 +131,29 @@ namespace OSHManagement.Controllers
             ViewBag.EmployeesByDepartment = new List<object>();
             ViewBag.AllEmployees = new List<object>();
 
-            // Team type options from enum (dictionary for proper value/text mapping)
-            ViewBag.TeamTypes = TeamEnumExtensions.GetTeamTypeDictionary();
+            // Load team type definitions for dropdown
+            ViewBag.TeamTypes = await _context.TeamTypeDefinitions
+                .Where(ttd => ttd.IsActive)
+                .OrderBy(ttd => ttd.TypeName)
+                .Select(ttd => new
+                {
+                    ttd.TeamTypeDefinitionId,
+                    ttd.TypeName,
+                    ttd.TypeCode,
+                    ttd.Description
+                })
+                .ToListAsync();
 
-            // Load all team role definitions grouped by team type
+            // Load all team role definitions grouped by team type definition
             ViewBag.TeamRoleDefinitions = await _context.TeamRoleDefinitions
                 .Where(trd => trd.IsActive)
-                .OrderBy(trd => trd.TeamType)
+                .OrderBy(trd => trd.TeamTypeDefinitionId)
                 .ThenBy(trd => trd.DisplayOrder)
                 .Select(trd => new
                 {
                     trd.TeamRoleDefinitionId,
-                    trd.TeamType,
+                    trd.TeamTypeDefinitionId,
+                    trd.TeamType, // For backward compatibility
                     trd.RoleName,
                     trd.Description,
                     trd.RequiresVotingRights,
@@ -215,68 +227,44 @@ namespace OSHManagement.Controllers
                         return View(model);
                     }
 
+                    // Fetch the TeamTypeDefinition to get constraints and TypeCode
+                    var teamTypeDefinition = await _context.TeamTypeDefinitions
+                        .FirstOrDefaultAsync(ttd => ttd.TeamTypeDefinitionId == model.TeamTypeDefinitionId);
+
+                    if (teamTypeDefinition == null)
+                    {
+                        ModelState.AddModelError("TeamTypeDefinitionId", "Invalid team type selected.");
+                        await LoadCreateViewData();
+                        return View(model);
+                    }
+
                     // Create team entity
                     var team = new Team
                     {
                         TeamName = model.TeamName.Trim(),
-                        TeamType = model.TeamType,
+                        TeamTypeDefinitionId = model.TeamTypeDefinitionId,
+                        TeamType = teamTypeDefinition.TypeCode, // Backward compatibility
                         TeamDescription = model.TeamDescription?.Trim(),
                         StationId = model.StationId,
                         FormationDate = model.FormationDate,
                         TeamStatus = model.SaveAsDraft ? "Inactive" : "Active",
-                        RequiredMemberCount = model.RequiredMemberCount,
-                        MaxMemberCount = model.MaxMemberCount,
-                        RequiresSectionRepresentation = model.RequiresSectionRepresentation,
+                        // Backward compatibility - copy from TeamTypeDefinition
+                        RequiredMemberCount = teamTypeDefinition.MinMemberCount,
+                        MaxMemberCount = teamTypeDefinition.MaxMemberCount,
+                        RequiresSectionRepresentation = teamTypeDefinition.RequiresSectionRepresentation,
                         CreatedAt = DateTime.UtcNow
                     };
 
                     _context.Teams.Add(team);
                     await _context.SaveChangesAsync();
 
-                    // Create type-specific configuration based on team type
-                    switch (model.TeamType)
-                    {
-                        case "OSH Committee":
-                            var oshConfig = new OshCommitteeConfig
-                            {
-                                TeamId = team.TeamId,
-                                IsCommitteeTrained = model.IsCommitteeTrained,
-                                TrainingDate = model.TrainingDate,
-                                HasMeetingSchedule = model.HasMeetingSchedule,
-                                InspectionFrequency = model.InspectionFrequency,
-                                NextInspectionDate = model.NextInspectionDate,
-                                CreatedAt = DateTime.UtcNow
-                            };
-                            _context.OshCommitteeConfigs.Add(oshConfig);
-                            break;
-
-                        case "Risk Assessment":
-                            var riskConfig = new RiskAssessmentConfig
-                            {
-                                TeamId = team.TeamId,
-                                AssessmentFrequency = model.AssessmentFrequency,
-                                TeamQualifications = model.TeamQualifications,
-                                NextAssessmentDate = model.NextAssessmentDate,
-                                CreatedAt = DateTime.UtcNow
-                            };
-                            _context.RiskAssessmentConfigs.Add(riskConfig);
-                            break;
-
-                        case "Investigation":
-                            var investigationConfig = new IncidentInvestigationConfig
-                            {
-                                TeamId = team.TeamId,
-                                InvestigationScope = model.InvestigationScope,
-                                TeamExpertise = model.TeamExpertise,
-                                ResponseTimeHours = model.ResponseTimeHours,
-                                EscalationThreshold = model.EscalationThreshold,
-                                CreatedAt = DateTime.UtcNow
-                            };
-                            _context.IncidentInvestigationConfigs.Add(investigationConfig);
-                            break;
-                    }
-
-                    await _context.SaveChangesAsync();
+                    // NOTE: Type-specific configurations (OshCommitteeConfig, IncidentInvestigationConfig, etc.)
+                    // are NOT created during team creation. They are optional extensions that should be
+                    // configured separately after the team is created, either through:
+                    // 1. The Edit Team page (Add/Update Config section)
+                    // 2. A dedicated Team Configuration management interface
+                    // This allows multiple teams of the same type to have different configurations
+                    // (e.g., different investigation teams with different response times and escalation thresholds)
 
                     // Add team members if selected
                     if (model.SelectedMemberPayrolls != null && model.SelectedMemberPayrolls.Any())
@@ -302,18 +290,16 @@ namespace OSHManagement.Controllers
                             var memberDto = model.Members.FirstOrDefault(m => m.EmployeePayroll == payroll);
                             if (memberDto == null)
                             {
-                                // If no details provided, skip this member or find a default role
-                                // Get a generic role for this team type
-                                /*
+                                // If no details provided, get a default role for this team type
                                 var defaultRole = await _context.TeamRoleDefinitions
-                                    .Where(trd => trd.TeamType == model.TeamType && trd.IsActive)
+                                    .Where(trd => trd.TeamTypeDefinitionId == model.TeamTypeDefinitionId && trd.IsActive)
                                     .OrderBy(trd => trd.DisplayOrder)
                                     .FirstOrDefaultAsync();
-                                
+
 
                                 if (defaultRole == null)
                                 {
-                                    ModelState.AddModelError("", $"No role definitions found for team type '{model.TeamType}'. Please contact administrator.");
+                                    ModelState.AddModelError("", $"No role definitions found for the selected team type. Please contact administrator.");
                                     await LoadCreateViewData();
                                     return View(model);
                                 }
@@ -325,7 +311,6 @@ namespace OSHManagement.Controllers
                                     AppointmentDate = DateTime.Today,
                                     IsVotingMember = defaultRole.RequiresVotingRights
                                 };
-                                */
                             }
 
                                 
@@ -403,14 +388,15 @@ namespace OSHManagement.Controllers
             {
                 TeamId = team.TeamId,
                 TeamName = team.TeamName,
-                TeamType = team.TeamType,
+                TeamTypeDefinitionId = team.TeamTypeDefinitionId,
+                TeamType = team.TeamTypeDefinition?.TypeCode ?? team.TeamType ?? "Unknown",
                 TeamDescription = team.TeamDescription,
                 StationId = team.StationId,
                 TeamStatus = team.TeamStatus,
                 FormationDate = team.FormationDate,
-                RequiredMemberCount = team.RequiredMemberCount,
-                MaxMemberCount = team.MaxMemberCount,
-                RequiresSectionRepresentation = team.RequiresSectionRepresentation,
+                RequiredMemberCount = team.TeamTypeDefinition?.MinMemberCount ?? team.RequiredMemberCount,
+                MaxMemberCount = team.TeamTypeDefinition?.MaxMemberCount ?? team.MaxMemberCount,
+                RequiresSectionRepresentation = team.TeamTypeDefinition?.RequiresSectionRepresentation ?? team.RequiresSectionRepresentation,
                 CreatedAt = team.CreatedAt,
                 UpdatedAt = team.UpdatedAt
             };
@@ -426,9 +412,11 @@ namespace OSHManagement.Controllers
                     tm.MemberId,
                     tm.EmployeePayroll,
                     EmployeeName = $"{tm.Employee.FirstName} {tm.Employee.LastName}",
+                    Designation = tm.Employee.Designation,
                     tm.TeamRoleDefinitionId,
-                    MemberRole = tm.TeamRoleDefinition != null ? tm.TeamRoleDefinition.RoleName : "No Role Assigned",
+                    RoleName = tm.TeamRoleDefinition != null ? tm.TeamRoleDefinition.RoleName : "No Role",
                     tm.SectionId,
+                    SectionName = tm.Section != null ? tm.Section.SectionName : null,
                     tm.EducationLevel,
                     tm.RelevantExperience,
                     tm.AppointmentDate,
@@ -436,8 +424,9 @@ namespace OSHManagement.Controllers
                 }).ToList();
 
             // Load role definitions for this team type
+            var teamTypeCode = team.TeamTypeDefinition?.TypeCode ?? team.TeamType;
             var roleDefinitions = await _context.TeamRoleDefinitions
-                .Where(trd => trd.TeamType == team.TeamType && trd.IsActive)
+                .Where(trd => trd.TeamTypeDefinitionId == team.TeamTypeDefinitionId && trd.IsActive)
                 .OrderBy(trd => trd.DisplayOrder)
                 .ToListAsync();
 
@@ -464,7 +453,8 @@ namespace OSHManagement.Controllers
             ViewBag.CalculatedMinimum = calculatedMinimum;
 
             // Check section representation
-            if (team.RequiresSectionRepresentation)
+            var requiresSectionRep = team.TeamTypeDefinition?.RequiresSectionRepresentation ?? team.RequiresSectionRepresentation;
+            if (requiresSectionRep)
             {
                 var sectionCount = team.TeamMembers
                     .Where(tm => tm.IsActive && tm.SectionId != null)
@@ -476,15 +466,15 @@ namespace OSHManagement.Controllers
             }
 
             // Pass type-specific config
-            if (team.TeamType == "OSH Committee" && team.OshCommitteeConfig != null)
+            if (teamTypeCode == "OshCommittee" && team.OshCommitteeConfig != null)
             {
                 ViewBag.OshCommitteeConfig = team.OshCommitteeConfig;
             }
-            else if (team.TeamType == "Risk Assessment" && team.RiskAssessmentConfig != null)
+            else if (teamTypeCode == "RiskAssessment" && team.RiskAssessmentConfig != null)
             {
                 ViewBag.RiskAssessmentConfig = team.RiskAssessmentConfig;
             }
-            else if (team.TeamType == "Investigation" && team.IncidentInvestigationConfig != null)
+            else if (teamTypeCode == "Investigation" && team.IncidentInvestigationConfig != null)
             {
                 ViewBag.IncidentInvestigationConfig = team.IncidentInvestigationConfig;
             }
@@ -539,21 +529,24 @@ namespace OSHManagement.Controllers
                     team.TeamDescription = model.TeamDescription?.Trim();
                     team.TeamStatus = model.TeamStatus;
                     team.FormationDate = model.FormationDate;
+                    // Note: Member constraints are now in TeamTypeDefinition, not Team
+                    // Kept for backward compatibility during migration
                     team.RequiredMemberCount = model.RequiredMemberCount;
                     team.MaxMemberCount = model.MaxMemberCount;
                     team.RequiresSectionRepresentation = model.RequiresSectionRepresentation;
                     team.UpdatedAt = DateTime.UtcNow;
 
                     // Handle type-specific configs
-                    if (team.TeamType == "OSH Committee")
+                    var teamTypeCode = team.TeamTypeDefinition?.TypeCode ?? team.TeamType;
+                    if (teamTypeCode == "OshCommittee")
                     {
                         await UpdateOshCommitteeConfig(team, form);
                     }
-                    else if (team.TeamType == "Risk Assessment")
+                    else if (teamTypeCode == "RiskAssessment")
                     {
                         await UpdateRiskAssessmentConfig(team, form);
                     }
-                    else if (team.TeamType == "Investigation")
+                    else if (teamTypeCode == "Investigation")
                     {
                         await UpdateInvestigationConfig(team, form);
                     }
@@ -705,8 +698,36 @@ namespace OSHManagement.Controllers
             ViewBag.EmployeesByDepartment = employeesByDepartment;
             ViewBag.AllEmployees = employees;
 
-            ViewBag.TeamTypes = TeamEnumExtensions.GetTeamTypeDictionary();
-            ViewBag.MemberRoles = TeamEnumExtensions.GetMemberRoleValues();
+            // Load team type definitions for dropdown
+            ViewBag.TeamTypes = await _context.TeamTypeDefinitions
+                .Where(ttd => ttd.IsActive)
+                .OrderBy(ttd => ttd.TypeName)
+                .Select(ttd => new
+                {
+                    ttd.TeamTypeDefinitionId,
+                    ttd.TypeName,
+                    ttd.TypeCode,
+                    ttd.Description
+                })
+                .ToListAsync();
+
+            // Load all team role definitions
+            ViewBag.TeamRoleDefinitions = await _context.TeamRoleDefinitions
+                .Where(trd => trd.IsActive)
+                .OrderBy(trd => trd.TeamTypeDefinitionId)
+                .ThenBy(trd => trd.DisplayOrder)
+                .Select(trd => new
+                {
+                    trd.TeamRoleDefinitionId,
+                    trd.TeamTypeDefinitionId,
+                    trd.RoleName,
+                    trd.Description,
+                    trd.RequiresVotingRights,
+                    trd.MaxOccurrences,
+                    trd.MinOccurrences
+                })
+                .ToListAsync();
+
             ViewBag.FrequencyOptions = TeamEnumExtensions.GetFrequencyValues();
             ViewBag.EducationLevels = TeamEnumExtensions.GetEducationLevelValues();
         }
@@ -750,17 +771,28 @@ namespace OSHManagement.Controllers
             ViewBag.EmployeesByDepartment = employeesByDepartment;
             ViewBag.AllEmployees = stationEmployees;
 
-            ViewBag.TeamTypes = TeamEnumExtensions.GetTeamTypeDictionary();
+            // Load team type definitions for dropdown
+            ViewBag.TeamTypes = await _context.TeamTypeDefinitions
+                .Where(ttd => ttd.IsActive)
+                .OrderBy(ttd => ttd.TypeName)
+                .Select(ttd => new
+                {
+                    ttd.TeamTypeDefinitionId,
+                    ttd.TypeName,
+                    ttd.TypeCode,
+                    ttd.Description
+                })
+                .ToListAsync();
 
             // Load team role definitions
             ViewBag.TeamRoleDefinitions = await _context.TeamRoleDefinitions
                 .Where(trd => trd.IsActive)
-                .OrderBy(trd => trd.TeamType)
+                .OrderBy(trd => trd.TeamTypeDefinitionId)
                 .ThenBy(trd => trd.DisplayOrder)
                 .Select(trd => new
                 {
                     trd.TeamRoleDefinitionId,
-                    trd.TeamType,
+                    trd.TeamTypeDefinitionId,
                     trd.RoleName,
                     trd.Description,
                     trd.RequiresVotingRights
@@ -775,10 +807,22 @@ namespace OSHManagement.Controllers
 
         // GET: Team/GetAvailableRoles
         [HttpGet]
-        public async Task<IActionResult> GetAvailableRoles(int teamId, string teamType)
+        public async Task<IActionResult> GetAvailableRoles(int teamId, int? teamTypeDefinitionId = null, string? teamType = null)
         {
             try
             {
+                // Get team to determine its type if not provided
+                if (!teamTypeDefinitionId.HasValue)
+                {
+                    var team = await _context.Teams
+                        .FirstOrDefaultAsync(t => t.TeamId == teamId);
+
+                    if (team != null)
+                    {
+                        teamTypeDefinitionId = team.TeamTypeDefinitionId;
+                    }
+                }
+
                 // Get current member counts
                 var memberCounts = await _context.TeamMembers
                     .Where(tm => tm.TeamId == teamId && tm.IsActive)
@@ -786,9 +830,20 @@ namespace OSHManagement.Controllers
                     .Select(g => new { RoleId = g.Key, Count = g.Count() })
                     .ToDictionaryAsync(x => x.RoleId, x => x.Count);
 
-                // Get role definitions for this team type
-                var roles = await _context.TeamRoleDefinitions
-                    .Where(trd => trd.TeamType == teamType && trd.IsActive)
+                // Get role definitions for this team type (using TeamTypeDefinitionId if available, fallback to TeamType string)
+                var query = _context.TeamRoleDefinitions.Where(trd => trd.IsActive);
+
+                if (teamTypeDefinitionId.HasValue)
+                {
+                    query = query.Where(trd => trd.TeamTypeDefinitionId == teamTypeDefinitionId.Value);
+                }
+                else if (!string.IsNullOrEmpty(teamType))
+                {
+                    // Backward compatibility: use old TeamType string
+                    query = query.Where(trd => trd.TeamType == teamType);
+                }
+
+                var roles = await query
                     .OrderBy(trd => trd.DisplayOrder)
                     .Select(trd => new
                     {
@@ -958,13 +1013,14 @@ namespace OSHManagement.Controllers
                     }
                 }
 
-                // Validate team capacity
-                if (team.MaxMemberCount.HasValue)
+                // Validate team capacity (check TeamTypeDefinition first, then fallback to Team)
+                var maxMemberCount = team.TeamTypeDefinition?.MaxMemberCount ?? team.MaxMemberCount;
+                if (maxMemberCount.HasValue)
                 {
                     var currentTeamSize = team.TeamMembers.Count;
-                    if (currentTeamSize >= team.MaxMemberCount.Value)
+                    if (currentTeamSize >= maxMemberCount.Value)
                     {
-                        return Json(new { success = false, message = $"Team is at maximum capacity ({team.MaxMemberCount} members)" });
+                        return Json(new { success = false, message = $"Team is at maximum capacity ({maxMemberCount} members)" });
                     }
                 }
 

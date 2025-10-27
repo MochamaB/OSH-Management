@@ -1,108 +1,121 @@
-SELECT TOP (1000) [MemberId]
-      ,[TeamId]
-      ,[EmployeePayroll]
-      ,[MemberRole]
-      ,[SectionId]
-      ,[EducationLevel]
-      ,[RelevantExperience]
-      ,[AppointmentDate]
-      ,[DepartureDate]
-      ,[IsVotingMember]
-      ,[IsActive]
-      ,[CreatedAt]
-      ,[UpdatedAt]
-      ,[TeamRoleDefinitionId]
-      ,[TermEndDate]
-      ,[TermNumber]
-      ,[IsElected]
-      ,[ElectionReference]
-      ,[AppointmentLetterRef]
-  FROM [OSHManagement].[dbo].[TeamMembers]
-
-  SELECT TOP (1000) [TeamId]
-      ,[StationId]
-      ,[TeamType]
-      ,[TeamName]
-      ,[TeamDescription]
-      ,[RequiredMemberCount]
-      ,[MaxMemberCount]
-      ,[RequiresSectionRepresentation]
-      ,[TeamStatus]
-      ,[FormationDate]
-      ,[DisbandDate]
-      ,[CreatedAt]
-      ,[UpdatedAt]
-      ,[TeamTypeDefinitionId]
-  FROM [OSHManagement].[dbo].[Teams]
-
-  SELECT TOP (1000) [TeamRoleDefinitionId]
-      ,[TeamType]
-      ,[RoleName]
-      ,[Description]
-      ,[RequiresVotingRights]
-      ,[MaxOccurrences]
-      ,[MinOccurrences]
-      ,[RequiredQualifications]
-      ,[DisplayOrder]
-      ,[IsActive]
-      ,[CreatedAt]
-      ,[UpdatedAt]
-      ,[TeamTypeDefinitionId]
-      ,[IsEmployeeRepresentative]
-      ,[IsEmployerRepresentative]
-      ,[IsExOfficio]
-  FROM [OSHManagement].[dbo].[TeamRoleDefinitions]
-
-  SELECT TOP (1000) [TeamTypeDefinitionId]
-      ,[TypeName]
-      ,[TypeCode]
-      ,[Description]
-      ,[MaxTeamsPerStation]
-      ,[RequiresStatutoryCompliance]
-      ,[RequiredEmployeeRepRatio]
-      ,[RequiredEmployerRepRatio]
-      ,[MinFemaleRatio]
-      ,[MinMaleRatio]
-      ,[MinMeetingsPerYear]
-      ,[QuorumPercentage]
-      ,[MinMemberCount]
-      ,[MaxMemberCount]
-      ,[RequiresSectionRepresentation]
-      ,[DefaultTermMonths]
-      ,[MaxConsecutiveTerms]
-      ,[IsActive]
-      ,[IsSystemType]
-      ,[CreatedAt]
-      ,[UpdatedAt]
-  FROM [OSHManagement].[dbo].[TeamTypeDefinitions]
-
-  SELECT TOP (1000) [ConfigId]
-      ,[TeamId]
-      ,[InvestigationScope]
-      ,[TeamExpertise]
-      ,[ResponseTimeHours]
-      ,[EscalationThreshold]
-      ,[CreatedAt]
-      ,[UpdatedAt]
-  FROM [OSHManagement].[dbo].[IncidentInvestigationConfigs]
-  SELECT TOP (1000) [ConfigId]
-      ,[TeamId]
-      ,[IsCommitteeTrained]
-      ,[TrainingDate]
-      ,[HasMeetingSchedule]
-      ,[InspectionFrequency]
-      ,[LastInspectionDate]
-      ,[NextInspectionDate]
-      ,[CreatedAt]
-      ,[UpdatedAt]
-  FROM [OSHManagement].[dbo].[OshCommitteeConfigs]
-
-  SELECT TOP (1000) [ConfigId]
-      ,[TeamId]
-      ,[AssessmentFrequency]
-      ,[LastAssessmentDate]
-      ,[NextAssessmentDate]
-      ,[TeamQualifications]
-      ,[CreatedAt]
-      ,[UpdatedAt]
-  FROM [OSHManagement].[dbo].[RiskAssessmentConfigs]
+     VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6);
+fail: Microsoft.EntityFrameworkCore.Update[10000]
+      An exception occurred in the database while saving changes for context type 'OSHManagement.Data.OshDbContext'.
+      Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+       ---> Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot insert the value NULL into column 'EscalationThreshold', table 'OSHManagement.dbo.IncidentInvestigationConfigs'; column does not allow nulls. INSERT fails.
+         at Microsoft.Data.SqlClient.SqlConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+         at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+         at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, Boolean callerHasConnectionLock, Boolean asyncClose)
+         at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+         at Microsoft.Data.SqlClient.SqlDataReader.TryHasMoreRows(Boolean& moreRows)
+         at Microsoft.Data.SqlClient.SqlDataReader.TryReadInternal(Boolean setTimeout, Boolean& more)
+         at Microsoft.Data.SqlClient.SqlDataReader.ReadAsyncExecute(Task task, Object state)
+         at Microsoft.Data.SqlClient.SqlDataReader.InvokeAsyncCall[T](SqlDataReaderBaseAsyncCallContext`1 context)
+      --- End of stack trace from previous location ---
+         at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+      ClientConnectionId:482adbdd-379b-44b2-8bdb-ab93fd88a8f6
+      Error Number:515,State:2,Class:16
+         --- End of inner exception stack trace ---
+         at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.SqlServer.Update.Internal.SqlServerModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+      Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+       ---> Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot insert the value NULL into column 'EscalationThreshold', table 'OSHManagement.dbo.IncidentInvestigationConfigs'; column does not allow nulls. INSERT fails.
+         at Microsoft.Data.SqlClient.SqlConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+         at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+         at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, Boolean callerHasConnectionLock, Boolean asyncClose)
+         at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+         at Microsoft.Data.SqlClient.SqlDataReader.TryHasMoreRows(Boolean& moreRows)
+         at Microsoft.Data.SqlClient.SqlDataReader.TryReadInternal(Boolean setTimeout, Boolean& more)
+         at Microsoft.Data.SqlClient.SqlDataReader.ReadAsyncExecute(Task task, Object state)
+         at Microsoft.Data.SqlClient.SqlDataReader.InvokeAsyncCall[T](SqlDataReaderBaseAsyncCallContext`1 context)
+      --- End of stack trace from previous location ---
+         at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+      ClientConnectionId:482adbdd-379b-44b2-8bdb-ab93fd88a8f6
+      Error Number:515,State:2,Class:16
+         --- End of inner exception stack trace ---
+         at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.SqlServer.Update.Internal.SqlServerModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+fail: OSHManagement.Controllers.TeamController[0]
+      Error creating team
+      Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while saving the entity changes. See the inner exception for details.
+       ---> Microsoft.Data.SqlClient.SqlException (0x80131904): Cannot insert the value NULL into column 'EscalationThreshold', table 'OSHManagement.dbo.IncidentInvestigationConfigs'; column does not allow nulls. INSERT fails.
+         at Microsoft.Data.SqlClient.SqlConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+         at Microsoft.Data.SqlClient.SqlInternalConnection.OnError(SqlException exception, Boolean breakConnection, Action`1 wrapCloseInAction)
+         at Microsoft.Data.SqlClient.TdsParser.ThrowExceptionAndWarning(TdsParserStateObject stateObj, Boolean callerHasConnectionLock, Boolean asyncClose)
+         at Microsoft.Data.SqlClient.TdsParser.TryRun(RunBehavior runBehavior, SqlCommand cmdHandler, SqlDataReader dataStream, BulkCopySimpleResultSet bulkCopyHandler, TdsParserStateObject stateObj, Boolean& dataReady)
+         at Microsoft.Data.SqlClient.SqlDataReader.TryHasMoreRows(Boolean& moreRows)
+         at Microsoft.Data.SqlClient.SqlDataReader.TryReadInternal(Boolean setTimeout, Boolean& more)
+         at Microsoft.Data.SqlClient.SqlDataReader.ReadAsyncExecute(Task task, Object state)
+         at Microsoft.Data.SqlClient.SqlDataReader.InvokeAsyncCall[T](SqlDataReaderBaseAsyncCallContext`1 context)
+      --- End of stack trace from previous location ---
+         at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+      ClientConnectionId:482adbdd-379b-44b2-8bdb-ab93fd88a8f6
+      Error Number:515,State:2,Class:16
+         --- End of inner exception stack trace ---
+         at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeResultSetAsync(Int32 startCommandIndex, RelationalDataReader reader, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.AffectedCountModificationCommandBatch.ConsumeAsync(RelationalDataReader reader, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.SqlServer.Update.Internal.SqlServerModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at OSHManagement.Controllers.TeamController.Create(CreateTeamViewModel model) in C:\Users\KTDA\source\repos\OSHManagement\OSHManagement\Controllers\TeamController.cs:line 304
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='120']
+      SELECT [s].[StationId], [s].[StationName]
+      FROM [Stations] AS [s]
+      ORDER BY [s].[StationName]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='120']
+      SELECT [s].[SectionId], [s].[SectionName], [s].[StationId]
+      FROM [Sections] AS [s]
+      ORDER BY [s].[SectionName]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (45ms) [Parameters=[], CommandType='Text', CommandTimeout='120']
+      SELECT [e].[EmployeeId], [e].[PayrollNo], [e].[FirstName] + N' ' + [e].[LastName] AS [FullName], [e].[Designation], [e].[StationId], [s].[StationName], [e].[DepartmentId], [d].[DepartmentName]
+      FROM [Employees] AS [e]
+      INNER JOIN [Stations] AS [s] ON [e].[StationId] = [s].[StationId]
+      LEFT JOIN [Departments] AS [d] ON [e].[DepartmentId] = [d].[DepartmentId]
+      WHERE [e].[EmploymentStatus] = N'Active'
+      ORDER BY [s].[StationName], [e].[LastName], [e].[FirstName]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[], CommandType='Text', CommandTimeout='120']
+      SELECT [t].[TeamTypeDefinitionId], [t].[TypeName], [t].[TypeCode], [t].[Description]
+      FROM [TeamTypeDefinitions] AS [t]
+      WHERE [t].[IsActive] = CAST(1 AS bit)
+      ORDER BY [t].[TypeName]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (19ms) [Parameters=[], CommandType='Text', CommandTimeout='120']
+      SELECT [t].[TeamRoleDefinitionId], [t].[TeamTypeDefinitionId], [t].[RoleName], [t].[Description], [t].[RequiresVotingRights], [t].[MaxOccurrences], [t].[MinOccurrences]
+      FROM [TeamRoleDefinitions] AS [t]
+      WHERE [t].[IsActive] = CAST(1 AS bit)
+      ORDER BY [t].[TeamTypeDefinitionId], [t].[DisplayOrder]

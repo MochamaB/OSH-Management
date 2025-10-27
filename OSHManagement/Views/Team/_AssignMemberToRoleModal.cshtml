@@ -1,0 +1,213 @@
+@*
+    Assign Member to Role Modal
+    Allows selecting an employee and assigning them to a specific team role
+    Used in Create and Edit workflows
+*@
+
+<!-- Modal -->
+<div class="modal fade" id="assignMemberModal" tabindex="-1" aria-labelledby="assignMemberModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignMemberModalLabel">
+                    <i class="ri-user-add-line me-2"></i>Assign Member to <span id="modalRoleName" class="text-primary">Role</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Role Information -->
+                <div class="alert alert-info border-0 mb-3" id="roleInfoAlert">
+                    <div class="d-flex align-items-start">
+                        <i class="ri-information-line me-2 mt-1"></i>
+                        <div class="flex-fill">
+                            <div class="fw-semibold mb-1" id="roleDescription">Role Information</div>
+                            <div class="fs-12" id="roleRequirements">
+                                <!-- Requirements will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Capacity -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                        <span class="text-muted fs-13">Current Capacity:</span>
+                        <span class="fw-semibold">
+                            <span id="currentRoleCount">0</span> /
+                            <span id="maxRoleCount">∞</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Employee Search -->
+                <div class="mb-3">
+                    <label for="employeeSearchInput" class="form-label">
+                        Search Employee <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="ri-search-line"></i>
+                        </span>
+                        <input type="text"
+                               class="form-control"
+                               id="employeeSearchInput"
+                               placeholder="Search by name or payroll number...">
+                    </div>
+                    <div class="form-text">Select an employee from the list below</div>
+                </div>
+
+                <!-- Employee List -->
+                <div id="employeeListContainer" style="max-height: 350px; overflow-y: auto; border: 1px solid var(--bs-border-color); border-radius: 0.375rem; padding: 1rem;">
+                    <!-- Loading State -->
+                    <div id="employeesLoadingState" class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted mb-0 mt-2 fs-12">Loading employees...</p>
+                    </div>
+
+                    <!-- No Employees -->
+                    <div id="noEmployeesFound" class="text-center py-3" style="display: none;">
+                        <i class="ri-user-search-line fs-1 text-muted mb-2 d-block"></i>
+                        <p class="text-muted mb-0">No employees available</p>
+                    </div>
+
+                    <!-- Employee List will be populated here -->
+                    <div id="employeeListContent"></div>
+                </div>
+
+                <!-- Selected Employee Preview -->
+                <div id="selectedEmployeePreview" class="mt-3" style="display: none;">
+                    <div class="card border-primary">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted d-block">Selected Employee:</small>
+                                    <strong id="selectedEmployeeName"></strong>
+                                    <small class="text-muted ms-2" id="selectedEmployeePayroll"></small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearEmployeeSelection()">
+                                    <i class="ri-close-line"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Member Details -->
+                <div id="additionalDetailsSection" style="display: none;">
+                    <hr class="my-3">
+                    <h6 class="mb-3">Additional Details (Optional)</h6>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="memberAppointmentDate" class="form-label">Appointment Date</label>
+                            <input type="date" class="form-control" id="memberAppointmentDate">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="memberSectionId" class="form-label">Section</label>
+                            <select class="form-select" id="memberSectionId">
+                                <option value="">-- No Section --</option>
+                                <!-- Sections will be populated dynamically -->
+                            </select>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="memberIsVoting" checked>
+                                <label class="form-check-label" for="memberIsVoting">
+                                    Voting Rights
+                                </label>
+                            </div>
+                            <div class="form-text">Grant this member voting rights in team decisions</div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="memberEducationLevel" class="form-label">Education Level</label>
+                            <select class="form-select" id="memberEducationLevel">
+                                <option value="">-- Select --</option>
+                                <!-- Will be populated from ViewBag.EducationLevels -->
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="memberRelevantExperience" class="form-label">Relevant Experience</label>
+                            <input type="text" class="form-control" id="memberRelevantExperience" maxlength="200" placeholder="e.g., 5 years in OSH">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden inputs to store selection -->
+                <input type="hidden" id="selectedRoleId">
+                <input type="hidden" id="selectedEmployeePayrollNo">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="ri-close-line me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="assignMemberButton" disabled onclick="assignMemberToRole()">
+                    <i class="ri-user-add-line me-1"></i>Assign Member
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .employee-item {
+        padding: 0.75rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .employee-item:hover {
+        background-color: var(--bs-light);
+        border-color: var(--bs-primary);
+    }
+
+    .employee-item.selected {
+        background-color: var(--bs-primary-bg-subtle);
+        border-color: var(--bs-primary);
+        border-width: 2px;
+    }
+
+    .employee-item.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: var(--bs-light);
+    }
+
+    .employee-item.disabled:hover {
+        border-color: var(--bs-border-color);
+    }
+
+    .employee-avatar-sm {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.75rem;
+        background: linear-gradient(135deg, var(--bs-primary), var(--bs-primary-dark));
+        color: white;
+    }
+
+    .department-group-header {
+        padding: 0.5rem 0;
+        margin-bottom: 0.5rem;
+        border-bottom: 1px solid var(--bs-border-color);
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--bs-secondary);
+        position: sticky;
+        top: 0;
+        background-color: var(--bs-body-bg);
+        z-index: 1;
+    }
+</style>

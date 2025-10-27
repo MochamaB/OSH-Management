@@ -80,6 +80,24 @@ namespace OSHManagement.Services
                 return (IQueryable<T>)ApplyTeamScope(query.Cast<Team>(), scope);
             }
 
+            // MediaFile filtering (Media Management)
+            if (entityType == typeof(MediaFile))
+            {
+                return (IQueryable<T>)ApplyMediaFileScope(query.Cast<MediaFile>(), scope);
+            }
+
+            // MediaCollection filtering (Media Management)
+            if (entityType == typeof(MediaCollection))
+            {
+                return (IQueryable<T>)ApplyMediaCollectionScope(query.Cast<MediaCollection>(), scope);
+            }
+
+            // MediaAssociation filtering (Media Management)
+            if (entityType == typeof(MediaAssociation))
+            {
+                return (IQueryable<T>)ApplyMediaAssociationScope(query.Cast<MediaAssociation>(), scope);
+            }
+
             // Default: if entity doesn't have scope filtering, return as-is
             // (e.g., OrgCategories, Roles, Permissions - reference data)
             return query;
@@ -211,6 +229,95 @@ namespace OSHManagement.Services
                 
                 // Organization scope sees all sections (handled in ApplyScope method)
                 _ => query
+            };
+        }
+
+        /// <summary>
+        /// Apply scope filtering to MediaFile queries
+        /// Users see files based on who uploaded them
+        /// </summary>
+        private IQueryable<MediaFile> ApplyMediaFileScope(IQueryable<MediaFile> query, UserScope scope)
+        {
+            return scope.Level switch
+            {
+                // Organization: See all files
+                ScopeLevel.Organization => query,
+
+                // Station: See files uploaded by station members
+                ScopeLevel.Station => query.Where(mf =>
+                    mf.UploadedBy.StationId == scope.StationId
+                ),
+
+                // Department: See files uploaded by department members
+                ScopeLevel.Department => query.Where(mf =>
+                    mf.UploadedBy.DepartmentId == scope.DepartmentId
+                ),
+
+                // Team/Self: See only own uploaded files
+                ScopeLevel.Team => query.Where(mf =>
+                    mf.UploadedByPayroll == scope.PayrollNo
+                ),
+
+                ScopeLevel.Self => query.Where(mf =>
+                    mf.UploadedByPayroll == scope.PayrollNo
+                ),
+
+                _ => query.Where(_ => false)
+            };
+        }
+
+        /// <summary>
+        /// Apply scope filtering to MediaCollection queries
+        /// Collections are filtered by role-based access and visibility
+        /// </summary>
+        private IQueryable<MediaCollection> ApplyMediaCollectionScope(IQueryable<MediaCollection> query, UserScope scope)
+        {
+            // Organization scope sees all collections
+            if (scope.IsOrganizationScope)
+                return query;
+
+            // Filter by AllowedRoles (stored as JSON array) and public visibility
+            // Note: This is a simplified version - actual implementation would need JSON parsing
+            return query.Where(mc =>
+                // Public collections visible to all
+                mc.IsPublic ||
+                // Collections with no role restrictions
+                mc.AllowedRoles == null
+                // For role-based filtering, you would parse JSON and check scope.Roles
+            );
+        }
+
+        /// <summary>
+        /// Apply scope filtering to MediaAssociation queries
+        /// Associations are filtered based on the associated media file's uploader
+        /// </summary>
+        private IQueryable<MediaAssociation> ApplyMediaAssociationScope(IQueryable<MediaAssociation> query, UserScope scope)
+        {
+            return scope.Level switch
+            {
+                // Organization: See all associations
+                ScopeLevel.Organization => query,
+
+                // Station: See associations for station files
+                ScopeLevel.Station => query.Where(ma =>
+                    ma.Media.UploadedBy.StationId == scope.StationId
+                ),
+
+                // Department: See associations for department files
+                ScopeLevel.Department => query.Where(ma =>
+                    ma.Media.UploadedBy.DepartmentId == scope.DepartmentId
+                ),
+
+                // Team/Self: See associations for own files
+                ScopeLevel.Team => query.Where(ma =>
+                    ma.Media.UploadedByPayroll == scope.PayrollNo
+                ),
+
+                ScopeLevel.Self => query.Where(ma =>
+                    ma.Media.UploadedByPayroll == scope.PayrollNo
+                ),
+
+                _ => query.Where(_ => false)
             };
         }
     }

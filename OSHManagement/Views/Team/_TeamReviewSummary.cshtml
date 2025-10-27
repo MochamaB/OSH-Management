@@ -1,0 +1,156 @@
+@*
+    Team Review Summary - Partial View
+    Shows complete summary of team details before submission
+    Used in Create wizard Step 3
+*@
+
+<div id="teamReviewSummaryContainer">
+    <!-- Summary Header -->
+    <div class="card border-primary mb-3">
+        <div class="card-header bg-primary-transparent">
+            <h6 class="mb-0 text-primary">
+                <i class="ri-checkbox-circle-line me-2"></i>Review Team Details
+            </h6>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-0">
+                Please review all team information before submitting. You can go back to any step to make changes.
+            </p>
+        </div>
+    </div>
+
+    <!-- Basic Information Section -->
+    <div class="card border mb-3">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">
+                <i class="ri-information-line me-2"></i>Basic Information
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label text-muted fs-12 mb-1">Team Name</label>
+                    <div class="fw-semibold" id="review_teamName">-</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted fs-12 mb-1">Team Type</label>
+                    <div class="fw-semibold" id="review_teamType">-</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted fs-12 mb-1">Station</label>
+                    <div class="fw-semibold" id="review_station">-</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted fs-12 mb-1">Formation Date</label>
+                    <div class="fw-semibold" id="review_formationDate">-</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-muted fs-12 mb-1">Team Status</label>
+                    <div>
+                        <span class="badge" id="review_teamStatus">-</span>
+                    </div>
+                </div>
+                <div class="col-12" id="review_descriptionContainer" style="display: none;">
+                    <label class="form-label text-muted fs-12 mb-1">Description</label>
+                    <div class="fw-semibold" id="review_teamDescription">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Members Section -->
+    <div class="card border mb-3">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="ri-team-line me-2"></i>Team Members
+                </h6>
+                <span class="badge bg-primary" id="review_totalMembersCount">0 members</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- No members message -->
+            <div id="review_noMembers" class="text-center py-4" style="display: none;">
+                <i class="ri-user-line fs-1 text-muted mb-2 d-block"></i>
+                <p class="text-muted mb-0">No team members assigned yet</p>
+                <small class="text-muted">You can add members after creating the team</small>
+            </div>
+
+            <!-- Members by Role -->
+            <div id="review_membersByRole">
+                <!-- Will be populated dynamically -->
+            </div>
+
+            <!-- Composition Status -->
+            <div id="review_compositionStatus" class="mt-3" style="display: none;">
+                <!-- Validation summary -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons (within card for better layout) -->
+    <div class="card border-0 bg-light">
+        <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <i class="ri-information-line text-muted me-2"></i>
+                    <span class="text-muted">Ready to create this team?</span>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-outline-secondary me-2" onclick="goToStep(1)">
+                        <i class="ri-edit-line me-1"></i>Edit Basic Info
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" onclick="goToStep(2)">
+                        <i class="ri-team-line me-1"></i>Edit Members
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .member-review-card {
+        padding: 0.75rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+        background-color: var(--bs-body-bg);
+        margin-bottom: 0.5rem;
+    }
+
+    .member-review-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.75rem;
+        color: white;
+    }
+
+    .role-section-review {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .role-section-review:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .role-header-review {
+        background-color: var(--bs-light);
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.375rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .composition-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+</style>

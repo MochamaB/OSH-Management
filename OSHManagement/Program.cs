@@ -103,10 +103,23 @@ builder.Services.AddScoped<INotificationChannelService, EmailNotificationService
 builder.Services.AddScoped<IEmployeeNotificationService, EmployeeNotificationService>();
 builder.Services.AddScoped<ITeamNotificationService, TeamNotificationService>();
 
+// Register media management services
+builder.Services.AddScoped<OSHManagement.Services.Media.IStorageProvider, OSHManagement.Services.Media.LocalStorageProvider>();
+builder.Services.AddScoped<OSHManagement.Services.Media.IMediaService, OSHManagement.Services.Media.MediaService>();
+
 // Add memory cache for reference data (Categories, Roles)
 builder.Services.AddMemoryCache();
 
 var app = builder.Build();
+
+// Ensure uploads directory exists
+var webRootPath = app.Environment.WebRootPath;
+var uploadsPath = Path.Combine(webRootPath, "uploads");
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+    app.Logger.LogInformation("Created uploads directory: {Path}", uploadsPath);
+}
 
 // Seed database
 using (var scope = app.Services.CreateScope())

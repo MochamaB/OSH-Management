@@ -1,0 +1,157 @@
+@*
+    Team Members by Role - Partial View
+    Shows roles as accordions with member assignment capabilities
+    Used in both Create and Edit workflows
+*@
+
+<div id="teamMembersByRoleContainer">
+    <!-- Role Requirements Summary -->
+    <div class="card border mb-3" id="rolesSummaryCard">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">
+                    <i class="ri-user-star-line me-2"></i>Role Requirements
+                </h6>
+                <span class="badge bg-light text-dark" id="totalMembersCount">
+                    <i class="ri-team-line me-1"></i><span id="totalMembersNumber">0</span> member(s) assigned
+                </span>
+            </div>
+
+            <!-- Overall Progress Bar -->
+            <div class="mb-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted">Overall Progress</small>
+                    <small class="text-muted">
+                        <span id="requiredRolesFilled">0</span>/<span id="totalRequiredRoles">0</span> required roles filled
+                    </small>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-success" id="overallProgressBar" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="rolesLoadingState" class="text-center py-3">
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Loading roles...</span>
+                </div>
+                <p class="text-muted mb-0 mt-2 fs-12">Loading role requirements...</p>
+            </div>
+
+            <!-- No Team Type Selected -->
+            <div id="noTeamTypeSelected" class="alert alert-info border-0 mb-0" style="display: none;">
+                <i class="ri-information-line me-2"></i>
+                Please select a <strong>Team Type</strong> in Step 1 to see role requirements.
+            </div>
+
+            <!-- No Roles Defined -->
+            <div id="noRolesDefined" class="alert alert-warning border-0 mb-0" style="display: none;">
+                <i class="ri-alert-line me-2"></i>
+                No role definitions found for this team type. Team members can still be added without specific roles.
+            </div>
+        </div>
+    </div>
+
+    <!-- Roles Accordion -->
+    <div class="accordion accordion-primary" id="rolesAccordion" style="display: none;">
+        <!-- Roles will be dynamically populated here -->
+    </div>
+
+    <!-- Validation Messages -->
+    <div id="memberValidationMessages" class="mt-3" style="display: none;">
+        <!-- Validation alerts will appear here -->
+    </div>
+</div>
+
+<style>
+    .role-accordion-item {
+        margin-bottom: 0.75rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+    }
+
+    .role-accordion-item.role-complete {
+        border-color: var(--bs-success);
+        background-color: var(--bs-success-bg-subtle);
+    }
+
+    .role-accordion-item.role-incomplete {
+        border-color: var(--bs-warning);
+        background-color: var(--bs-warning-bg-subtle);
+    }
+
+    .role-accordion-item.role-overfilled {
+        border-color: var(--bs-danger);
+        background-color: var(--bs-danger-bg-subtle);
+    }
+
+    .role-header {
+        padding: 1rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .role-header:hover {
+        background-color: var(--bs-light);
+    }
+
+    .role-badge-count {
+        font-size: 0.875rem;
+        padding: 0.25rem 0.5rem;
+        min-width: 50px;
+        text-align: center;
+    }
+
+    .member-card {
+        padding: 0.75rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+        background-color: var(--bs-body-bg);
+        margin-bottom: 0.5rem;
+        transition: all 0.2s ease;
+    }
+
+    .member-card:hover {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.1);
+    }
+
+    .member-card .member-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .member-card .remove-member-btn {
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .member-card:hover .remove-member-btn {
+        opacity: 1;
+    }
+
+    .empty-role-state {
+        padding: 2rem;
+        text-align: center;
+        color: var(--bs-secondary);
+        border: 2px dashed var(--bs-border-color);
+        border-radius: 0.375rem;
+        background-color: var(--bs-light);
+    }
+
+    .role-info-badge {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.4rem;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background-color: var(--bs-primary-bg-subtle);
+        color: var(--bs-primary);
+    }
+</style>

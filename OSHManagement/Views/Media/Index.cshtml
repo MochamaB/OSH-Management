@@ -1,0 +1,265 @@
+@model OSHManagement.Models.ViewModels.MediaLibraryViewModel
+@{
+    ViewData["Title"] = "File Manager";
+}
+
+
+<!-- Main Row -->
+<div class="row">
+    <!-- Left Sidebar -->
+    <div class="col-xxl-3 col-xl-12">
+        <div class="row">
+            <div class="col-xxl-12 col-xl-6">
+                <div class="card custom-card">
+                    <div class="card-body">
+                        <ul class="list-unstyled files-main-nav" id="files-main-nav">
+                            <li class="active files-type">
+                                <a href="/Media/Index">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            <i class="ri-folder-line fs-18"></i>
+                                        </div>
+                                        <span class="flex-fill text-nowrap">
+                                            My Files
+                                        </span>
+                                    </div>
+                                </a>
+                            </li>
+                            <li class="files-type">
+                                <a href="/Media/Index?filter=recent">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            <i class="ri-time-line fs-18"></i>
+                                        </div>
+                                        <span class="flex-fill text-nowrap">
+                                            Recent Files
+                                        </span>
+                                    </div>
+                                </a>
+                            </li>
+                            <li class="files-type">
+                                <a href="/Media/Index?filter=shared">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            <i class="ri-share-line fs-18"></i>
+                                        </div>
+                                        <span class="flex-fill text-nowrap">
+                                            Shared Files
+                                        </span>
+                                    </div>
+                                </a>
+                            </li>
+                            <li class="files-type">
+                                <a href="/Media/Access">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            <i class="ri-settings-3-line fs-18"></i>
+                                        </div>
+                                        <span class="flex-fill text-nowrap">
+                                            Settings
+                                        </span>
+                                    </div>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xxl-12 col-xl-6">
+                <div class="card custom-card">
+                    <div class="card-body">
+                        <div class="filemanager-upgrade-storage w-100 text-center">
+                            <span class="d-block mb-3 p-4 bg-light rounded">
+                                <i class="ri-database-2-line fs-1 text-primary"></i>
+                            </span>
+                            <span class="fs-15 fw-semibold text-default">Storage Overview</span>
+                            @if (Model.StorageStats != null)
+                            {
+                                <span class="fs-13 fw-medium d-block text-muted mt-2">@Model.StorageStats.ActiveSizeFormatted of @Model.StorageStats.TotalSizeFormatted used</span>
+                                <span class="fs-12 d-block text-muted">@Model.StorageStats.ActiveFilesCount active files</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Middle Content Area -->
+    <div class="col-xxl-6 col-xl-12">
+        <div class="card custom-card overflow-hidden">
+            <div class="card-body p-0">
+                <div class="file-manager-folders">
+                    <!-- Search and Upload -->
+                    <div class="d-flex p-3 flex-wrap gap-2 align-items-center justify-content-between border-bottom">
+                        <div class="w-sm-50">
+                            <form method="get" class="d-inline">
+                                @if (!string.IsNullOrEmpty(Model.CurrentCollection))
+                                {
+                                    <input type="hidden" name="collection" value="@Model.CurrentCollection" />
+                                }
+                                <input class="form-control" name="search" value="@Model.SearchTerm" type="text" placeholder="Search Files Here" aria-label="files-search">
+                            </form>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap justify-content-sm-end">
+                            <a href="/Media/Upload" class="btn btn-primary btn-w-md d-flex align-items-center justify-content-center btn-wave">
+                                <i class="ri-upload-cloud-line align-middle me-1"></i>Upload File
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="p-3 file-folders-container">
+                        <!-- Categories Section -->
+                        <div class="d-flex mb-3 align-items-center justify-content-between">
+                            <p class="mb-0 fw-medium fs-14">Categories</p>
+                        </div>
+                        <div class="row">
+                            @{
+                                var categories = Model.Collections.GroupBy(c => c.ModuleName ?? "General");
+                                var colors = new[] { "primary", "info", "warning", "success", "danger", "secondary" };
+                                var index = 0;
+                            }
+                            @foreach (var module in categories.Take(6))
+                            {
+                                var color = colors[index % colors.Length];
+                                var totalFiles = module.Sum(c => c.FileCount);
+                                <div class="col-xxl-4 col-xl-4 col-lg-6 col-md-6">
+                                    <div class="card custom-card shadow-none file-category-card @color">
+                                        <div class="card-body text-center">
+                                            <a href="/Media/Index?module=@module.Key" class="stretched-link"></a>
+                                            <div class="mb-2 text-@color svg-@color file-img">
+                                                <i class="ri-folder-3-line fs-1"></i>
+                                            </div>
+                                            <h6 class="fw-semibold mb-1">@module.Key</h6>
+                                            <span class="d-block text-muted">@totalFiles Files</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                index++;
+                            }
+                        </div>
+
+                        <!-- Recent Files Table -->
+                        <div class="d-flex mb-3 align-items-center justify-content-between">
+                            <p class="mb-0 fw-medium fs-14">Recent Files</p>
+                        </div>
+                        <div class="row">
+                            <div class="col-xl-12">
+                                @if (!Model.Files.Any())
+                                {
+                                    <div class="text-center py-5">
+                                        <i class="ri-folder-open-line fs-1 text-muted"></i>
+                                        <p class="text-muted mt-3">No files found</p>
+                                        <a href="/Media/Upload" class="btn btn-primary btn-sm">Upload Files</a>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="table-responsive border border-bottom-0">
+                                        <table class="table text-nowrap table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col">File Name</th>
+                                                    <th scope="col">Collection</th>
+                                                    <th scope="col">Size</th>
+                                                    <th scope="col">Date Modified</th>
+                                                    <th scope="col">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="files-list">
+                                                @foreach (var file in Model.Files)
+                                                {
+                                                    <tr>
+                                                        <th scope="row">
+                                                            <div class="d-flex align-items-center">
+                                                                <div class="me-2">
+                                                                    <span class="avatar avatar-sm @file.IconClass">
+                                                                        <i class="@file.IconClass"></i>
+                                                                    </span>
+                                                                </div>
+                                                                <div>
+                                                                    <a href="javascript:void(0);">@file.OriginalFilename</a>
+                                                                </div>
+                                                            </div>
+                                                        </th>
+                                                        <td>@file.CollectionDisplayName</td>
+                                                        <td>@file.FileSizeFormatted</td>
+                                                        <td>@file.CreatedAt.ToString("yyyy-MM-dd, hh:mm tt")</td>
+                                                        <td>
+                                                            <div class="hstack gap-2 fs-15">
+                                                                <a href="@Url.Action("View", "Media", new { id = file.MediaId })" class="btn btn-icon btn-sm btn-light" title="View" target="_blank"><i class="ri-eye-line"></i></a>
+                                                                <a href="@Url.Action("Download", "Media", new { id = file.MediaId })" class="btn btn-icon btn-sm btn-light" title="Download"><i class="ri-download-line"></i></a>
+                                                                <button type="button" class="btn btn-icon btn-sm btn-light" title="Delete" onclick="confirmDelete(@file.MediaId)"><i class="ri-delete-bin-line"></i></button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Sidebar - Storage Stats -->
+    <div class="col-xxl-3 col-xl-12">
+        <div class="card custom-card">
+            <div class="card-body">
+                @if (Model.StorageStats != null)
+                {
+                    <div class="p-1 rounded bg-light mb-4">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-fill">
+                                <span class="d-block fw-semibold">Available Storage</span>
+                                <span class="fs-13 text-muted">@Model.StorageStats.ActiveSizeFormatted of @Model.StorageStats.TotalSizeFormatted</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+                <ul class="list-unstyled files-media-list">
+                    @foreach (var collection in Model.Collections.Take(5))
+                    {
+                        <li>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="lh-1">
+                                    <span class="avatar avatar-md avatar-rounded bg-primary-transparent">
+                                        <i class="ri-folder-3-line text-primary"></i>
+                                    </span>
+                                </div>
+                                <div class="flex-fill">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <div class="fw-medium">@collection.CollectionDisplayName</div>
+                                        <span class="fs-11 text-muted">@collection.FileCount</span>
+                                    </div>
+                                    <div class="progress progress-xs">
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: @((collection.FileCount * 100.0 / (Model.Files.Count + 1)).ToString("F0"))%" aria-valuenow="@collection.FileCount" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        console.log('File Manager loaded with @Model.Files.Count files');
+
+        // Delete confirmation
+        function confirmDelete(mediaId) {
+            if (confirm('Are you sure you want to delete this file? This action cannot be undone.')) {
+                // Will implement delete action in next step
+                alert('Delete functionality will be implemented in the next step.');
+                console.log('Delete file:', mediaId);
+            }
+        }
+    </script>
+}

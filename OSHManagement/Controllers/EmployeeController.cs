@@ -164,14 +164,16 @@ namespace OSHManagement.Controllers
 
             // Get avatar URLs from MediaAssociation
             var employeeIds = employees.Select(e => e.EmployeeId).ToList();
+            // Convert to strings for comparison (AssociatedRecordId is now string for polymorphic support)
+            var employeeIdStrings = employeeIds.Select(id => id.ToString()).ToList();
             var avatars = await _context.MediaAssociations
                 .Where(ma => ma.AssociatedTable == "Employees" && 
-                            employeeIds.Contains(ma.AssociatedRecordId) && 
+                            employeeIdStrings.Contains(ma.AssociatedRecordId) && 
                             ma.AssociationType == "Avatar" &&
                             ma.IsPrimary)
                 .Include(ma => ma.Media)
                 .Select(ma => new { 
-                    EmployeeId = ma.AssociatedRecordId, 
+                    EmployeeId = int.Parse(ma.AssociatedRecordId), 
                     AvatarUrl = ma.Media.FilePath 
                 })
                 .ToDictionaryAsync(a => a.EmployeeId, a => a.AvatarUrl);

@@ -55,35 +55,34 @@ namespace OSHManagement.Models.ViewModels
     {
         // ========== STEP 1: Basic Information ==========
 
+        [Required(ErrorMessage = "Station is required")]
+        [Display(Name = "Station")]
+        public int StationId { get; set; }
+
         [Required(ErrorMessage = "Team type is required")]
         [Display(Name = "Team Type")]
-        public string TeamType { get; set; } = string.Empty;
+        public int TeamTypeDefinitionId { get; set; }
 
         [Required(ErrorMessage = "Team name is required")]
         [StringLength(100, ErrorMessage = "Team name cannot exceed 100 characters")]
         [Display(Name = "Team Name")]
         public string TeamName { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Station is required")]
-        [Display(Name = "Station")]
-        public int StationId { get; set; }
-
         [Required(ErrorMessage = "Formation date is required")]
         [Display(Name = "Formation Date")]
         public DateTime FormationDate { get; set; } = DateTime.Today;
 
+        [Required(ErrorMessage = "Team status is required")]
+        [StringLength(20)]
+        [Display(Name = "Team Status")]
+        public string TeamStatus { get; set; } = "Forming";
+
+        [Display(Name = "Disband Date")]
+        public DateTime? DisbandDate { get; set; }
+
         [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
         [Display(Name = "Description")]
         public string? TeamDescription { get; set; }
-
-        [Display(Name = "Required Member Count")]
-        public int? RequiredMemberCount { get; set; }
-
-        [Display(Name = "Maximum Member Count")]
-        public int? MaxMemberCount { get; set; }
-
-        [Display(Name = "Requires Section Representation")]
-        public bool RequiresSectionRepresentation { get; set; }
 
         // ========== STEP 2: Type-Specific Configuration ==========
 
@@ -189,6 +188,9 @@ namespace OSHManagement.Models.ViewModels
         [StringLength(100)]
         [Display(Name = "Team Name")]
         public string TeamName { get; set; } = string.Empty;
+
+        [Display(Name = "Team Type Definition ID")]
+        public int? TeamTypeDefinitionId { get; set; }
 
         [Display(Name = "Team Type")]
         public string TeamType { get; set; } = string.Empty;

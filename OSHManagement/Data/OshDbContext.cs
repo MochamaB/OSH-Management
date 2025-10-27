@@ -141,6 +141,12 @@ namespace OSHManagement.Data
                     .WithMany(ttd => ttd.Teams)
                     .HasForeignKey(t => t.TeamTypeDefinitionId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                // Ignore deprecated columns that were removed from database
+                entity.Ignore(t => t.TeamType);
+                entity.Ignore(t => t.RequiredMemberCount);
+                entity.Ignore(t => t.MaxMemberCount);
+                entity.Ignore(t => t.RequiresSectionRepresentation);
             });
 
             // TeamRoleDefinition configuration (update existing)
@@ -154,6 +160,9 @@ namespace OSHManagement.Data
                     .WithMany(ttd => ttd.TeamRoleDefinitions)
                     .HasForeignKey(trd => trd.TeamTypeDefinitionId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                // Ignore deprecated TeamType column if it was removed from database
+                entity.Ignore(trd => trd.TeamType);
             });
 
             // TeamMember configuration
@@ -270,6 +279,141 @@ namespace OSHManagement.Data
                 // Indexes
                 entity.HasIndex(e => new { e.Channel, e.IsActive })
                     .HasDatabaseName("IX_NotificationChannelConfigs_Channel");
+            });
+
+            // ========================================
+            // Media Management Configuration
+            // ========================================
+
+            // MediaCollection configuration
+            modelBuilder.Entity<MediaCollection>(entity =>
+            {
+                entity.HasKey(e => e.CollectionId);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+                
+                // Relationships
+                entity.HasOne(e => e.CreatedBy)
+                    .WithMany()
+                    .HasForeignKey(e => e.CreatedByPayroll)
+                    .HasPrincipalKey(emp => emp.PayrollNo)
+                    .OnDelete(DeleteBehavior.Restrict);
+                
+                entity.HasOne(e => e.DeletedBy)
+                    .WithMany()
+                    .HasForeignKey(e => e.DeletedByPayroll)
+                    .HasPrincipalKey(emp => emp.PayrollNo)
+                    .OnDelete(DeleteBehavior.Restrict);
+                
+                // Unique constraint on collection name
+                entity.HasIndex(e => e.CollectionName)
+                    .IsUnique()
+                    .HasDatabaseName("UQ_MediaCollections_Name");
+                
+                // Index for module queries
+                entity.HasIndex(e => e.ModuleName)
+                    .HasDatabaseName("IX_MediaCollections_Module");
+            });
+
+            // MediaFile configuration
+            modelBuilder.Entity<MediaFile>(entity =>
+            {
+                entity.HasKey(e => e.MediaId);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+                
+                // Relationships
+                entity.HasOne(e => e.Collection)
+                    .WithMany(c => c.MediaFiles)
+                    .HasForeignKey(e => e.CollectionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                
+                entity.HasOne(e => e.UploadedBy)
+                    .WithMany()
+                    .HasForeignKey(e => e.UploadedByPayroll)
+                    .HasPrincipalKey(emp => emp.PayrollNo)
+                    .OnDelete(DeleteBehavior.Restrict);
+                
+                entity.HasOne(e => e.DeletedBy)
+                    .WithMany()
+                    .HasForeignKey(e => e.DeletedByPayroll)
+                    .HasPrincipalKey(emp => emp.PayrollNo)
+                    .OnDelete(DeleteBehavior.Restrict);
+                
+                entity.HasOne(e => e.ParentMedia)
+                    .WithMany(e => e.ChildVersions)
+                    .HasForeignKey(e => e.ParentMediaId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                
+                // Indexes
+                entity.HasIndex(e => e.FileHash)
+                    .HasDatabaseName("IX_MediaFiles_FileHash");
+                
+                entity.HasIndex(e => new { e.CollectionId, e.IsActive, e.CreatedAt })
+                    .HasDatabaseName("IX_MediaFiles_Collection");
+                
+                entity.HasIndex(e => e.UploadedByPayroll)
+                    .HasDatabaseName("IX_MediaFiles_UploadedBy");
+                
+                entity.HasIndex(e => new { e.ParentMediaId, e.VersionNumber })
+                    .HasDatabaseName("IX_MediaFiles_Version");
+            });
+
+            // MediaAssociation configuration
+            modelBuilder.Entity<MediaAssociation>(entity =>
+            {
+                entity.HasKey(e => e.AssociationId);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+                
+                // Relationships
+                entity.HasOne(e => e.Media)
+                    .WithMany(m => m.Associations)
+                    .HasForeignKey(e => e.MediaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                
+                entity.HasOne(e => e.CreatedBy)
+                    .WithMany()
+                    .HasForeignKey(e => e.CreatedByPayroll)
+                    .HasPrincipalKey(emp => emp.PayrollNo)
+                    .OnDelete(DeleteBehavior.Restrict);
+                
+                entity.HasOne(e => e.DeletedBy)
+                    .WithMany()
+                    .HasForeignKey(e => e.DeletedByPayroll)
+                    .HasPrincipalKey(emp => emp.PayrollNo)
+                    .OnDelete(DeleteBehavior.Restrict);
+                
+                // Composite indexes for polymorphic lookups
+                entity.HasIndex(e => new { e.AssociatedTable, e.AssociatedRecordId, e.AssociationType })
+                    .HasDatabaseName("IX_MediaAssociations_Entity");
+                
+                entity.HasIndex(e => new { e.MediaId, e.AssociationType })
+                    .HasDatabaseName("IX_MediaAssociations_Media");
+            });
+
+            // MediaAccessLog configuration
+            modelBuilder.Entity<MediaAccessLog>(entity =>
+            {
+                entity.HasKey(e => e.AccessLogId);
+                entity.Property(e => e.AccessTimestamp).HasDefaultValueSql("GETUTCDATE()");
+                
+                // Indexes for audit queries
+                entity.HasIndex(e => new { e.MediaId, e.AccessTimestamp })
+                    .HasDatabaseName("IX_MediaAccessLogs_Media")
+                    .IsDescending(false, true);
+                
+                entity.HasIndex(e => new { e.UserPayroll, e.AccessTimestamp })
+                    .HasDatabaseName("IX_MediaAccessLogs_User")
+                    .IsDescending(false, true);
+            });
+
+            // MediaConversionJob configuration
+            modelBuilder.Entity<MediaConversionJob>(entity =>
+            {
+                entity.HasKey(e => e.JobId);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+                
+                // Index for job status queries
+                entity.HasIndex(e => new { e.JobStatus, e.CreatedAt })
+                    .HasDatabaseName("IX_MediaConversionJobs_Status");
             });
         }
     }
