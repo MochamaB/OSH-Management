@@ -1,36 +1,193 @@
+@model OSHManagement.Models.ViewModels.MediaUploaderViewModel
 @{
     ViewData["Title"] = "Upload Media";
 }
 
-<!-- Page Header -->
-<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
-    <div>
-        <p class="fw-semibold fs-18 mb-0">Upload Media</p>
-        <span class="fs-semibold text-muted">Upload new files and documents</span>
-    </div>
-    <div class="btn-list mt-md-0 mt-2">
-        <a href="/Media/Index" class="btn btn-secondary btn-wave">
-            <i class="ri-arrow-left-line me-2"></i>Back to Library
-        </a>
-    </div>
-</div>
-
-<!-- Content -->
+<!-- Upload Form -->
 <div class="row">
     <div class="col-xl-12">
         <div class="card custom-card">
-            <div class="card-header">
-                <div class="card-title">
-                    Upload Files
-                </div>
-            </div>
+           
             <div class="card-body">
-                <div class="text-center py-5">
-                    <i class="ri-upload-cloud-2-line fs-1 text-primary"></i>
-                    <h4 class="mt-3">Upload Feature Coming Soon</h4>
-                    <p class="text-muted">File upload functionality will be implemented in the next step.</p>
+                <!-- Anti-Forgery Token (required for upload) -->
+                @Html.AntiForgeryToken()
+
+                <!-- Collection Selector -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">
+                        Select Collection <span class="text-danger">*</span>
+                    </label>
+                    <select class="form-select" id="collection-select" required>
+                        <option value="">-- Choose a collection --</option>
+                        @foreach (var collection in Model.AvailableCollections)
+                        {
+                            <option value="@collection.CollectionName" 
+                                    data-max-size="@collection.MaxFileSizeMb"
+                                    data-allowed-types="@collection.AllowedFileTypes">
+                                [@collection.ModuleName] @collection.CollectionDisplayName
+                            </option>
+                        }
+                    </select>
+                    <div class="form-text">
+                        <i class="ri-information-line me-1"></i>
+                        Select the appropriate collection based on file type and purpose
+                    </div>
+                </div>
+
+                <!-- Optional Metadata -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Title (Optional)</label>
+                        <input type="text" class="form-control" id="default-title" placeholder="Leave empty to use filename" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Description (Optional)</label>
+                        <input type="text" class="form-control" id="default-description" placeholder="Optional description" />
+                    </div>
+                </div>
+
+                <!-- Media Uploader Component (Just Dropzone) -->
+                <partial name="~/Views/Shared/Components/_MediaUploader.cshtml" model="Model" />
+
+                <!-- Upload Statistics -->
+                <div id="upload-stats" class="alert alert-light d-none mt-3">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="mb-2"><i class="ri-file-list-line fs-4 text-primary"></i></div>
+                            <h5 class="mb-1" id="total-files">0</h5>
+                            <p class="text-muted mb-0 small">Files Ready</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-2"><i class="ri-file-check-line fs-4 text-success"></i></div>
+                            <h5 class="mb-1" id="uploaded-files">0</h5>
+                            <p class="text-muted mb-0 small">Uploaded</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-2"><i class="ri-file-warning-line fs-4 text-danger"></i></div>
+                            <h5 class="mb-1" id="failed-files">0</h5>
+                            <p class="text-muted mb-0 small">Failed</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Help Card -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="ri-information-line me-2"></i>Upload Guidelines
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="avatar avatar-md bg-primary-transparent me-3">
+                                <i class="ri-folder-line fs-20"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Choose Collection</h6>
+                                <p class="text-muted small mb-0">Select the appropriate collection for your files. Each collection has specific file type restrictions.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="avatar avatar-md bg-success-transparent me-3">
+                                <i class="ri-file-upload-line fs-20"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Drag & Drop</h6>
+                                <p class="text-muted small mb-0">Simply drag files into the upload zone or click to browse. Multiple files can be uploaded at once.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="avatar avatar-md bg-info-transparent me-3">
+                                <i class="ri-price-tag-3-line fs-20"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Add Metadata</h6>
+                                <p class="text-muted small mb-0">Optionally add titles and descriptions to make files easier to find later.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-3" />
+
+                <div class="alert alert-warning d-flex align-items-start mb-0">
+                    <i class="ri-error-warning-line fs-20 me-2"></i>
+                    <div>
+                        <strong>Important Notes:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Maximum file size varies by collection (typically 10MB)</li>
+                            <li>Only approved file types for the selected collection are allowed</li>
+                            <li>Files are automatically scanned for security before storage</li>
+                            <li>All uploads are logged and associated with your user account</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Track upload statistics
+        let totalFiles = 0;
+        let uploadedFiles = 0;
+        let failedFiles = 0;
+
+        function updateStats() {
+            document.getElementById('total-files').textContent = totalFiles;
+            document.getElementById('uploaded-files').textContent = uploadedFiles;
+            document.getElementById('failed-files').textContent = failedFiles;
+            
+            // Show stats if files have been added
+            if (totalFiles > 0) {
+                document.getElementById('upload-stats').classList.remove('d-none');
+            }
+        }
+
+        function onFileAdded() {
+            totalFiles++;
+            updateStats();
+        }
+
+        function onUploadSuccess(response) {
+            uploadedFiles++;
+            updateStats();
+            
+            // Show success message
+            if (uploadedFiles === totalFiles && failedFiles === 0) {
+                setTimeout(() => {
+                    alert('All files uploaded successfully!');
+                    window.location.href = '/Media/Index';
+                }, 1500);
+            }
+        }
+
+        function onUploadError(errorMessage) {
+            failedFiles++;
+            updateStats();
+        }
+
+        // Reset stats
+        function resetStats() {
+            totalFiles = 0;
+            uploadedFiles = 0;
+            failedFiles = 0;
+            updateStats();
+            document.getElementById('upload-stats').classList.add('d-none');
+        }
+    </script>
+}
+

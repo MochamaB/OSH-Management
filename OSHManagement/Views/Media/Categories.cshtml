@@ -1,36 +1,239 @@
+@using OSHManagement.Extensions
+@using OSHManagement.Models.ViewModels
+@model IEnumerable<OSHManagement.Models.ViewModels.MediaCollectionViewModel>
 @{
     ViewData["Title"] = "Media Categories";
+
+    // Get current filter values from controller
+    var currentSearch = ViewBag.CurrentSearch as string;
+    var currentStatus = ViewBag.CurrentStatus as string;
+    var currentModule = ViewBag.CurrentModule as string;
+
+    // Configure stat cards
+    var statsConfig = new StatsRowConfig
+    {
+        Titles = new List<string> { "Total Collections", "Active", "Inactive", "Total Files" },
+        Values = new List<string>
+        {
+            ViewBag.TotalCollections.ToString(),
+            ViewBag.ActiveCollections.ToString(),
+            ViewBag.InactiveCollections.ToString(),
+            ViewBag.TotalFiles.ToString()
+        },
+        Icons = new List<string> { "ri-folder-line", "ri-checkbox-circle-line", "ri-close-circle-line", "ri-file-line" },
+        ColorThemes = new List<string> { "primary", "success", "danger", "info" },
+        CardType = CardType.LeftBorderCard,
+        ColumnClass = "col-xxl-3 col-xl-6"
+    };
+
+    // Build stat cards
+    var statCards = statsConfig.BuildStatsRow();
+
+    // Configure table
+    var tableConfig = new TableConfig
+    {
+        TableId = "collectionsTable",
+        ActionUrl = "/Media/Categories",
+        SearchPlaceholder = "Search collections...",
+        SearchValue = currentSearch,
+        Columns = new List<string> { "Collection", "Module", "Files", "Size", "Allowed Types", "Status", "Last Upload", "Actions" },
+        CreateButtonText = "Create Category",
+        CreateButtonUrl = "/Media/CreateCollection",
+        Filters = new List<FilterConfig>
+        {
+            new FilterConfig
+            {
+                Label = "Status",
+                ParameterName = "status",
+                CurrentValue = currentStatus,
+                Type = FilterType.Dropdown,
+                Options = new List<FilterOptionConfig>
+                {
+                    new FilterOptionConfig { Text = "Active Only", Value = "" },
+                    new FilterOptionConfig { Text = "Active", Value = "active" },
+                    new FilterOptionConfig { Text = "Inactive", Value = "inactive" }
+                }
+            },
+            new FilterConfig
+            {
+                Label = "Module",
+                ParameterName = "module",
+                CurrentValue = currentModule,
+                Type = FilterType.Dropdown,
+                Options = new List<FilterOptionConfig>
+                {
+                    new FilterOptionConfig { Text = "All Modules", Value = "" }
+                }.Concat(
+                    ((List<string>)ViewBag.AvailableModules).Select(m =>
+                        new FilterOptionConfig { Text = m, Value = m }
+                    )
+                ).ToList()
+            }
+        }
+    };
+
+    // Build table with content
+    var table = tableConfig.BuildTable(
+        tableContent: @<text>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <!-- Collection Name with Icon -->
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="avatar avatar-sm bg-@(item.ModuleBadgeColor)-transparent me-2">
+                                <i class="@item.ModuleIcon fs-16"></i>
+                            </span>
+                            <div>
+                                <div class="fw-medium">@item.CollectionDisplayName</div>
+                                <small class="text-muted">@item.CollectionName</small>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- Module Badge -->
+                    <td>
+                        @if (!string.IsNullOrEmpty(item.ModuleName))
+                        {
+                            <span class="badge bg-@(item.ModuleBadgeColor)-transparent">
+                                <i class="@item.ModuleIcon me-1"></i>@item.ModuleName
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-light-transparent">
+                                <i class="ri-folder-line me-1"></i>General
+                            </span>
+                        }
+                    </td>
+
+                    <!-- File Count -->
+                    <td>
+                        @if (item.FileCount > 0)
+                        {
+                            <span class="badge bg-primary-transparent">
+                                <i class="ri-file-line me-1"></i>@item.FileCount
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-light text-muted">Empty</span>
+                        }
+                    </td>
+
+                    <!-- Total Size -->
+                    <td>
+                        <span class="text-muted">@item.TotalSizeFormatted</span>
+                    </td>
+
+                    <!-- Allowed File Types with Icons -->
+                    <td>
+                        @if (item.FileTypeIcons.Any())
+                        {
+                            <div class="d-flex gap-1 flex-wrap align-items-center">
+                                @foreach (var icon in item.FileTypeIcons.Take(6))
+                                {
+                                    <span class="avatar avatar-sm bg-light @icon.ColorClass rounded" title="@icon.Extension.ToUpper()">
+                                        <i class="@icon.IconClass fs-18"></i>
+                                    </span>
+                                }
+                                @if (item.FileTypeIcons.Count > 6)
+                                {
+                                    <span class="badge bg-primary-transparent">+@(item.FileTypeIcons.Count - 6) more</span>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="badge bg-info-transparent">
+                                <i class="ri-file-line me-1"></i>All types
+                            </span>
+                        }
+                    </td>
+
+                    <!-- Status -->
+                    <td>
+                        <span class="badge bg-@(item.StatusClass)-transparent">@item.StatusText</span>
+                    </td>
+
+                    <!-- Last Upload -->
+                    <td>
+                        <small class="text-muted">@item.FormattedLastUpload</small>
+                    </td>
+
+                    <!-- Actions -->
+                    <td>
+                        <div class="hstack gap-2 fs-15">
+                            <a href="@Url.Action("CollectionDetails", "Media", new { id = item.CollectionId })" 
+                               class="btn btn-icon btn-sm btn-info-light" 
+                               title="View Details">
+                                <i class="ri-eye-line"></i>
+                            </a>
+                            <a href="@Url.Action("EditCollection", "Media", new { id = item.CollectionId })" 
+                               class="btn btn-icon btn-sm btn-success-light" 
+                               title="Edit">
+                                <i class="ri-edit-line"></i>
+                            </a>
+                            @if (item.FileCount == 0)
+                            {
+                                <button type="button" 
+                                        class="btn btn-icon btn-sm btn-danger-light" 
+                                        title="Delete"
+                                        onclick="confirmDelete(@item.CollectionId, '@item.CollectionDisplayName')">
+                                    <i class="ri-delete-bin-line"></i>
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button" 
+                                        class="btn btn-icon btn-sm btn-light" 
+                                        title="Cannot delete collection with files"
+                                        disabled>
+                                    <i class="ri-delete-bin-line"></i>
+                                </button>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </text>,
+        currentUrl: Context.Request.Path + Context.Request.QueryString
+    );
 }
 
-<!-- Page Header -->
-<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
-    <div>
-        <p class="fw-semibold fs-18 mb-0">Media Categories</p>
-        <span class="fs-semibold text-muted">Manage media collections and categories</span>
-    </div>
-    <div class="btn-list mt-md-0 mt-2">
-        <a href="/Media/Index" class="btn btn-secondary btn-wave">
-            <i class="ri-arrow-left-line me-2"></i>Back to Library
-        </a>
+
+
+<!-- Stat Cards Row -->
+<div class="row">
+    @foreach (var card in statCards)
+    {
+        <partial name="~/Views/Shared/Components/StatisticCards/_LeftBorderCard.cshtml" model="card" />
+    }
+</div>
+
+<!-- Collections Table -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/_DataTable.cshtml" model="table" />
     </div>
 </div>
 
-<!-- Content -->
-<div class="row">
-    <div class="col-xl-12">
-        <div class="card custom-card">
-            <div class="card-header">
-                <div class="card-title">
-                    Collections & Categories
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="text-center py-5">
-                    <i class="ri-folder-settings-line fs-1 text-warning"></i>
-                    <h4 class="mt-3">Categories Management Coming Soon</h4>
-                    <p class="text-muted">Category management functionality will be implemented in future updates.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Delete Confirmation Form -->
+<form id="deleteForm" method="post" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script>
+        console.log('Media Categories loaded with @Model.Count() collections');
+
+        // Delete confirmation
+        function confirmDelete(collectionId, collectionName) {
+            if (confirm(`Are you sure you want to delete the collection "${collectionName}"?\n\nThis action cannot be undone.`)) {
+                const form = document.getElementById('deleteForm');
+                form.action = '/Media/DeleteCollection/' + collectionId;
+                form.submit();
+            }
+        }
+    </script>
+}

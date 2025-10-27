@@ -1,0 +1,299 @@
+@using OSHManagement.Extensions
+@model List<OSHManagement.Models.ViewModels.OshPolicyViewModel>
+@{
+    ViewData["Title"] = "OSH Policy Management";
+
+    // Build stat cards
+    var statConfig = new OSHManagement.Models.ViewModels.StatsRowConfig
+    {
+        Titles = new List<string> { "Total Policies", "Active", "Compliant", "Needs Attention" },
+        Values = new List<string> {
+            ViewBag.TotalPolicies.ToString(),
+            ViewBag.ActivePolicies.ToString(),
+            ViewBag.CompliantPolicies.ToString(),
+            ViewBag.NeedsAttention.ToString()
+        },
+        Icons = new List<string> {
+            "ri-file-shield-line",
+            "ri-checkbox-circle-line",
+            "ri-shield-check-line",
+            "ri-alert-line"
+        },
+        ColorThemes = new List<string> { "primary", "success", "info", "warning" },
+        CardType = OSHManagement.Models.ViewModels.CardType.LeftBorderCard
+    };
+    var statCards = statConfig.BuildStatsRow();
+
+    // Build DataTable configuration
+    var tableConfig = new OSHManagement.Models.ViewModels.TableConfig
+    {
+        TableId = "oshPoliciesTable",
+        ActionUrl = "/OshPolicy/Index",
+        Columns = new List<string> {
+            "#",
+            "Station",
+            "Status",
+            "Signed",
+            "Implemented",
+            "Last Reviewed",
+            "Next Review",
+            "Actions"
+        },
+        SearchPlaceholder = "Search policies by station...",
+        SearchValue = ViewBag.CurrentSearch,
+        CreateButtonText = "Create Policy",
+        CreateButtonUrl = "/OshPolicy/Create",
+        Filters = new List<OSHManagement.Models.ViewModels.FilterConfig>
+        {
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Organization Category",
+                ParameterName = "categoryId",
+                CurrentValue = ViewBag.CurrentCategoryId?.ToString(),
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Categories", Value = "" }
+                }.Concat(
+                    ((IEnumerable<dynamic>)ViewBag.Categories).Select(c =>
+                        new OSHManagement.Models.ViewModels.FilterOptionConfig
+                        {
+                            Text = c.CategoryName,
+                            Value = c.OrgCategoryId.ToString()
+                        }
+                    )
+                ).ToList()
+            },
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Station",
+                ParameterName = "stationId",
+                CurrentValue = ViewBag.CurrentStationId?.ToString(),
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Stations", Value = "" }
+                }.Concat(
+                    ((IEnumerable<dynamic>)ViewBag.Stations).Select(s =>
+                        new OSHManagement.Models.ViewModels.FilterOptionConfig
+                        {
+                            Text = s.StationName,
+                            Value = s.StationId.ToString()
+                        }
+                    )
+                ).ToList()
+            },
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Policy Status",
+                ParameterName = "status",
+                CurrentValue = ViewBag.CurrentStatus,
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Statuses", Value = "" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Draft", Value = "Draft" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Active", Value = "Active" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Under Review", Value = "Under Review" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Expired", Value = "Expired" }
+                }
+            }
+        }
+    };
+
+    // Calculate row number starting point
+    int startingNumber = ((ViewBag.CurrentPage - 1) * ViewBag.PageSize) + 1;
+
+    // Build table with row data
+    var table = tableConfig.BuildTable(
+        tableContent: @<text>
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                var item = Model[i];
+                var rowNumber = startingNumber + i;
+                <tr>
+                    <td class="text-center">
+                        <span class="text-muted fw-medium">@rowNumber</span>
+                    </td>
+                    <td>
+                        <div>
+                            <div class="fw-medium">@item.StationName</div>
+                            @if (!string.IsNullOrEmpty(item.SignedByName))
+                            {
+                                <small class="text-muted">Signed by: @item.SignedByName</small>
+                            }
+                        </div>
+                    </td>
+                    <td>
+                        @Html.Raw(item.PolicyStatusBadge)
+                    </td>
+                    <td>
+                        @if (item.HasTopManagementSignature)
+                        {
+                            <div>
+                                <i class="ri-checkbox-circle-fill text-success me-1"></i>
+                                <small class="text-muted">@item.FormattedDateSigned</small>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning-transparent">
+                                <i class="ri-close-circle-line me-1"></i>Not Signed
+                            </span>
+                        }
+                    </td>
+                    <td>
+                        @if (item.IsPolicyImplemented)
+                        {
+                            <span class="badge bg-success-transparent">
+                                <i class="ri-check-line me-1"></i>Yes
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger-transparent">
+                                <i class="ri-close-line me-1"></i>No
+                            </span>
+                        }
+                    </td>
+                    <td>
+                        @if (item.LastReviewedDate.HasValue)
+                        {
+                            <span class="text-muted">@item.LastReviewedDate.Value.ToString("MMM dd, yyyy")</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </td>
+                    <td>
+                        @if (item.NextReviewDue.HasValue)
+                        {
+                            var isOverdue = item.NextReviewDue.Value < DateTime.UtcNow;
+                            var isDueSoon = !isOverdue && (item.NextReviewDue.Value - DateTime.UtcNow).TotalDays <= 30;
+
+                            if (isOverdue)
+                            {
+                                <span class="badge bg-danger-transparent">
+                                    <i class="ri-alert-line me-1"></i>@item.NextReviewDue.Value.ToString("MMM dd, yyyy")
+                                </span>
+                            }
+                            else if (isDueSoon)
+                            {
+                                <span class="badge bg-warning-transparent">
+                                    <i class="ri-time-line me-1"></i>@item.NextReviewDue.Value.ToString("MMM dd, yyyy")
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">@item.NextReviewDue.Value.ToString("MMM dd, yyyy")</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </td>
+                    <td>
+                        @{
+                            var rowActions = new OSHManagement.Models.ViewModels.RowActionConfig
+                            {
+                                EditUrl = $"/OshPolicy/Edit/{{id}}",
+                                ViewUrl = $"/OshPolicy/Details/{{id}}",
+                                DeleteUrl = $"/OshPolicy/Delete/{{id}}",
+                                DeleteItemName = $"Policy for {item.StationName}",
+                                ShowView = true,
+                                ShowEdit = true,
+                                ShowDelete = false
+                            };
+                            var actions = OSHManagement.Extensions.DataTableExtensions.BuildRowActions(item.PolicyId, "/OshPolicy", rowActions);
+                        }
+                        <partial name="~/Views/Shared/Components/_ActionButtons.cshtml" model="actions" />
+                    </td>
+                </tr>
+            }
+        </text>,
+        currentUrl: Context.Request.Path + Context.Request.QueryString
+    );
+
+    // Enable pagination
+    table.ShowPagination = true;
+    table.CurrentPage = ViewBag.CurrentPage;
+    table.TotalPages = ViewBag.TotalPages;
+    table.TotalRecords = ViewBag.TotalItems;
+    table.PageSize = ViewBag.PageSize;
+}
+
+<!-- Stat Cards Row -->
+<div class="row">
+    @foreach (var card in statCards)
+    {
+        <partial name="~/Views/Shared/Components/StatisticCards/_LeftBorderCard.cshtml" model="card" />
+    }
+</div>
+
+<!-- Main Content -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/_DataTable.cshtml" model="table" />
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Store all stations with their categories
+            var allStations = @Html.Raw(Json.Serialize(ViewBag.Stations));
+            var categorySelect = $('select[name="categoryId"]');
+            var stationSelect = $('select[name="stationId"]');
+            var currentStationId = '@(ViewBag.CurrentStationId?.ToString() ?? "")';
+
+            // Function to filter stations based on selected category
+            function filterStations() {
+                var selectedCategoryId = categorySelect.val();
+
+                // Store current selection
+                var currentSelection = stationSelect.val();
+
+                // Clear all options except the first (placeholder)
+                stationSelect.find('option:not(:first)').remove();
+
+                // Filter stations
+                var filteredStations = selectedCategoryId
+                    ? allStations.filter(s => s.orgCategoryId == selectedCategoryId)
+                    : allStations;
+
+                // Repopulate station dropdown
+                filteredStations.forEach(function(station) {
+                    var option = $('<option></option>')
+                        .val(station.stationId)
+                        .text(station.stationName);
+
+                    // Restore selection if it's still valid
+                    if (station.stationId == currentSelection || station.stationId == currentStationId) {
+                        option.prop('selected', true);
+                    }
+
+                    stationSelect.append(option);
+                });
+
+                // If current selection is not in filtered list, clear it
+                if (selectedCategoryId && stationSelect.val() != currentSelection) {
+                    stationSelect.val('');
+                }
+            }
+
+            // Initialize on page load
+            if (categorySelect.val()) {
+                filterStations();
+            }
+
+            // Handle category change
+            categorySelect.on('change', function() {
+                filterStations();
+                // Auto-submit the form to apply filter
+                $(this).closest('form').submit();
+            });
+        });
+    </script>
+}

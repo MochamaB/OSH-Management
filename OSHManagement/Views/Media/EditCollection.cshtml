@@ -1,0 +1,282 @@
+@model OSHManagement.Models.ViewModels.MediaCollectionViewModel
+@{
+    ViewData["Title"] = $"Edit Collection: {Model.CollectionDisplayName}";
+}
+
+
+
+<div class="row">
+    <div class="col-xl-12">
+        <form asp-action="EditCollection" asp-controller="Media" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="CollectionId" />
+            <input type="hidden" asp-for="CollectionName" />
+
+            <!-- Basic Information Card -->
+            <div class="card custom-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="ri-information-line me-2"></i>Basic Information
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Collection Name <span class="text-muted">(Read-only)</span></label>
+                            <input type="text" class="form-control" value="@Model.CollectionName" disabled />
+                            <small class="form-text text-muted">System identifier - cannot be changed</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="CollectionDisplayName" class="form-label fw-semibold">Display Name <span class="text-danger">*</span></label>
+                            <input asp-for="CollectionDisplayName" class="form-control" required />
+                            <small class="form-text text-muted">User-friendly name shown in the UI</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Module <span class="text-muted">(Read-only)</span></label>
+                            <input type="text" class="form-control" value="@Model.ModuleName" disabled />
+                            <small class="form-text text-muted">Associated module - cannot be changed</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="MaxFileSizeMb" class="form-label fw-semibold">Max File Size (MB) <span class="text-danger">*</span></label>
+                            <input asp-for="MaxFileSizeMb" type="number" min="1" max="100" class="form-control" required />
+                            <small class="form-text text-muted">Maximum file size in megabytes (1-100)</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label fw-semibold">Description</label>
+                        <textarea asp-for="Description" class="form-control" rows="3" maxlength="500"></textarea>
+                        <small class="form-text text-muted">Optional description of this collection</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Type Restrictions Card -->
+            <div class="card custom-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="ri-file-list-line me-2"></i>File Type Restrictions
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info d-flex align-items-start">
+                        <i class="ri-information-line fs-18 me-2"></i>
+                        <div>
+                            <strong>Note:</strong> Enter file extensions separated by commas (e.g., pdf,docx,xlsx) or leave empty to allow all file types.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Allowed File Extensions</label>
+                        <input type="text" 
+                               id="allowedTypesInput" 
+                               class="form-control" 
+                               value="@string.Join(",", Model.AllowedFileTypes)"
+                               placeholder="pdf,docx,xlsx,jpg,png" />
+                        <small class="form-text text-muted">Comma-separated list (e.g., pdf,docx,xlsx)</small>
+                    </div>
+
+                    <!-- File Type Preview -->
+                    <div id="fileTypePreview" class="d-flex gap-2 flex-wrap mb-3">
+                        @foreach (var icon in Model.FileTypeIcons)
+                        {
+                            <span class="avatar avatar-sm bg-light @icon.ColorClass" title="@icon.Extension.ToUpper()">
+                                <i class="@icon.IconClass fs-16"></i>
+                            </span>
+                        }
+                    </div>
+
+                    <!-- Common File Types Quick Add -->
+                    <div>
+                        <label class="form-label fw-semibold">Quick Add Common Types:</label>
+                        <div class="btn-group flex-wrap" role="group">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addFileType('pdf')">PDF</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addFileType('doc,docx')">Word</button>
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="addFileType('xls,xlsx')">Excel</button>
+                            <button type="button" class="btn btn-sm btn-outline-warning" onclick="addFileType('ppt,pptx')">PowerPoint</button>
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="addFileType('jpg,jpeg,png,gif')">Images</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addFileType('zip,rar')">Archives</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Access Control Card -->
+            <div class="card custom-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="ri-shield-check-line me-2"></i>Access Control & Permissions
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsPublic" class="form-check-input" type="checkbox" />
+                                <label asp-for="IsPublic" class="form-check-label fw-semibold">
+                                    Public Access
+                                </label>
+                            </div>
+                            <small class="form-text text-muted d-block ms-4">Allow public access without authentication</small>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                <input asp-for="RequiresAuthentication" class="form-check-input" type="checkbox" />
+                                <label asp-for="RequiresAuthentication" class="form-check-label fw-semibold">
+                                    Requires Authentication
+                                </label>
+                            </div>
+                            <small class="form-text text-muted d-block ms-4">Users must be logged in to access</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Allowed Roles</label>
+                        <input type="text" 
+                               id="allowedRolesInput" 
+                               class="form-control" 
+                               value="@string.Join(",", Model.AllowedRoles)"
+                               placeholder="Admin,Manager,Staff" />
+                        <small class="form-text text-muted">Comma-separated list of roles or leave empty for all roles</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Retention Policy Card -->
+            <div class="card custom-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="ri-calendar-check-line me-2"></i>Retention Policy
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="RetentionPolicyDays" class="form-label fw-semibold">Retention Period (Days)</label>
+                            <input asp-for="RetentionPolicyDays" type="number" min="0" class="form-control" placeholder="Leave empty for no policy" />
+                            <small class="form-text text-muted">Number of days to retain files (empty = no retention policy)</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Current Status</label>
+                            <div class="mt-2">
+                                <span class="badge bg-@(Model.StatusClass)-transparent fs-14">
+                                    @Model.StatusText
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="card custom-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <a href="@Url.Action("CollectionDetails", new { id = Model.CollectionId })" class="btn btn-light">
+                            <i class="ri-close-line me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="ri-save-line me-2"></i>Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Handle file type input
+        document.getElementById('allowedTypesInput').addEventListener('change', function() {
+            updateFileTypePreview(this.value);
+        });
+
+        function addFileType(types) {
+            const input = document.getElementById('allowedTypesInput');
+            const currentTypes = input.value ? input.value.split(',').map(t => t.trim().toLowerCase()) : [];
+            const newTypes = types.split(',').map(t => t.trim().toLowerCase());
+            
+            newTypes.forEach(type => {
+                if (!currentTypes.includes(type)) {
+                    currentTypes.push(type);
+                }
+            });
+            
+            input.value = currentTypes.join(',');
+            updateFileTypePreview(input.value);
+        }
+
+        function updateFileTypePreview(typesString) {
+            const types = typesString ? typesString.split(',').map(t => t.trim().toLowerCase()) : [];
+            const preview = document.getElementById('fileTypePreview');
+            
+            if (types.length === 0) {
+                preview.innerHTML = '<span class="text-muted">All file types allowed</span>';
+                return;
+            }
+
+            const iconMap = {
+                'pdf': { icon: 'ri-file-pdf-line', color: 'text-danger' },
+                'doc': { icon: 'ri-file-word-line', color: 'text-primary' },
+                'docx': { icon: 'ri-file-word-line', color: 'text-primary' },
+                'xls': { icon: 'ri-file-excel-line', color: 'text-success' },
+                'xlsx': { icon: 'ri-file-excel-line', color: 'text-success' },
+                'ppt': { icon: 'ri-file-ppt-line', color: 'text-warning' },
+                'pptx': { icon: 'ri-file-ppt-line', color: 'text-warning' },
+                'jpg': { icon: 'ri-image-line', color: 'text-info' },
+                'jpeg': { icon: 'ri-image-line', color: 'text-info' },
+                'png': { icon: 'ri-image-line', color: 'text-info' },
+                'gif': { icon: 'ri-image-line', color: 'text-info' },
+                'zip': { icon: 'ri-file-zip-line', color: 'text-secondary' },
+                'rar': { icon: 'ri-file-zip-line', color: 'text-secondary' }
+            };
+
+            preview.innerHTML = types.map(type => {
+                const iconInfo = iconMap[type] || { icon: 'ri-file-line', color: 'text-muted' };
+                return `<span class="avatar avatar-sm bg-light ${iconInfo.color}" title="${type.toUpperCase()}">
+                            <i class="${iconInfo.icon} fs-16"></i>
+                        </span>`;
+            }).join('');
+        }
+
+        // Form submission - prepare arrays
+        document.querySelector('form').addEventListener('submit', function(e) {
+            // Convert comma-separated strings to hidden inputs for list binding
+            const allowedTypes = document.getElementById('allowedTypesInput').value
+                .split(',')
+                .map(t => t.trim())
+                .filter(t => t);
+            
+            const allowedRoles = document.getElementById('allowedRolesInput').value
+                .split(',')
+                .map(r => r.trim())
+                .filter(r => r);
+
+            // Remove existing hidden inputs
+            document.querySelectorAll('input[name^="AllowedFileTypes"]').forEach(el => el.remove());
+            document.querySelectorAll('input[name^="AllowedRoles"]').forEach(el => el.remove());
+
+            // Add new hidden inputs for collection binding
+            allowedTypes.forEach((type, index) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `AllowedFileTypes[${index}]`;
+                input.value = type;
+                this.appendChild(input);
+            });
+
+            allowedRoles.forEach((role, index) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `AllowedRoles[${index}]`;
+                input.value = role;
+                this.appendChild(input);
+            });
+        });
+    </script>
+}

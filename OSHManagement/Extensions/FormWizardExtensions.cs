@@ -19,6 +19,7 @@ namespace OSHManagement.Extensions
                 WizardId = config.WizardId,
                 ActionUrl = config.ActionUrl,
                 Method = config.Method,
+                EncType = config.EncType,
                 Type = config.Type,
                 PreviousButtonText = config.PreviousButtonText,
                 NextButtonText = config.NextButtonText,

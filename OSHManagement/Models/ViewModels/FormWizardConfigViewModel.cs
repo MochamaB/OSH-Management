@@ -9,6 +9,7 @@ namespace OSHManagement.Models.ViewModels
         public string WizardId { get; set; } = "formWizard";
         public string ActionUrl { get; set; } = "";
         public string Method { get; set; } = "POST";
+        public string? EncType { get; set; }
         public WizardType Type { get; set; } = WizardType.Horizontal;
 
         // Steps configuration
@@ -60,6 +61,7 @@ namespace OSHManagement.Models.ViewModels
         public string WizardId { get; set; } = "";
         public string ActionUrl { get; set; } = "";
         public string Method { get; set; } = "POST";
+        public string? EncType { get; set; }
         public WizardType Type { get; set; } = WizardType.Horizontal;
 
         public List<WizardStepViewModel> Steps { get; set; } = new List<WizardStepViewModel>();

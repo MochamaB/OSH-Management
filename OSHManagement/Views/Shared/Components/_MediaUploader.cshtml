@@ -1,0 +1,322 @@
+@model OSHManagement.Models.ViewModels.MediaUploaderViewModel
+@{
+    var uploaderId = Model.UploaderId;
+    var maxSizeBytes = Model.MaxFileSizeMb * 1024 * 1024;
+}
+
+
+<style>
+    .dropzone {
+        transition: all 0.3s ease;
+    }
+    .dropzone:hover {
+        border-color: var(--primary-color) !important;
+        background: #f0f4ff !important;
+    }
+    .dropzone .dz-preview {
+        margin: 10px;
+    }
+    .dropzone .dz-preview .dz-image {
+        border-radius: 8px;
+    }
+    .dropzone .dz-error-message {
+        background: #dc3545;
+        color: white;
+    }
+    .dropzone .dz-success-mark,
+    .dropzone .dz-error-mark {
+        display: none;
+    }
+</style>
+
+<!-- Media Uploader Component (Just Dropzone) -->
+<div id="@uploaderId-container">
+    <!-- Dropzone Area -->
+    <div id="@uploaderId" 
+         class="dropzone" 
+         style="min-height: @Model.DropzoneHeight; border: 2px dashed #dee2e6; border-radius: 8px; background: #f8f9fa;">
+        <div class="dz-message" style="margin: 2em 0;">
+            <div class="text-center">
+                <i class="ri-upload-cloud-2-line fs-1 text-primary mb-3"></i>
+                <h5>
+                    @if (!string.IsNullOrEmpty(Model.CustomMessage))
+                    {
+                        @Model.CustomMessage
+                    }
+                    else
+                    {
+                        <span>Drop files here or click to browse</span>
+                    }
+                </h5>
+                <p class="text-muted mb-0">
+                    Maximum file size: <strong>@Model.MaxFileSizeMb MB</strong>
+                </p>
+                @if (!string.IsNullOrEmpty(Model.AcceptedFileTypes))
+                {
+                    <p class="text-muted small mb-0">
+                        Allowed types: @Model.AcceptedFileTypesDisplay
+                    </p>
+                }
+                @if (Model.MaxFiles.HasValue)
+                {
+                    <p class="text-muted small mb-0">
+                        Maximum @Model.MaxFiles file(s) at a time
+                    </p>
+                }
+            </div>
+        </div>
+    </div>
+
+        <!-- Upload Progress -->
+        <div id="@uploaderId-progress" class="mt-3" style="display: none;">
+            <div class="progress" style="height: 25px;">
+                <div id="@uploaderId-progress-bar" 
+                     class="progress-bar progress-bar-striped progress-bar-animated" 
+                     role="progressbar" 
+                     style="width: 0%">
+                    <span id="@uploaderId-progress-text">0%</span>
+                </div>
+            </div>
+            <p class="text-muted small mt-2 mb-0" id="@uploaderId-status">Preparing upload...</p>
+        </div>
+
+        <!-- Upload Button (if manual mode) -->
+        @if (!Model.AutoProcessQueue)
+        {
+            <div class="mt-3 text-end">
+                <button type="button" class="btn btn-primary" id="@uploaderId-upload-btn" disabled>
+                    <i class="ri-upload-line me-2"></i>Start Upload
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+
+<script>
+    // Wait for Dropzone library to load and DOM to be ready
+    (function() {
+        function initializeUploader() {
+            // Check if Dropzone is available
+            if (typeof Dropzone === 'undefined') {
+                console.warn('Dropzone not loaded yet, waiting...');
+                setTimeout(initializeUploader, 100);
+                return;
+            }
+
+            // Configuration
+            const uploaderId = '@uploaderId';
+            const collectionName = '@Model.CollectionName';
+            const maxFileSizeMb = @Model.MaxFileSizeMb;
+            const acceptedFiles = '@Model.AcceptedFileTypes' || null;
+            const maxFiles = @(Model.MaxFiles?.ToString() ?? "null");
+            const autoProcessQueue = @Model.AutoProcessQueue.ToString().ToLower();
+            const showMetadata = @Model.ShowMetadataFields.ToString().ToLower();
+            const showCollectionSelector = @Model.ShowCollectionSelector.ToString().ToLower();
+            
+            // Association data
+            const associateToTable = '@Model.AssociateToTable';
+            const associateToRecordId = '@Model.AssociateToRecordId';
+            const associationType = '@Model.AssociationType';
+
+            // Callbacks
+            const onSuccessCallback = '@Model.OnSuccessCallback';
+            const onErrorCallback = '@Model.OnErrorCallback';
+            const redirectUrl = '@Model.RedirectUrl';
+
+            // Initialize Dropzone
+            const dropzone = new Dropzone(`#${uploaderId}`, {
+                url: '/Media/UploadFile',
+                paramName: 'file',
+                maxFilesize: maxFileSizeMb,
+                acceptedFiles: acceptedFiles,
+                maxFiles: maxFiles,
+                autoProcessQueue: autoProcessQueue,
+                addRemoveLinks: true,
+                dictDefaultMessage: '',
+                dictRemoveFile: 'Remove',
+                dictCancelUpload: 'Cancel',
+                parallelUploads: 1,
+                uploadMultiple: false,
+                
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+
+                init: function() {
+                    const dz = this;
+
+                    // Add collection name to request
+                    this.on('sending', function(file, xhr, formData) {
+                        let selectedCollection = collectionName;
+
+                        // Try to get collection from page-level selector first
+                        const pageCollectionSelect = document.getElementById('collection-select');
+                        if (pageCollectionSelect) {
+                            selectedCollection = pageCollectionSelect.value;
+                        }
+                        // Otherwise check if component has its own selector
+                        else if (showCollectionSelector) {
+                            const compCollectionSelect = document.getElementById(`${uploaderId}-collection-select`);
+                            selectedCollection = compCollectionSelect?.value || collectionName;
+                        }
+                            
+                        if (!selectedCollection) {
+                            dz.cancelUpload(file);
+                            alert('Please select a collection first');
+                            return false;
+                        }
+
+                        formData.append('collectionName', selectedCollection);
+                        
+                        // Try to get metadata from page-level fields
+                        const pageTitle = document.getElementById('default-title');
+                        const pageDescription = document.getElementById('default-description');
+                        
+                        if (pageTitle && pageTitle.value) {
+                            formData.append('title', pageTitle.value);
+                        }
+                        if (pageDescription && pageDescription.value) {
+                            formData.append('description', pageDescription.value);
+                        }
+                        
+                        // Add association data if provided
+                        if (associateToTable) formData.append('associateToTable', associateToTable);
+                        if (associateToRecordId) formData.append('associateToRecordId', associateToRecordId);
+                        if (associationType) formData.append('associationType', associationType);
+
+                        // Show progress
+                        document.getElementById(`${uploaderId}-progress`).style.display = 'block';
+                        document.getElementById(`${uploaderId}-status`).textContent = `Uploading ${file.name}...`;
+                    });
+
+                    // File added
+                    this.on('addedfile', function(file) {
+                        console.log('File added:', file.name);
+                        
+                        // Enable upload button (if manual mode)
+                        if (!autoProcessQueue) {
+                            document.getElementById(`${uploaderId}-upload-btn`).disabled = false;
+                        }
+
+                        // Call external callback if exists
+                        if (typeof window.onFileAdded === 'function') {
+                            window.onFileAdded(file);
+                        }
+                    });
+
+                    // Upload progress
+                    this.on('uploadprogress', function(file, progress) {
+                        const progressBar = document.getElementById(`${uploaderId}-progress-bar`);
+                        const progressText = document.getElementById(`${uploaderId}-progress-text`);
+                        
+                        progressBar.style.width = progress + '%';
+                        progressText.textContent = Math.round(progress) + '%';
+                    });
+
+                    // Success
+                    this.on('success', function(file, response) {
+                        console.log('Upload success:', response);
+                        
+                        document.getElementById(`${uploaderId}-status`).innerHTML = 
+                            `<i class="ri-check-line text-success me-1"></i>Successfully uploaded: ${file.name}`;
+                        
+                        // Call custom callback if provided
+                        if (onSuccessCallback && window[onSuccessCallback]) {
+                            window[onSuccessCallback](response);
+                        }
+
+                        // Call external callback if exists
+                        if (typeof window.onUploadSuccess === 'function') {
+                            window.onUploadSuccess(response);
+                        }
+
+                        // Keep file visible (don't auto-remove) to show success
+                    });
+
+                    // Error
+                    this.on('error', function(file, errorMessage) {
+                        console.error('Upload error:', errorMessage);
+                        
+                        document.getElementById(`${uploaderId}-status`).innerHTML = 
+                            `<i class="ri-error-warning-line text-danger me-1"></i>Error: ${errorMessage}`;
+                        
+                        // Call custom callback if provided
+                        if (onErrorCallback && window[onErrorCallback]) {
+                            window[onErrorCallback](errorMessage);
+                        }
+
+                        // Call external callback if exists
+                        if (typeof window.onUploadError === 'function') {
+                            window.onUploadError(errorMessage);
+                        }
+                    });
+
+                    // Queue complete
+                    this.on('queuecomplete', function() {
+                        console.log('All uploads complete');
+                        
+                        // Redirect if specified
+                        if (redirectUrl) {
+                            setTimeout(() => {
+                                window.location.href = redirectUrl;
+                            }, 1500);
+                        }
+
+                        // Reset progress after delay
+                        setTimeout(() => {
+                            document.getElementById(`${uploaderId}-progress`).style.display = 'none';
+                            document.getElementById(`${uploaderId}-progress-bar`).style.width = '0%';
+                        }, 3000);
+                    });
+
+                    // Manual upload button
+                    if (!autoProcessQueue) {
+                        const uploadBtn = document.getElementById(`${uploaderId}-upload-btn`);
+                        if (uploadBtn) {
+                            uploadBtn.addEventListener('click', function() {
+                                console.log('Upload button clicked');
+                                
+                                // Validate collection is selected (if using page-level selector)
+                                const pageCollectionSelect = document.getElementById('collection-select');
+                                if (pageCollectionSelect && !pageCollectionSelect.value) {
+                                    alert('Please select a collection first');
+                                    pageCollectionSelect.focus();
+                                    return;
+                                }
+                                
+                                // Check if files are in queue
+                                if (dz.getQueuedFiles().length === 0) {
+                                    alert('Please add files first');
+                                    return;
+                                }
+                                
+                                console.log('Processing queue with', dz.getQueuedFiles().length, 'files');
+                                dz.processQueue();
+                            });
+                        } else {
+                            console.error('Upload button not found:', `${uploaderId}-upload-btn`);
+                        }
+                    }
+                }
+            });
+
+            // Collection selector change handler
+            if (showCollectionSelector) {
+                document.getElementById(`${uploaderId}-collection-select`).addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const maxSize = selectedOption.dataset.maxSize || maxFileSizeMb;
+                    
+                    // Update dropzone max file size
+                    dropzone.options.maxFilesize = parseInt(maxSize);
+                });
+            }
+
+            // Expose dropzone instance globally for external access
+            window[`${uploaderId}_dropzone`] = dropzone;
+        }
+        
+        // Start initialization (will wait for Dropzone to load)
+        initializeUploader();
+    })();
+</script>

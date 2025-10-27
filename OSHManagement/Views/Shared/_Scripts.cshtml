@@ -41,6 +41,15 @@
 <!-- Apex Charts JS -->
 <script src="~/assets/libs/apexcharts/apexcharts.min.js"></script>
 
+<!-- Dropzone JS -->
+<script src="~/lib/dropzone/dropzone.min.js"></script>
+<script>
+    // Disable auto-discovery immediately after Dropzone loads
+    if (typeof Dropzone !== 'undefined') {
+        Dropzone.autoDiscover = false;
+    }
+</script>
+
 <!-- Custom-Switcher JS -->
 <script src="~/assets/js/custom-switcher.min.js"></script>
 
