@@ -37,6 +37,7 @@
             "Implemented",
             "Last Reviewed",
             "Next Review",
+            "Documents",
             "Actions"
         },
         SearchPlaceholder = "Search policies by station...",
@@ -116,23 +117,25 @@
                         <span class="text-muted fw-medium">@rowNumber</span>
                     </td>
                     <td>
-                        <div>
-                            <div class="fw-medium">@item.StationName</div>
-                            @if (!string.IsNullOrEmpty(item.SignedByName))
-                            {
-                                <small class="text-muted">Signed by: @item.SignedByName</small>
-                            }
-                        </div>
+                        <div class="fw-medium">@item.StationName</div>
                     </td>
                     <td>
-                        @Html.Raw(item.PolicyStatusBadge)
+                        <span class="badge @item.ComplianceStatusBadge">
+                            @item.ComplianceStatusText
+                        </span>
                     </td>
                     <td>
                         @if (item.HasTopManagementSignature)
                         {
-                            <div>
-                                <i class="ri-checkbox-circle-fill text-success me-1"></i>
-                                <small class="text-muted">@item.FormattedDateSigned</small>
+                            <div class="d-flex flex-column">
+                                <div class="mb-1">
+                                    <i class="ri-user-line text-primary me-1"></i>
+                                    <span class="fw-medium">@item.SignedByName</span>
+                                </div>
+                                <div>
+                                    <i class="ri-calendar-line text-muted me-1"></i>
+                                    <small class="text-muted">@item.FormattedDateSigned</small>
+                                </div>
                             </div>
                         }
                         else
@@ -195,6 +198,42 @@
                         }
                     </td>
                     <td>
+                        <div class="documents-preview" data-policy-id="@item.PolicyId">
+                            @if (item.PolicyDocumentCount > 0)
+                            {
+                                <div class="mb-1">
+                                    <span class="badge bg-primary-transparent">
+                                        <i class="ri-file-pdf-line me-1"></i>Policy (@item.PolicyDocumentCount)
+                                    </span>
+                                </div>
+                            }
+                            @if (item.CharterDocumentCount > 0)
+                            {
+                                <div class="mb-1">
+                                    <span class="badge bg-info-transparent">
+                                        <i class="ri-file-text-line me-1"></i>Charter (@item.CharterDocumentCount)
+                                    </span>
+                                </div>
+                            }
+                            @if (item.HasDocuments)
+                            {
+                                <button type="button"
+                                        class="btn btn-sm btn-primary-light view-documents-btn mt-1"
+                                        data-policy-id="@item.PolicyId"
+                                        data-station-name="@item.StationName"
+                                        title="View All Documents">
+                                    <i class="ri-eye-line me-1"></i>View All
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">
+                                    <i class="ri-file-forbid-line me-1"></i>No documents
+                                </span>
+                            }
+                        </div>
+                    </td>
+                    <td>
                         @{
                             var rowActions = new OSHManagement.Models.ViewModels.RowActionConfig
                             {
@@ -236,6 +275,96 @@
 <div class="row mt-3">
     <div class="col-xl-12">
         <partial name="~/Views/Shared/Components/_DataTable.cshtml" model="table" />
+    </div>
+</div>
+
+<!-- Document List Modal -->
+<div class="modal fade" id="documentViewerModal" tabindex="-1" aria-labelledby="documentViewerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="documentViewerModalLabel">
+                    <i class="ri-file-list-2-line me-2"></i>Policy Documents
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="documentViewerContent">
+                    <!-- Loading spinner -->
+                    <div class="text-center py-5" id="documentLoader">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted mt-3">Loading documents...</p>
+                    </div>
+
+                    <!-- Documents list will be loaded here -->
+                    <div id="documentsList" style="display: none;">
+                        <div class="row" id="documentsGrid"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="ri-close-line me-1"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PDF/Document Viewer Modal -->
+<div class="modal fade" id="pdfViewerModal" tabindex="-1" aria-labelledby="pdfViewerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="pdfViewerModalLabel">
+                    <i class="ri-file-pdf-line me-2"></i>Document Viewer
+                </h6>
+                <div class="btn-group btn-group-sm me-3">
+                    <a id="pdfDownloadBtn" href="#" class="btn btn-primary" download>
+                        <i class="ri-download-2-line me-1"></i>Download
+                    </a>
+                    <a id="pdfOpenNewTabBtn" href="#" target="_blank" class="btn btn-info">
+                        <i class="ri-external-link-line me-1"></i>Open in New Tab
+                    </a>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" style="height: calc(100vh - 120px);">
+                <div id="pdfViewerContent" class="w-100 h-100">
+                    <!-- Loading spinner -->
+                    <div class="text-center py-5" id="pdfLoader" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted mt-3">Loading document...</p>
+                    </div>
+                    
+                    <!-- PDF/Document iframe -->
+                    <iframe id="pdfIframe" 
+                            style="width: 100%; height: 100%; border: none;"
+                            title="Document Viewer">
+                    </iframe>
+                    
+                    <!-- Unsupported file type message -->
+                    <div id="unsupportedFileMessage" class="alert alert-warning m-4" style="display: none;">
+                        <div class="d-flex align-items-center">
+                            <i class="ri-information-line fs-4 me-3"></i>
+                            <div>
+                                <h6 class="alert-heading mb-2">Preview Not Available</h6>
+                                <p class="mb-2">This file type cannot be previewed in the browser.</p>
+                                <p class="mb-0">
+                                    <a id="unsupportedDownloadBtn" href="#" class="btn btn-sm btn-primary">
+                                        <i class="ri-download-line me-1"></i>Download File
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -293,6 +422,269 @@
                 filterStations();
                 // Auto-submit the form to apply filter
                 $(this).closest('form').submit();
+            });
+
+            // ========================================
+            // Document Viewer Modal
+            // ========================================
+
+            // Handle view documents button click
+            $(document).on('click', '.view-documents-btn', function() {
+                var policyId = $(this).data('policy-id');
+                var stationName = $(this).data('station-name');
+
+                // Update modal title
+                $('#documentViewerModalLabel').html(
+                    '<i class="ri-file-list-2-line me-2"></i>Policy Documents - ' + stationName
+                );
+
+                // Show loading state
+                $('#documentLoader').show();
+                $('#documentsList').hide();
+                $('#documentsGrid').empty();
+
+                // Open modal
+                var modal = new bootstrap.Modal(document.getElementById('documentViewerModal'));
+                modal.show();
+
+                // Fetch documents via AJAX
+                $.ajax({
+                    url: '/OshPolicy/GetPolicyDocuments',
+                    type: 'GET',
+                    data: { policyId: policyId },
+                    success: function(response) {
+                        if (response.success && response.documents && response.documents.length > 0) {
+                            renderDocuments(response.documents);
+                        } else {
+                            showNoDocuments();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching documents:', error);
+                        showErrorMessage();
+                    }
+                });
+            });
+
+            // Render documents in the modal
+            function renderDocuments(documents) {
+                var grid = $('#documentsGrid');
+                grid.empty();
+
+                documents.forEach(function(doc) {
+                    var fileIcon = getFileIcon(doc.fileExtension);
+                    var fileTypeClass = getFileTypeClass(doc.fileExtension);
+                    var associationTypeLabel = doc.associationType === 'policy_document'
+                        ? '<span class="badge bg-primary-transparent">Policy Document</span>'
+                        : '<span class="badge bg-info-transparent">Safety Charter</span>';
+
+                    var cardHtml = `
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card custom-card border">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-start mb-3">
+                                        <div class="avatar avatar-lg bg-${fileTypeClass}-transparent me-3">
+                                            <i class="${fileIcon} fs-24"></i>
+                                        </div>
+                                        <div class="flex-fill">
+                                            <h6 class="fw-semibold mb-1 text-truncate" title="${doc.originalFileName}">
+                                                ${doc.originalFileName}
+                                            </h6>
+                                            <div class="mb-2">
+                                                ${associationTypeLabel}
+                                            </div>
+                                            <small class="text-muted">
+                                                <i class="ri-file-line me-1"></i>${formatFileSize(doc.fileSize)}
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    ${doc.title ? `<p class="text-muted mb-2"><strong>Title:</strong> ${doc.title}</p>` : ''}
+                                    ${doc.description ? `<p class="text-muted mb-2 small">${doc.description}</p>` : ''}
+
+                                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                        <small class="text-muted">
+                                            <i class="ri-calendar-line me-1"></i>${formatDate(doc.uploadedAt)}
+                                        </small>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button"
+                                                    class="btn btn-info-light btn-sm view-pdf-btn"
+                                                    data-media-id="${doc.mediaId}"
+                                                    data-file-name="${doc.originalFileName}"
+                                                    data-file-ext="${doc.fileExtension}"
+                                                    title="Preview">
+                                                <i class="ri-eye-line"></i>
+                                            </button>
+                                            <a href="/Media/Download/${doc.mediaId}"
+                                               class="btn btn-primary-light btn-sm"
+                                               title="Download">
+                                                <i class="ri-download-2-line"></i>
+                                            </a>
+                                            <a href="/Media/View/${doc.mediaId}"
+                                               target="_blank"
+                                               class="btn btn-secondary-light btn-sm"
+                                               title="Open in New Tab">
+                                                <i class="ri-external-link-line"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    grid.append(cardHtml);
+                });
+
+                // Show documents list
+                $('#documentLoader').hide();
+                $('#documentsList').show();
+            }
+
+            // Show no documents message
+            function showNoDocuments() {
+                $('#documentsGrid').html(`
+                    <div class="col-12">
+                        <div class="alert alert-warning text-center">
+                            <i class="ri-file-forbid-line fs-24 mb-2"></i>
+                            <p class="mb-0">No documents found for this policy.</p>
+                        </div>
+                    </div>
+                `);
+                $('#documentLoader').hide();
+                $('#documentsList').show();
+            }
+
+            // Show error message
+            function showErrorMessage() {
+                $('#documentsGrid').html(`
+                    <div class="col-12">
+                        <div class="alert alert-danger text-center">
+                            <i class="ri-error-warning-line fs-24 mb-2"></i>
+                            <p class="mb-0">Error loading documents. Please try again.</p>
+                        </div>
+                    </div>
+                `);
+                $('#documentLoader').hide();
+                $('#documentsList').show();
+            }
+
+            // Helper: Get file icon based on extension
+            function getFileIcon(extension) {
+                const icons = {
+                    '.pdf': 'ri-file-pdf-line',
+                    '.doc': 'ri-file-word-line',
+                    '.docx': 'ri-file-word-line',
+                    '.xls': 'ri-file-excel-line',
+                    '.xlsx': 'ri-file-excel-line',
+                    '.ppt': 'ri-file-ppt-line',
+                    '.pptx': 'ri-file-ppt-line',
+                    '.jpg': 'ri-image-line',
+                    '.jpeg': 'ri-image-line',
+                    '.png': 'ri-image-line',
+                    '.gif': 'ri-image-line'
+                };
+                return icons[extension.toLowerCase()] || 'ri-file-line';
+            }
+
+            // Helper: Get file type class for coloring
+            function getFileTypeClass(extension) {
+                const classes = {
+                    '.pdf': 'danger',
+                    '.doc': 'primary',
+                    '.docx': 'primary',
+                    '.xls': 'success',
+                    '.xlsx': 'success',
+                    '.ppt': 'warning',
+                    '.pptx': 'warning',
+                    '.jpg': 'info',
+                    '.jpeg': 'info',
+                    '.png': 'info',
+                    '.gif': 'info'
+                };
+                return classes[extension.toLowerCase()] || 'secondary';
+            }
+
+            // Helper: Format file size
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+            }
+
+            // Helper: Format date
+            function formatDate(dateString) {
+                if (!dateString) return 'N/A';
+                const date = new Date(dateString);
+                const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                return date.toLocaleDateString('en-US', options);
+            }
+
+            // ========================================
+            // PDF/Document Viewer
+            // ========================================
+
+            // Handle view PDF button click
+            $(document).on('click', '.view-pdf-btn', function() {
+                const mediaId = $(this).data('media-id');
+                const fileName = $(this).data('file-name');
+                const fileExt = $(this).data('file-ext');
+
+                openDocumentViewer(mediaId, fileName, fileExt);
+            });
+
+            // Open document in fullscreen viewer modal
+            function openDocumentViewer(mediaId, fileName, fileExtension) {
+                // Update modal title
+                $('#pdfViewerModalLabel').html(
+                    `<i class="ri-file-pdf-line me-2"></i>${fileName}`
+                );
+
+                // Set download and open buttons
+                const viewUrl = `/Media/View/${mediaId}`;
+                const downloadUrl = `/Media/Download/${mediaId}`;
+
+                $('#pdfDownloadBtn').attr('href', downloadUrl);
+                $('#pdfOpenNewTabBtn').attr('href', viewUrl);
+
+                // Check if file type can be previewed
+                const previewableExtensions = ['.pdf', '.txt', '.jpg', '.jpeg', '.png', '.gif', '.svg'];
+                const canPreview = previewableExtensions.includes(fileExtension.toLowerCase());
+
+                if (canPreview) {
+                    // Show iframe, hide unsupported message
+                    $('#pdfIframe').show();
+                    $('#unsupportedFileMessage').hide();
+
+                    // Show loading
+                    $('#pdfLoader').show();
+
+                    // Load document in iframe
+                    const iframe = document.getElementById('pdfIframe');
+                    iframe.src = viewUrl;
+
+                    // Hide loading when iframe loads
+                    iframe.onload = function() {
+                        $('#pdfLoader').hide();
+                    };
+                } else {
+                    // Show unsupported message, hide iframe
+                    $('#pdfIframe').hide();
+                    $('#unsupportedFileMessage').show();
+                    $('#unsupportedDownloadBtn').attr('href', downloadUrl);
+                }
+
+                // Open modal
+                const pdfModal = new bootstrap.Modal(document.getElementById('pdfViewerModal'));
+                pdfModal.show();
+            }
+
+            // Reset PDF viewer when modal is closed
+            $('#pdfViewerModal').on('hidden.bs.modal', function() {
+                document.getElementById('pdfIframe').src = '';
+                $('#pdfLoader').hide();
             });
         });
     </script>

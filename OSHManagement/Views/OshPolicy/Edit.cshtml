@@ -1,0 +1,554 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.OshPolicyViewModel
+@{
+    ViewData["Title"] = $"Edit OSH Policy - {Model.StationName}";
+
+    // Configure Vertical Tabs
+    var tabsConfig = new OSHManagement.Models.ViewModels.TabsConfig
+    {
+        TabsId = "editPolicyTabs",
+        Type = OSHManagement.Models.ViewModels.TabsType.VerticalStyle1,
+        NavColumnClass = "col-md-3",
+        ContentColumnClass = "col-md-9",
+        WrapInCard = true,
+        CardTitle = "",
+        CardSubtitle = "",
+
+        Tabs = new List<OSHManagement.Models.ViewModels.TabConfig>
+        {
+            // ========== TAB 1: Policy Signature & Status ==========
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "policySignature",
+                Title = "Signature & Status",
+                Icon = "ri-file-shield-line",
+                IsActive = true,
+                Content = @<text>
+                    <div class="row">
+                        <!-- Station (Read-only) -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Station</label>
+                            <input type="text" class="form-control" value="@Model.StationName" readonly />
+                            <input asp-for="StationId" type="hidden" />
+                            <div class="form-text">Station cannot be changed after policy creation</div>
+                        </div>
+
+                        <!-- Policy Status -->
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PolicyStatus" class="form-label"></label>
+                            <select asp-for="PolicyStatus" class="form-select" required>
+                                @if (ViewBag.PolicyStatuses != null)
+                                {
+                                    foreach (var status in (IEnumerable<dynamic>)ViewBag.PolicyStatuses)
+                                    {
+                                        <option value="@status.Value" selected="@(status.Value == Model.PolicyStatus)">
+                                            @status.Text
+                                        </option>
+                                    }
+                                }
+                            </select>
+                            <span asp-validation-for="PolicyStatus" class="text-danger"></span>
+                        </div>
+
+                        <!-- Signature Details (Always visible in Edit mode) -->
+                        <div class="col-md-12 mb-3">
+                            <div class="card custom-card border-primary">
+                                <div class="card-body">
+                                    <h6 class="mb-3">
+                                        <i class="ri-user-star-line me-2"></i>Signature Details
+                                    </h6>
+                                    <div class="row">
+                                        <!-- Has Top Management Signature -->
+                                        <div class="col-md-12 mb-3">
+                                            <div class="form-check">
+                                                <input asp-for="HasTopManagementSignature" 
+                                                       class="form-check-input" 
+                                                       type="checkbox" />
+                                                <label asp-for="HasTopManagementSignature" class="form-check-label">
+                                                    <strong>Policy Signed by Top Management</strong>
+                                                </label>
+                                            </div>
+                                            <div class="form-text">Check this box to confirm the policy has been officially signed</div>
+                                        </div>
+
+                                        <!-- Date Signed -->
+                                        <div class="col-md-6 mb-3">
+                                            <label asp-for="DateSigned" class="form-label"></label>
+                                            <input asp-for="DateSigned" 
+                                                   type="date" 
+                                                   class="form-control" />
+                                            <span asp-validation-for="DateSigned" class="text-danger"></span>
+                                            <div class="form-text">Date when policy was signed by management</div>
+                                        </div>
+
+                                        <!-- Signed By (Employee) -->
+                                        <div class="col-md-6 mb-3">
+                                            <label asp-for="SignedByPayroll" class="form-label"></label>
+                                            <select asp-for="SignedByPayroll" class="form-select">
+                                                <option value="">-- Select Signatory --</option>
+                                                @if (ViewBag.Employees != null)
+                                                {
+                                                    foreach (var emp in (IEnumerable<dynamic>)ViewBag.Employees)
+                                                    {
+                                                        <option value="@emp.PayrollNo" 
+                                                                selected="@(emp.PayrollNo == Model.SignedByPayroll)">
+                                                            @emp.FullName (@emp.PayrollNo)
+                                                        </option>
+                                                    }
+                                                }
+                                            </select>
+                                            <span asp-validation-for="SignedByPayroll" class="text-danger"></span>
+                                            <div class="form-text">Select the employee who signed the policy</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save Button -->
+                        <div class="col-12 mt-4">
+                            <div class="d-flex justify-content-between">
+                                <a asp-action="Index" class="btn btn-secondary">
+                                    <i class="ri-arrow-left-line me-1"></i>Back to List
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="ri-save-line me-1"></i>Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </text>
+            },
+
+            // ========== TAB 2: Implementation & Review ==========
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "implementationReview",
+                Title = "Implementation & Review",
+                Icon = "ri-checkbox-circle-line",
+                Content = @<text>
+                    <div class="row">
+                        <!-- Policy Implementation Status -->
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check">
+                                <input asp-for="IsPolicyImplemented" 
+                                       class="form-check-input" 
+                                       type="checkbox" 
+                                       id="isPolicyImplementedCheck" />
+                                <label class="form-check-label" for="isPolicyImplementedCheck">
+                                    <strong>Policy is Being Implemented</strong>
+                                </label>
+                            </div>
+                            <div class="form-text">Indicates whether the policy is actively implemented at the station</div>
+                        </div>
+
+                        <!-- Last Reviewed Date -->
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="LastReviewedDate" class="form-label"></label>
+                            <input asp-for="LastReviewedDate" 
+                                   type="date" 
+                                   class="form-control" />
+                            <span asp-validation-for="LastReviewedDate" class="text-danger"></span>
+                            <div class="form-text">OSH policies should be reviewed annually</div>
+                        </div>
+
+                        <!-- Next Review Due (Calculated, Read-only) -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Next Review Due</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   value="@Model.FormattedNextReviewDue" 
+                                   readonly />
+                            @if (Model.IsReviewOverdue)
+                            {
+                                <div class="form-text text-danger">
+                                    <i class="ri-alert-line"></i> Review is overdue
+                                </div>
+                            }
+                            else if (Model.LastReviewedDate.HasValue)
+                            {
+                                <div class="form-text">
+                                    Calculated as 1 year from last review date
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Communication Methods -->
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="CommunicationMethods" class="form-label"></label>
+                            <textarea asp-for="CommunicationMethods" 
+                                      class="form-control" 
+                                      rows="4"
+                                      placeholder="E.g., Notice boards, staff meetings, email circulars, induction training, safety briefings"></textarea>
+                            <span asp-validation-for="CommunicationMethods" class="text-danger"></span>
+                            <div class="form-text">Describe how the OSH policy is communicated to all employees</div>
+                        </div>
+
+                        <!-- Contractor Charter Exists -->
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check">
+                                <input asp-for="ContractorCharterExists" 
+                                       class="form-check-input" 
+                                       type="checkbox" 
+                                       id="contractorCharterCheck" />
+                                <label class="form-check-label" for="contractorCharterCheck">
+                                    <strong>Contractor Safety Charter Exists</strong>
+                                </label>
+                            </div>
+                            <div class="form-text">Indicates if a separate safety charter for contractors is in place</div>
+                        </div>
+
+                        <!-- Save Button -->
+                        <div class="col-12 mt-4">
+                            <div class="d-flex justify-content-between">
+                                <a asp-action="Index" class="btn btn-secondary">
+                                    <i class="ri-arrow-left-line me-1"></i>Back to List
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="ri-save-line me-1"></i>Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </text>
+            },
+
+            // ========== TAB 3: Responsibilities ==========
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "responsibilities",
+                Title = "Responsibilities",
+                Icon = "ri-team-line",
+                Content = @<text>
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <div class="alert alert-info border-0">
+                                <i class="ri-information-line me-2"></i>
+                                <strong>Define OSH Responsibilities</strong> for different stakeholder groups at the station
+                            </div>
+                        </div>
+
+                        <!-- Management Responsibilities -->
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="ManagementResponsibilities" class="form-label"></label>
+                            <textarea asp-for="ManagementResponsibilities" 
+                                      class="form-control" 
+                                      rows="4"
+                                      placeholder="E.g., Provide resources for OSH, ensure compliance with regulations, review policy annually..."></textarea>
+                            <span asp-validation-for="ManagementResponsibilities" class="text-danger"></span>
+                            <div class="form-text">Key responsibilities of management regarding OSH</div>
+                        </div>
+
+                        <!-- Supervisor Responsibilities -->
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="SupervisorResponsibilities" class="form-label"></label>
+                            <textarea asp-for="SupervisorResponsibilities" 
+                                      class="form-control" 
+                                      rows="4"
+                                      placeholder="E.g., Enforce safety rules, conduct inspections, report hazards, ensure team compliance..."></textarea>
+                            <span asp-validation-for="SupervisorResponsibilities" class="text-danger"></span>
+                            <div class="form-text">Supervisory-level OSH responsibilities</div>
+                        </div>
+
+                        <!-- Outsourced Labour Responsibilities -->
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="OutsourcedResponsibilities" class="form-label"></label>
+                            <textarea asp-for="OutsourcedResponsibilities" 
+                                      class="form-control" 
+                                      rows="3"
+                                      placeholder="E.g., Adhere to safety standards, report hazards, ensure compliance with the policy..."></textarea>
+                            <span asp-validation-for="OutsourcedResponsibilities" class="text-danger"></span>
+                            <div class="form-text">Optional: Responsibilities for outsourced workers</div>
+                        </div>
+
+                        <!-- Contractor Responsibilities -->
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="ContractorResponsibilities" class="form-label"></label>
+                            <textarea asp-for="ContractorResponsibilities" 
+                                      class="form-control" 
+                                      rows="3"
+                                      placeholder="E.g., Comply with safety standards, report hazards, ensure compliance with the policy..."></textarea>
+                            <span asp-validation-for="ContractorResponsibilities" class="text-danger"></span>
+                            <div class="form-text">Optional: Responsibilities for contractors working at the station</div>
+                        </div>
+
+                        <!-- Save Button -->
+                        <div class="col-12 mt-4">
+                            <div class="d-flex justify-content-between">
+                                <a asp-action="Index" class="btn btn-secondary">
+                                    <i class="ri-arrow-left-line me-1"></i>Back to List
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="ri-save-line me-1"></i>Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </text>
+            },
+
+            // ========== TAB 4: Documents & Charter ==========
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "documentsCharter",
+                Title = "Documents & Charter",
+                Icon = "ri-file-text-line",
+                Content = @<text>
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <div class="alert alert-warning border-0">
+                                <i class="ri-error-warning-line me-2"></i>
+                                <strong>Note:</strong> Document management for policies is handled separately. 
+                                Use the document viewer to manage existing documents.
+                            </div>
+                        </div>
+
+                        <!-- Existing Documents Section -->
+                        <div class="col-12 mb-4">
+                            <div class="card custom-card border">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">
+                                        <i class="ri-folder-line me-2"></i>Existing Documents
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="existingDocumentsContainer">
+                                        <div class="text-center py-4">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                            <p class="text-muted mt-3">Loading documents...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upload New Documents Section -->
+                        <div class="col-12 mb-3">
+                            <div class="card custom-card border-primary">
+                                <div class="card-header bg-primary-transparent">
+                                    <h6 class="card-title mb-0 text-primary">
+                                        <i class="ri-upload-cloud-line me-2"></i>Upload New Documents
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <!-- Policy Document Upload -->
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Policy Document</label>
+                                            <input type="file" 
+                                                   name="PolicyDocumentFile" 
+                                                   class="form-control" 
+                                                   accept=".pdf,.doc,.docx" />
+                                            <div class="form-text">
+                                                <i class="ri-information-line me-1"></i>
+                                                Upload the official OSH policy document (PDF, DOC, DOCX)
+                                            </div>
+                                        </div>
+
+                                        <!-- Charter Document Upload -->
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Contractor Safety Charter</label>
+                                            <input type="file" 
+                                                   name="CharterDocumentFile" 
+                                                   class="form-control" 
+                                                   accept=".pdf,.doc,.docx" />
+                                            <div class="form-text">
+                                                <i class="ri-information-line me-1"></i>
+                                                Optional: Upload contractor safety charter document
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Document Statistics -->
+                        <div class="col-12 mb-3">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card custom-card border">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar avatar-lg bg-primary-transparent me-3">
+                                                    <i class="ri-file-pdf-line fs-24"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">Policy Documents</h6>
+                                                    <h4 class="mb-0 text-primary" id="policyDocCount">@Model.PolicyDocumentCount</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card custom-card border">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar avatar-lg bg-info-transparent me-3">
+                                                    <i class="ri-file-text-line fs-24"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">Charter Documents</h6>
+                                                    <h4 class="mb-0 text-info" id="charterDocCount">@Model.CharterDocumentCount</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save Button -->
+                        <div class="col-12 mt-4">
+                            <div class="d-flex justify-content-between">
+                                <a asp-action="Index" class="btn btn-secondary">
+                                    <i class="ri-arrow-left-line me-1"></i>Back to List
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="ri-save-line me-1"></i>Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </text>
+            }
+        }
+    };
+
+    var tabs = OSHManagement.Extensions.TabsExtensions.BuildTabs(tabsConfig);
+}
+
+
+
+<!-- Form Wrapper -->
+<form asp-action="Edit" asp-route-id="@Model.PolicyId" method="post" enctype="multipart/form-data" id="editPolicyForm">
+    @Html.AntiForgeryToken()
+    <input asp-for="PolicyId" type="hidden" />
+    <input asp-for="StationId" type="hidden" />
+    
+    <!-- Vertical Tabs -->
+    <partial name="~/Views/Shared/Components/Tabs/VerticalTabs.cshtml" model="tabs" />
+</form>
+
+@section Scripts {
+    <partial name="~/Views/Shared/_ValidationScriptsPartial.cshtml" />
+    
+    <script>
+        $(document).ready(function() {
+            // ========================================
+            // Load Existing Documents
+            // ========================================
+            loadPolicyDocuments();
+
+            function loadPolicyDocuments() {
+                const policyId = @Model.PolicyId;
+
+                $.ajax({
+                    url: '/OshPolicy/GetPolicyDocuments',
+                    type: 'GET',
+                    data: { policyId: policyId },
+                    success: function(response) {
+                        if (response.success && response.documents && response.documents.length > 0) {
+                            renderDocuments(response.documents);
+                        } else {
+                            showNoDocuments();
+                        }
+                    },
+                    error: function() {
+                        showErrorMessage();
+                    }
+                });
+            }
+
+            function renderDocuments(documents) {
+                let html = '<div class="list-group">';
+
+                documents.forEach(function(doc) {
+                    const fileIcon = getFileIcon(doc.fileExtension);
+                    const badge = doc.associationType === 'policy_document'
+                        ? '<span class="badge bg-primary-transparent">Policy</span>'
+                        : '<span class="badge bg-info-transparent">Charter</span>';
+
+                    html += `
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar avatar-md bg-light me-3">
+                                    <i class="${fileIcon} fs-20"></i>
+                                </div>
+                                <div class="flex-fill">
+                                    <h6 class="mb-1">${doc.originalFileName}</h6>
+                                    <div class="mb-1">${badge}</div>
+                                    <small class="text-muted">
+                                        <i class="ri-file-line me-1"></i>${formatFileSize(doc.fileSize)} | 
+                                        <i class="ri-calendar-line me-1"></i>${formatDate(doc.uploadedAt)}
+                                    </small>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="/Media/Download/${doc.mediaId}" 
+                                       class="btn btn-primary-light"
+                                       title="Download">
+                                        <i class="ri-download-2-line"></i>
+                                    </a>
+                                    <a href="/Media/View/${doc.mediaId}" 
+                                       target="_blank"
+                                       class="btn btn-info-light"
+                                       title="View">
+                                        <i class="ri-eye-line"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                $('#existingDocumentsContainer').html(html);
+            }
+
+            function showNoDocuments() {
+                $('#existingDocumentsContainer').html(`
+                    <div class="text-center py-4">
+                        <i class="ri-file-forbid-line fs-48 text-muted mb-3"></i>
+                        <p class="text-muted">No documents have been uploaded yet.</p>
+                    </div>
+                `);
+            }
+
+            function showErrorMessage() {
+                $('#existingDocumentsContainer').html(`
+                    <div class="alert alert-danger">
+                        <i class="ri-error-warning-line me-2"></i>
+                        Error loading documents. Please try again.
+                    </div>
+                `);
+            }
+
+            function getFileIcon(extension) {
+                const icons = {
+                    '.pdf': 'ri-file-pdf-line text-danger',
+                    '.doc': 'ri-file-word-line text-primary',
+                    '.docx': 'ri-file-word-line text-primary',
+                    '.xls': 'ri-file-excel-line text-success',
+                    '.xlsx': 'ri-file-excel-line text-success'
+                };
+                return icons[extension.toLowerCase()] || 'ri-file-line';
+            }
+
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+            }
+
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                return date.toLocaleDateString('en-US', options);
+            }
+        });
+    </script>
+}

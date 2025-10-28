@@ -147,6 +147,32 @@ namespace OSHManagement.Controllers
                 }
             }
 
+            // Get document counts for policies
+            var policyIds = policies.Select(p => p.PolicyId).ToList();
+            var policyIdStrings = policyIds.Select(id => id.ToString()).ToList();
+            var documentCounts = await _context.MediaAssociations
+                .Where(ma => ma.AssociatedTable == "OshPolicies" && policyIdStrings.Contains(ma.AssociatedRecordId) && ma.IsActive)
+                .GroupBy(ma => new { ma.AssociatedRecordId, ma.AssociationType })
+                .Select(g => new
+                {
+                    PolicyIdString = g.Key.AssociatedRecordId,
+                    AssociationType = g.Key.AssociationType,
+                    Count = g.Count()
+                })
+                .ToListAsync();
+
+            // Populate document counts
+            foreach (var policy in policies)
+            {
+                var policyIdString = policy.PolicyId.ToString();
+                policy.PolicyDocumentCount = documentCounts
+                    .Where(dc => dc.PolicyIdString == policyIdString && dc.AssociationType == "policy_document")
+                    .Sum(dc => dc.Count);
+                policy.CharterDocumentCount = documentCounts
+                    .Where(dc => dc.PolicyIdString == policyIdString && dc.AssociationType == "charter_document")
+                    .Sum(dc => dc.Count);
+            }
+
             // Pass pagination info to view
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
@@ -346,6 +372,22 @@ namespace OSHManagement.Controllers
             }
 
             await PopulateDropdowns();
+
+            // Filter employees to only show those from the policy's station
+            var stationEmployeesQuery = _context.Employees
+                .Where(e => e.EmploymentStatus == "Active" && e.StationId == policy.StationId)
+                .AsQueryable();
+
+            // Apply scope filtering for security
+            stationEmployeesQuery = _scopeFilterService.ApplyScope(stationEmployeesQuery, CurrentScope);
+
+            var stationEmployees = await stationEmployeesQuery
+                .OrderBy(e => e.LastName).ThenBy(e => e.FirstName)
+                .Select(e => new { e.PayrollNo, FullName = e.FirstName + " " + e.LastName })
+                .ToListAsync();
+
+            ViewBag.Employees = stationEmployees;
+
             return View(model);
         }
 
@@ -596,6 +638,59 @@ namespace OSHManagement.Controllers
             {
                 _logger.LogError(ex, "Error fetching employees for station {StationId}", stationId);
                 return Json(new List<object>());
+            }
+        }
+
+        // GET: OshPolicy/GetPolicyDocuments
+        [HttpGet]
+        public async Task<IActionResult> GetPolicyDocuments(int policyId)
+        {
+            try
+            {
+                // Verify policy exists and is accessible
+                var policyQuery = _context.OshPolicies
+                    .Where(p => p.PolicyId == policyId)
+                    .AsQueryable();
+
+                // Apply scope filtering
+                policyQuery = _scopeFilterService.ApplyScope(policyQuery, CurrentScope);
+
+                var policy = await policyQuery.FirstOrDefaultAsync();
+
+                if (policy == null)
+                {
+                    return Json(new { success = false, message = "Policy not found" });
+                }
+
+                // Get all media associations for this policy
+                var documents = await _context.MediaAssociations
+                    .Where(ma => ma.AssociatedTable == "OshPolicies"
+                               && ma.AssociatedRecordId == policyId.ToString()
+                               && ma.IsActive)
+                    .Include(ma => ma.Media)
+                    .Select(ma => new
+                    {
+                        mediaId = ma.Media.MediaId,
+                        originalFileName = ma.Media.OriginalFilename,
+                        fileExtension = ma.Media.FileExtension,
+                        fileSize = ma.Media.FileSizeBytes,
+                        title = ma.Media.Title,
+                        description = ma.Media.Description,
+                        fileUrl = ma.Media.FilePath,
+                        uploadedAt = ma.Media.CreatedAt,
+                        associationType = ma.AssociationType,
+                        displayOrder = ma.DisplayOrder
+                    })
+                    .OrderBy(d => d.displayOrder)
+                    .ThenBy(d => d.uploadedAt)
+                    .ToListAsync();
+
+                return Json(new { success = true, documents });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching documents for policy {PolicyId}", policyId);
+                return Json(new { success = false, message = "Error loading documents" });
             }
         }
 

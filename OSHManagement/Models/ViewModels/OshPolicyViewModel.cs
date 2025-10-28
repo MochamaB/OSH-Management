@@ -67,6 +67,11 @@ namespace OSHManagement.Models.ViewModels
         public string? OrgCategoryName { get; set; }
         public string? SignedByName { get; set; }
 
+        // Document information
+        public int PolicyDocumentCount { get; set; }
+        public int CharterDocumentCount { get; set; }
+        public bool HasDocuments => PolicyDocumentCount > 0 || CharterDocumentCount > 0;
+
         // Helper properties for UI
         public string FormattedDateSigned => DateSigned?.ToString("MMM dd, yyyy") ?? "—";
         public string FormattedLastReviewed => LastReviewedDate?.ToString("MMM dd, yyyy") ?? "—";
