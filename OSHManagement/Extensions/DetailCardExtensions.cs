@@ -19,6 +19,7 @@ namespace OSHManagement.Extensions
                 CardId = config.CardId,
                 Icon = config.Icon,
                 IconColor = config.IconColor,
+                BorderColor = config.BorderColor,
                 Title = config.Title,
                 Subtitle = config.Subtitle,
                 Category = config.Category,

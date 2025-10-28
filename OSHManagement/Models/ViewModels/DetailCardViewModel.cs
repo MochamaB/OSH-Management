@@ -9,6 +9,7 @@ namespace OSHManagement.Models.ViewModels
         public string CardId { get; set; } = "detailCard";
         public string Icon { get; set; } = "ri-folder-line";
         public string IconColor { get; set; } = "primary"; // primary, secondary, success, danger, warning, info
+        public string BorderColor { get; set; } = "primary"; // Left border and background color
         public string Title { get; set; } = "";
         public string? Subtitle { get; set; }
         public string? Category { get; set; } // e.g., "Category Type", "Department"
@@ -84,6 +85,7 @@ namespace OSHManagement.Models.ViewModels
         public string CardId { get; set; } = "";
         public string Icon { get; set; } = "";
         public string IconColor { get; set; } = "primary";
+        public string BorderColor { get; set; } = "primary";
         public string Title { get; set; } = "";
         public string? Subtitle { get; set; }
         public string? Category { get; set; }

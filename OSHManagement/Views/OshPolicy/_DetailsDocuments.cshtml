@@ -1,0 +1,218 @@
+@model OSHManagement.Models.ViewModels.OshPolicyViewModel
+
+<div class="p-3">
+    <!-- Document Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card custom-card border">
+                <div class="card-body text-center">
+                    <div class="avatar avatar-xl bg-primary-transparent mx-auto mb-3">
+                        <i class="ri-file-pdf-line fs-32"></i>
+                    </div>
+                    <h3 class="mb-1 text-primary">@(ViewBag.PolicyDocumentCount ?? 0)</h3>
+                    <p class="text-muted mb-0">Policy Documents</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card custom-card border">
+                <div class="card-body text-center">
+                    <div class="avatar avatar-xl bg-info-transparent mx-auto mb-3">
+                        <i class="ri-file-text-line fs-32"></i>
+                    </div>
+                    <h3 class="mb-1 text-info">@(ViewBag.CharterDocumentCount ?? 0)</h3>
+                    <p class="text-muted mb-0">Charter Documents</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card custom-card border">
+                <div class="card-body text-center">
+                    <div class="avatar avatar-xl bg-success-transparent mx-auto mb-3">
+                        <i class="ri-folder-line fs-32"></i>
+                    </div>
+                    <h3 class="mb-1 text-success">@(ViewBag.TotalDocumentCount ?? 0)</h3>
+                    <p class="text-muted mb-0">Total Documents</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Documents Container -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card custom-card border">
+                <div class="card-header">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6 class="card-title mb-0">
+                            <i class="ri-folder-open-line me-2"></i>Policy Documents
+                        </h6>
+                        <a asp-action="Edit" asp-route-id="@Model.PolicyId" class="btn btn-sm btn-primary">
+                            <i class="ri-upload-line me-1"></i>Upload Documents
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="documentsContainer">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-muted mt-3">Loading documents...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            loadPolicyDocuments();
+
+            function loadPolicyDocuments() {
+                const policyId = @Model.PolicyId;
+
+                $.ajax({
+                    url: '/OshPolicy/GetPolicyDocuments',
+                    type: 'GET',
+                    data: { policyId: policyId },
+                    success: function(response) {
+                        if (response.success && response.documents && response.documents.length > 0) {
+                            renderDocuments(response.documents);
+                        } else {
+                            showNoDocuments();
+                        }
+                    },
+                    error: function() {
+                        showErrorMessage();
+                    }
+                });
+            }
+
+            function renderDocuments(documents) {
+                let html = '<div class="list-group">';
+
+                documents.forEach(function(doc) {
+                    const fileIcon = getFileIcon(doc.fileExtension);
+                    const fileTypeClass = getFileTypeClass(doc.fileExtension);
+                    const badge = doc.associationType === 'policy_document'
+                        ? '<span class="badge bg-primary-transparent">Policy Document</span>'
+                        : '<span class="badge bg-info-transparent">Safety Charter</span>';
+
+                    html += `
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar avatar-lg bg-${fileTypeClass}-transparent me-3">
+                                    <i class="${fileIcon} fs-24"></i>
+                                </div>
+                                <div class="flex-fill">
+                                    <h6 class="mb-1">${doc.originalFileName}</h6>
+                                    <div class="mb-2">${badge}</div>
+                                    ${doc.title ? `<p class="text-muted mb-1 small"><strong>Title:</strong> ${doc.title}</p>` : ''}
+                                    ${doc.description ? `<p class="text-muted mb-1 small">${doc.description}</p>` : ''}
+                                    <small class="text-muted">
+                                        <i class="ri-file-line me-1"></i>${formatFileSize(doc.fileSize)} | 
+                                        <i class="ri-calendar-line me-1"></i>${formatDate(doc.uploadedAt)}
+                                    </small>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button"
+                                            class="btn btn-info-light view-pdf-btn"
+                                            data-media-id="${doc.mediaId}"
+                                            data-file-name="${doc.originalFileName}"
+                                            data-file-ext="${doc.fileExtension}"
+                                            title="Preview">
+                                        <i class="ri-eye-line"></i>
+                                    </button>
+                                    <a href="/Media/Download/${doc.mediaId}" 
+                                       class="btn btn-primary-light"
+                                       title="Download">
+                                        <i class="ri-download-2-line"></i>
+                                    </a>
+                                    <a href="/Media/View/${doc.mediaId}" 
+                                       target="_blank"
+                                       class="btn btn-secondary-light"
+                                       title="Open in New Tab">
+                                        <i class="ri-external-link-line"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                $('#documentsContainer').html(html);
+            }
+
+            function showNoDocuments() {
+                $('#documentsContainer').html(`
+                    <div class="text-center py-5">
+                        <i class="ri-file-forbid-line fs-48 text-muted mb-3 d-block"></i>
+                        <h6 class="mb-2">No Documents Found</h6>
+                        <p class="text-muted mb-3">No documents have been uploaded for this policy yet.</p>
+                        <a href="/OshPolicy/Edit/@Model.PolicyId" class="btn btn-primary btn-sm">
+                            <i class="ri-upload-line me-1"></i>Upload Documents
+                        </a>
+                    </div>
+                `);
+            }
+
+            function showErrorMessage() {
+                $('#documentsContainer').html(`
+                    <div class="alert alert-danger">
+                        <i class="ri-error-warning-line me-2"></i>
+                        Error loading documents. Please try again.
+                    </div>
+                `);
+            }
+
+            function getFileIcon(extension) {
+                const icons = {
+                    '.pdf': 'ri-file-pdf-line',
+                    '.doc': 'ri-file-word-line',
+                    '.docx': 'ri-file-word-line',
+                    '.xls': 'ri-file-excel-line',
+                    '.xlsx': 'ri-file-excel-line',
+                    '.txt': 'ri-file-text-line',
+                    '.jpg': 'ri-image-line',
+                    '.jpeg': 'ri-image-line',
+                    '.png': 'ri-image-line'
+                };
+                return icons[extension.toLowerCase()] || 'ri-file-line';
+            }
+
+            function getFileTypeClass(extension) {
+                const classes = {
+                    '.pdf': 'danger',
+                    '.doc': 'primary',
+                    '.docx': 'primary',
+                    '.xls': 'success',
+                    '.xlsx': 'success',
+                    '.txt': 'secondary',
+                    '.jpg': 'info',
+                    '.jpeg': 'info',
+                    '.png': 'info'
+                };
+                return classes[extension.toLowerCase()] || 'secondary';
+            }
+
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+            }
+
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                return date.toLocaleDateString('en-US', options);
+            }
+        });
+    </script>
+}

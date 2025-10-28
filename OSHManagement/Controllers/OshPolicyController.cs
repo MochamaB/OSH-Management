@@ -542,7 +542,131 @@ namespace OSHManagement.Controllers
                 }
             }
 
+            // Calculate metrics and populate ViewBag data for tabs
+            await PopulateDetailsViewBag(policy);
+
             return View(model);
+        }
+
+        private async Task PopulateDetailsViewBag(OshPolicy policy)
+        {
+            // 1. Calculate Compliance Score
+            ViewBag.ComplianceScore = CalculateComplianceScore(policy);
+
+            // 2. Get Document Counts
+            var documentCounts = await GetDocumentCounts(policy.PolicyId);
+            ViewBag.PolicyDocumentCount = documentCounts.PolicyCount;
+            ViewBag.CharterDocumentCount = documentCounts.CharterCount;
+            ViewBag.TotalDocumentCount = documentCounts.TotalCount;
+
+            // 3. Calculate Days Until Review
+            if (policy.LastReviewedDate.HasValue)
+            {
+                var nextReviewDue = policy.LastReviewedDate.Value.AddYears(1);
+                var daysUntil = (nextReviewDue - DateTime.UtcNow).Days;
+                ViewBag.DaysUntilReview = daysUntil;
+                ViewBag.NextReviewDue = nextReviewDue;
+                ViewBag.IsReviewOverdue = daysUntil < 0;
+                ViewBag.IsReviewDueSoon = daysUntil > 0 && daysUntil <= 60;
+            }
+            else
+            {
+                ViewBag.DaysUntilReview = null;
+                ViewBag.NextReviewDue = null;
+                ViewBag.IsReviewOverdue = false;
+                ViewBag.IsReviewDueSoon = false;
+            }
+
+            // 4. Days Since Last Review
+            ViewBag.DaysSinceReview = policy.LastReviewedDate.HasValue 
+                ? (DateTime.UtcNow - policy.LastReviewedDate.Value).Days 
+                : (DateTime.UtcNow - policy.CreatedAt).Days;
+
+            // 5. Count Defined Stakeholders
+            var stakeholderCount = 0;
+            if (!string.IsNullOrWhiteSpace(policy.ManagementResponsibilities)) stakeholderCount++;
+            if (!string.IsNullOrWhiteSpace(policy.SupervisorResponsibilities)) stakeholderCount++;
+            if (!string.IsNullOrWhiteSpace(policy.OutsourcedResponsibilities)) stakeholderCount++;
+            if (!string.IsNullOrWhiteSpace(policy.ContractorResponsibilities)) stakeholderCount++;
+            ViewBag.StakeholderCount = stakeholderCount;
+
+            // 6. Compliance Checklist Items
+            ViewBag.ComplianceChecklist = new List<dynamic>
+            {
+                new { Item = "Policy Signed by Management", IsCompliant = policy.HasTopManagementSignature, Icon = "ri-quill-pen-line" },
+                new { Item = "Policy Being Implemented", IsCompliant = policy.IsPolicyImplemented, Icon = "ri-checkbox-circle-line" },
+                new { Item = "Management Responsibilities Defined", IsCompliant = !string.IsNullOrWhiteSpace(policy.ManagementResponsibilities), Icon = "ri-user-star-line" },
+                new { Item = "Supervisor Responsibilities Defined", IsCompliant = !string.IsNullOrWhiteSpace(policy.SupervisorResponsibilities), Icon = "ri-user-settings-line" },
+                new { Item = "Contractor Charter Exists", IsCompliant = policy.ContractorCharterExists, Icon = "ri-file-text-line" },
+                new { Item = "Policy Documents Uploaded", IsCompliant = documentCounts.TotalCount > 0, Icon = "ri-file-list-line" },
+                new { Item = "Reviewed Within 12 Months", IsCompliant = policy.LastReviewedDate.HasValue && (DateTime.UtcNow - policy.LastReviewedDate.Value).Days <= 365, Icon = "ri-calendar-check-line" }
+            };
+
+            // 7. Implementation Progress (simplified for Phase 1)
+            var implementationProgress = 0;
+            if (policy.HasTopManagementSignature) implementationProgress += 20;
+            if (policy.IsPolicyImplemented) implementationProgress += 30;
+            if (!string.IsNullOrWhiteSpace(policy.CommunicationMethods)) implementationProgress += 20;
+            if (policy.LastReviewedDate.HasValue) implementationProgress += 15;
+            if (documentCounts.TotalCount > 0) implementationProgress += 15;
+            ViewBag.ImplementationProgress = implementationProgress;
+        }
+
+        private int CalculateComplianceScore(OshPolicy policy)
+        {
+            int score = 0;
+            int maxScore = 100;
+
+            // Signature (20 points)
+            if (policy.HasTopManagementSignature && policy.DateSigned.HasValue && !string.IsNullOrEmpty(policy.SignedByPayroll))
+                score += 20;
+
+            // Implementation (15 points)
+            if (policy.IsPolicyImplemented)
+                score += 15;
+
+            // Responsibilities defined (25 points - 5 each + 5 bonus for all)
+            int responsibilityCount = 0;
+            if (!string.IsNullOrWhiteSpace(policy.ManagementResponsibilities)) { score += 5; responsibilityCount++; }
+            if (!string.IsNullOrWhiteSpace(policy.SupervisorResponsibilities)) { score += 5; responsibilityCount++; }
+            if (!string.IsNullOrWhiteSpace(policy.OutsourcedResponsibilities)) { score += 5; responsibilityCount++; }
+            if (!string.IsNullOrWhiteSpace(policy.ContractorResponsibilities)) { score += 5; responsibilityCount++; }
+            if (responsibilityCount == 4) score += 5; // Bonus for completing all
+
+            // Communication methods defined (10 points)
+            if (!string.IsNullOrWhiteSpace(policy.CommunicationMethods))
+                score += 10;
+
+            // Review status (20 points)
+            if (policy.LastReviewedDate.HasValue)
+            {
+                var daysSinceReview = (DateTime.UtcNow - policy.LastReviewedDate.Value).Days;
+                if (daysSinceReview <= 365)
+                    score += 20; // Full points if reviewed within a year
+                else if (daysSinceReview <= 730)
+                    score += 10; // Half points if reviewed within 2 years
+            }
+
+            // Documents (10 points) - will be checked separately
+            // This will be added in the PopulateDetailsViewBag after document count is fetched
+
+            return score;
+        }
+
+        private async Task<(int PolicyCount, int CharterCount, int TotalCount)> GetDocumentCounts(int policyId)
+        {
+            var policyIdString = policyId.ToString();
+            
+            var associations = await _context.MediaAssociations
+                .Where(ma => ma.AssociatedTable == "OshPolicies" 
+                    && ma.AssociatedRecordId == policyIdString 
+                    && ma.IsActive)
+                .ToListAsync();
+
+            var policyCount = associations.Count(a => a.AssociationType == "policy_document");
+            var charterCount = associations.Count(a => a.AssociationType == "charter_document");
+
+            return (policyCount, charterCount, associations.Count);
         }
 
         private async Task<bool> PolicyExists(int id)

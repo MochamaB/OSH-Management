@@ -3,7 +3,7 @@
 
 @if (Model.WrapInCard)
 {
-    <div class="card custom-card">
+    <div class="">
         @if (!string.IsNullOrEmpty(Model.CardTitle))
         {
             <div class="card-header">
@@ -14,7 +14,7 @@
                 }
             </div>
         }
-        <div class="card-body">
+        <div class="">
             <partial name="~/Views/Shared/Components/Tabs/_HorizontalTabsContent.cshtml" model="Model" />
         </div>
     </div>

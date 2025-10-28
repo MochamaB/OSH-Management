@@ -1,0 +1,210 @@
+@model OSHManagement.Models.ViewModels.OshPolicyViewModel
+
+<div class="p-3">
+    <div class="alert alert-info border-0 mb-4">
+        <div class="d-flex align-items-start">
+            <i class="ri-information-line fs-4 me-3"></i>
+            <div>
+                <h6 class="alert-heading mb-2">Stakeholder Responsibilities</h6>
+                <p class="mb-0 small">
+                    Defined OSH responsibilities for different stakeholder groups at this station. 
+                    <strong>Phase 3</strong> will add employee assignment and acknowledgment tracking.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Management Responsibilities -->
+        <div class="col-md-12 mb-4">
+            <div class="card custom-card border @(string.IsNullOrWhiteSpace(Model.ManagementResponsibilities) ? "border-danger" : "")">
+                <div class="card-header bg-primary-transparent">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6 class="card-title mb-0">
+                            <i class="ri-user-star-line me-2"></i>Management Responsibilities
+                        </h6>
+                        @if (!string.IsNullOrWhiteSpace(Model.ManagementResponsibilities))
+                        {
+                            <span class="badge bg-success">
+                                <i class="ri-check-line me-1"></i>Defined
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">
+                                <i class="ri-close-line me-1"></i>Not Defined
+                            </span>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrWhiteSpace(Model.ManagementResponsibilities))
+                    {
+                        <p class="mb-0" style="white-space: pre-wrap;">@Model.ManagementResponsibilities</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">
+                            <i class="ri-error-warning-line me-2"></i>
+                            Management responsibilities have not been defined. 
+                            <a asp-action="Edit" asp-route-id="@Model.PolicyId" class="text-primary">Define now</a>
+                        </p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Supervisor Responsibilities -->
+        <div class="col-md-12 mb-4">
+            <div class="card custom-card border @(string.IsNullOrWhiteSpace(Model.SupervisorResponsibilities) ? "border-danger" : "")">
+                <div class="card-header bg-info-transparent">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6 class="card-title mb-0">
+                            <i class="ri-user-settings-line me-2"></i>Supervisor Responsibilities
+                        </h6>
+                        @if (!string.IsNullOrWhiteSpace(Model.SupervisorResponsibilities))
+                        {
+                            <span class="badge bg-success">
+                                <i class="ri-check-line me-1"></i>Defined
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">
+                                <i class="ri-close-line me-1"></i>Not Defined
+                            </span>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrWhiteSpace(Model.SupervisorResponsibilities))
+                    {
+                        <p class="mb-0" style="white-space: pre-wrap;">@Model.SupervisorResponsibilities</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">
+                            <i class="ri-error-warning-line me-2"></i>
+                            Supervisor responsibilities have not been defined. 
+                            <a asp-action="Edit" asp-route-id="@Model.PolicyId" class="text-primary">Define now</a>
+                        </p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Outsourced Labour Responsibilities -->
+        <div class="col-md-12 mb-4">
+            <div class="card custom-card border">
+                <div class="card-header bg-warning-transparent">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6 class="card-title mb-0">
+                            <i class="ri-user-follow-line me-2"></i>Outsourced Labour Responsibilities
+                        </h6>
+                        @if (!string.IsNullOrWhiteSpace(Model.OutsourcedResponsibilities))
+                        {
+                            <span class="badge bg-success">
+                                <i class="ri-check-line me-1"></i>Defined
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+                                <i class="ri-subtract-line me-1"></i>Optional
+                            </span>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrWhiteSpace(Model.OutsourcedResponsibilities))
+                    {
+                        <p class="mb-0" style="white-space: pre-wrap;">@Model.OutsourcedResponsibilities</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">
+                            <i class="ri-information-line me-2"></i>
+                            No responsibilities defined for outsourced labour. This is optional.
+                        </p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Contractor Responsibilities -->
+        <div class="col-md-12 mb-4">
+            <div class="card custom-card border">
+                <div class="card-header bg-success-transparent">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6 class="card-title mb-0">
+                            <i class="ri-building-line me-2"></i>Contractor Responsibilities
+                        </h6>
+                        @if (!string.IsNullOrWhiteSpace(Model.ContractorResponsibilities))
+                        {
+                            <span class="badge bg-success">
+                                <i class="ri-check-line me-1"></i>Defined
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+                                <i class="ri-subtract-line me-1"></i>Optional
+                            </span>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrWhiteSpace(Model.ContractorResponsibilities))
+                    {
+                        <p class="mb-0" style="white-space: pre-wrap;">@Model.ContractorResponsibilities</p>
+                        
+                        @if (Model.ContractorCharterExists)
+                        {
+                            <div class="alert alert-success mt-3 mb-0">
+                                <i class="ri-checkbox-circle-line me-2"></i>
+                                A separate <strong>Contractor Safety Charter</strong> document exists for this station.
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">
+                            <i class="ri-information-line me-2"></i>
+                            No responsibilities defined for contractors. This is optional.
+                        </p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phase 3 Preview -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card custom-card border-dashed">
+                <div class="card-body text-center py-5">
+                    <img src="~/assets/images/vectors/assignment.png" 
+                         alt="Assignment" 
+                         class="img-fluid mb-4" 
+                         style="max-width: 300px; opacity: 0.7;" />
+                    <h5 class="mb-3">Responsibility Assignment</h5>
+                    <p class="text-muted mb-3" style="max-width: 600px; margin: 0 auto;">
+                        <strong>Coming in Phase 3:</strong> Assign specific employees to each responsibility category,
+                        track acknowledgments, and send automated reminders.
+                    </p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <span class="badge bg-primary-transparent">
+                            <i class="ri-user-add-line me-1"></i>Employee Assignment
+                        </span>
+                        <span class="badge bg-info-transparent">
+                            <i class="ri-checkbox-line me-1"></i>Acknowledgment Tracking
+                        </span>
+                        <span class="badge bg-warning-transparent">
+                            <i class="ri-notification-line me-1"></i>Automated Reminders
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

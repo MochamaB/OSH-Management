@@ -1,9 +1,13 @@
 @using OSHManagement.Extensions
 @model OSHManagement.Models.ViewModels.DetailCardViewModel
 
+@{
+    var borderColor = !string.IsNullOrEmpty(Model.BorderColor) ? Model.BorderColor : "primary";
+}
+
 @if (Model.ShowCard)
 {
-    <div class="card custom-card" id="@Model.CardId">
+    <div class="card custom-card dashboard-main-card @borderColor bg-@(borderColor)-transparent" id="@Model.CardId">
         <div class="pt-4 pb-0 ps-4 pe-4">
             <!-- Top Section: Action Buttons -->
             @if (Model.HasActions)
@@ -109,12 +113,20 @@
             <!-- Fields Grid with Top Border -->
             @if (Model.HasFields)
             {
-                <div class="border-top mt-3 pt-0">
-                    <div class="row g-3">
+                <div class="border-top mt-3 pt-3">
+                    <div class="row g-0">
+                        @{
+                            var fieldCount = Model.Fields.Count();
+                            var fieldIndex = 0;
+                        }
                         @foreach (var field in Model.Fields)
                         {
-                            <div class="col-auto">
-                                <div class="border-right p-2 d-flex align-items-center gap-2">
+                            fieldIndex++;
+                            var isLast = fieldIndex == fieldCount;
+                            var borderClass = isLast ? "" : "border-end";
+                            
+                            <div class="col @borderClass">
+                                <div class="px-3 py-2 d-flex align-items-center gap-2">
                                     @if (!string.IsNullOrEmpty(field.Icon))
                                     {
                                         <i class="@field.Icon text-muted fs-16"></i>

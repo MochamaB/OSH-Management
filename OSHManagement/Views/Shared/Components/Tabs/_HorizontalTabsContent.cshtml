@@ -2,7 +2,7 @@
 @model OSHManagement.Models.ViewModels.TabsViewModel
 
 <!-- Horizontal Tabs (Tab Style-8 from Vyzor) -->
-<ul class="nav nav-tabs mb-3 tab-style-8 scaleX" id="@Model.TabsId" role="tablist">
+<ul class="nav nav-tabs mb-0 tab-style-8 scaleX" id="@Model.TabsId" role="tablist">
     @foreach (var tab in Model.Tabs)
     {
         <li class="nav-item" role="presentation">
@@ -30,7 +30,7 @@
 <div class="tab-content" id="@(Model.TabsId)-content">
     @foreach (var tab in Model.Tabs)
     {
-        <div class="tab-pane fade @(tab.IsActive ? "show active" : "")"
+        <div class="tab-pane mb-2 fade @(tab.IsActive ? "show active" : "")"
              id="@tab.PanelId"
              role="tabpanel"
              aria-labelledby="@tab.NavId"

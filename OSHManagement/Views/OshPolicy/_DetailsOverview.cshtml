@@ -1,0 +1,218 @@
+@model OSHManagement.Models.ViewModels.OshPolicyViewModel
+
+<div class="p-3">
+    <div class="row">
+        <!-- Left Column: Policy Information -->
+        <div class="col-md-6 mb-4">
+            <h6 class="fw-semibold mb-3">
+                <i class="ri-information-line me-2"></i>Policy Information
+            </h6>
+            <div class="table-responsive">
+                <table class="table table-borderless mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted" style="width: 45%;">Station</td>
+                            <td class="fw-medium">@Model.StationName (@Model.StationCode)</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Category</td>
+                            <td class="fw-medium">@(Model.OrgCategoryName ?? "—")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Policy Status</td>
+                            <td>
+                                <span class="badge bg-@(Model.PolicyStatus == "Active" ? "success" : Model.PolicyStatus == "Draft" ? "secondary" : "warning")-transparent">
+                                    @(Model.PolicyStatus ?? "Draft")
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Communication Method</td>
+                            <td class="fw-medium">
+                                @if (!string.IsNullOrWhiteSpace(Model.CommunicationMethods))
+                                {
+                                    @Model.CommunicationMethods
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Not specified</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Created</td>
+                            <td class="fw-medium">@Model.CreatedAt.ToString("dd MMM yyyy, hh:mm tt")</td>
+                        </tr>
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <tr>
+                                <td class="text-muted">Last Updated</td>
+                                <td class="fw-medium">@Model.UpdatedAt.Value.ToString("dd MMM yyyy, hh:mm tt")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <h6 class="fw-semibold mb-3 mt-4">
+                <i class="ri-bar-chart-line me-2"></i>Compliance Breakdown
+            </h6>
+            <div class="progress-stacked mb-3">
+                <div class="progress" role="progressbar" style="width: @(ViewBag.ComplianceScore ?? 0)%">
+                    <div class="progress-bar bg-success">@(ViewBag.ComplianceScore ?? 0)%</div>
+                </div>
+            </div>
+            <p class="text-muted small mb-0">
+                Overall compliance score based on signature, implementation, responsibilities, and review status.
+            </p>
+        </div>
+
+        <!-- Right Column: Statistics & Metrics -->
+        <div class="col-md-6 mb-4">
+            <h6 class="fw-semibold mb-3">
+                <i class="ri-pie-chart-line me-2"></i>Quick Statistics
+            </h6>
+            <div class="row g-3">
+                <!-- Compliance Score -->
+                <div class="col-6">
+                    <div class="card border">
+                        <div class="card-body text-center p-3">
+                            <div class="avatar avatar-lg bg-@(ViewBag.ComplianceScore >= 90 ? "success" : ViewBag.ComplianceScore >= 70 ? "warning" : "danger")-transparent mx-auto mb-2">
+                                <i class="ri-shield-check-line fs-24"></i>
+                            </div>
+                            <h4 class="mb-1 text-@(ViewBag.ComplianceScore >= 90 ? "success" : ViewBag.ComplianceScore >= 70 ? "warning" : "danger")">
+                                @(ViewBag.ComplianceScore ?? 0)%
+                            </h4>
+                            <p class="text-muted mb-0 fs-12">Compliance Score</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documents -->
+                <div class="col-6">
+                    <div class="card border">
+                        <div class="card-body text-center p-3">
+                            <div class="avatar avatar-lg bg-primary-transparent mx-auto mb-2">
+                                <i class="ri-file-list-line fs-24"></i>
+                            </div>
+                            <h4 class="mb-1 text-primary">@(ViewBag.TotalDocumentCount ?? 0)</h4>
+                            <p class="text-muted mb-0 fs-12">Documents</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stakeholders -->
+                <div class="col-6">
+                    <div class="card border">
+                        <div class="card-body text-center p-3">
+                            <div class="avatar avatar-lg bg-info-transparent mx-auto mb-2">
+                                <i class="ri-team-line fs-24"></i>
+                            </div>
+                            <h4 class="mb-1 text-info">@(ViewBag.StakeholderCount ?? 0)/4</h4>
+                            <p class="text-muted mb-0 fs-12">Stakeholders Defined</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Days Since Review -->
+                <div class="col-6">
+                    <div class="card border">
+                        <div class="card-body text-center p-3">
+                            <div class="avatar avatar-lg bg-secondary-transparent mx-auto mb-2">
+                                <i class="ri-calendar-line fs-24"></i>
+                            </div>
+                            <h4 class="mb-1 text-secondary">@(ViewBag.DaysSinceReview ?? 0)</h4>
+                            <p class="text-muted mb-0 fs-12">Days Since Review</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compliance Checklist -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card custom-card border">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="ri-checkbox-multiple-line me-2"></i>Compliance Checklist
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @if (ViewBag.ComplianceChecklist != null)
+                        {
+                            foreach (var item in (IEnumerable<dynamic>)ViewBag.ComplianceChecklist)
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            @if (item.IsCompliant)
+                                            {
+                                                <span class="avatar avatar-sm bg-success-transparent">
+                                                    <i class="ri-check-line fs-18"></i>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="avatar avatar-sm bg-danger-transparent">
+                                                    <i class="ri-close-line fs-18"></i>
+                                                </span>
+                                            }
+                                        </div>
+                                        <div>
+                                            <p class="mb-0 fw-medium">@item.Item</p>
+                                            <small class="text-muted">
+                                                @if (item.IsCompliant)
+                                                {
+                                                    <span class="text-success">Compliant</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-danger">Action Required</span>
+                                                }
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Status Alert -->
+    @if (ViewBag.IsReviewOverdue == true)
+    {
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="alert alert-danger d-flex align-items-center" role="alert">
+                    <i class="ri-error-warning-line fs-20 me-3"></i>
+                    <div>
+                        <strong>Review Overdue!</strong>
+                        This policy is overdue for review. Last reviewed on @Model.LastReviewedDate?.ToString("MMM dd, yyyy").
+                        <a asp-action="Edit" asp-route-id="@Model.PolicyId" class="alert-link">Update review date</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (ViewBag.IsReviewDueSoon == true)
+    {
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="alert alert-warning d-flex align-items-center" role="alert">
+                    <i class="ri-time-line fs-20 me-3"></i>
+                    <div>
+                        <strong>Review Due Soon!</strong>
+                        This policy is due for review in @(ViewBag.DaysUntilReview) days (by @((DateTime)ViewBag.NextReviewDue).ToString("MMM dd, yyyy")).
+                        <a asp-action="Edit" asp-route-id="@Model.PolicyId" class="alert-link">Schedule review</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,209 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.OshPolicyViewModel
+
+@{
+    ViewData["Title"] = $"OSH Policy - {Model.StationName}";
+
+    // Determine compliance status
+    var complianceScore = ViewBag.ComplianceScore ?? 0;
+    var complianceStatus = complianceScore >= 90 ? "Compliant" : complianceScore >= 70 ? "Needs Attention" : "Critical";
+    var complianceBadgeColor = complianceScore >= 90 ? "success" : complianceScore >= 70 ? "warning" : "danger";
+    var complianceIcon = complianceScore >= 90 ? "ri-checkbox-circle-line" : complianceScore >= 70 ? "ri-alert-line" : "ri-error-warning-line";
+
+    // Configure Detail Card
+    var detailCardConfig = new OSHManagement.Models.ViewModels.DetailCardConfig
+    {
+        CardId = "policyDetailCard",
+        Icon = "ri-file-shield-line",
+        IconColor = "primary",
+        Title = $"OSH Policy - {Model.StationName}",
+        Subtitle = $"{Model.OrgCategoryName ?? ""}",
+        Category = Model.StationCode,
+        StatusBadge = new OSHManagement.Models.ViewModels.DetailBadge
+        {
+            Text = complianceStatus,
+            Color = complianceBadgeColor,
+            Icon = complianceIcon
+        },
+        Fields = new List<OSHManagement.Models.ViewModels.DetailField>
+        {
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Policy Status",
+                Value = Model.PolicyStatus ?? "Draft",
+                Icon = "ri-clipboard-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Signed",
+                Value = Model.HasTopManagementSignature ? $"Yes ({Model.SignedByName})" : "Not Signed",
+                Icon = "ri-quill-pen-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Date Signed",
+                Value = Model.DateSigned?.ToString("MMM dd, yyyy") ?? "—",
+                Icon = "ri-calendar-check-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Last Reviewed",
+                Value = Model.LastReviewedDate?.ToString("MMM dd, yyyy") ?? "Not Reviewed",
+                Icon = "ri-eye-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Next Review Due",
+                Value = Model.FormattedNextReviewDue ?? "—",
+                Icon = "ri-calendar-todo-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Documents",
+                Value = $"{ViewBag.TotalDocumentCount ?? 0}",
+                Icon = "ri-file-list-line"
+            }
+        },
+        Actions = new List<OSHManagement.Models.ViewModels.DetailCardAction>
+        {
+            new OSHManagement.Models.ViewModels.DetailCardAction
+            {
+                Text = "Edit Policy",
+                Icon = "ri-edit-line",
+                Url = $"/OshPolicy/Edit/{Model.PolicyId}",
+                ButtonStyle = "primary",
+                ButtonSize = ""
+            },
+            new OSHManagement.Models.ViewModels.DetailCardAction
+            {
+                Text = "Actions",
+                Icon = "ri-more-2-fill",
+                ButtonStyle = "light",
+                ButtonSize = "",
+                IsDropdown = true,
+                DropdownItems = new List<OSHManagement.Models.ViewModels.DropdownItem>
+                {
+                    new OSHManagement.Models.ViewModels.DropdownItem
+                    {
+                        Text = "Generate Report",
+                        Icon = "ri-file-download-line",
+                        Url = $"/OshPolicy/GenerateReport/{Model.PolicyId}"
+                    },
+                    new OSHManagement.Models.ViewModels.DropdownItem
+                    {
+                        Text = "Schedule Reminder",
+                        Icon = "ri-notification-line",
+                        OnClick = $"scheduleReminder({Model.PolicyId})"
+                    },
+                    new OSHManagement.Models.ViewModels.DropdownItem
+                    {
+                        Text = "Mark as Reviewed",
+                        Icon = "ri-checkbox-line",
+                        OnClick = $"markAsReviewed({Model.PolicyId})"
+                    },
+                    new OSHManagement.Models.ViewModels.DropdownItem { IsDivider = true },
+                    new OSHManagement.Models.ViewModels.DropdownItem
+                    {
+                        Text = "Export Policy",
+                        Icon = "ri-download-line",
+                        Url = $"/OshPolicy/Export/{Model.PolicyId}"
+                    }
+                }
+            },
+            new OSHManagement.Models.ViewModels.DetailCardAction
+            {
+                Text = "Back",
+                Icon = "ri-arrow-left-line",
+                Url = "/OshPolicy/Index",
+                ButtonStyle = "light",
+                ButtonSize = ""
+            }
+        }
+    };
+
+    var detailCard = detailCardConfig.BuildDetailCard();
+
+    // Configure Horizontal Tabs
+    var tabsConfig = new OSHManagement.Models.ViewModels.TabsConfig
+    {
+        TabsId = "policyDetailsTabs",
+        Type = OSHManagement.Models.ViewModels.TabsType.HorizontalStyle8,
+        WrapInCard = true,
+        CardTitle = "",
+        Tabs = new List<OSHManagement.Models.ViewModels.TabConfig>
+        {
+            // TAB 1: Overview
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "overview",
+                Title = "Overview",
+                Icon = "ri-dashboard-line",
+                IsActive = true,
+                Content = @<text><partial name="~/Views/OshPolicy/_DetailsOverview.cshtml" model="Model" /></text>
+            },
+            // TAB 2: Responsibilities
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "responsibilities",
+                Title = "Responsibilities",
+                Icon = "ri-team-line",
+                Content = @<text><partial name="~/Views/OshPolicy/_DetailsResponsibilities.cshtml" model="Model" /></text>
+            },
+            // TAB 3: Documents
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "documents",
+                Title = "Documents",
+                Icon = "ri-file-text-line",
+                Content = @<text><partial name="~/Views/OshPolicy/_DetailsDocuments.cshtml" model="Model" /></text>
+            },
+            // TAB 4: Implementation
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "implementation",
+                Title = "Implementation",
+                Icon = "ri-check-double-line",
+                Content = @<text><partial name="~/Views/OshPolicy/_DetailsImplementation.cshtml" model="Model" /></text>
+            },
+            // TAB 5: Activity Log
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "activity",
+                Title = "Activity Log",
+                Icon = "ri-history-line",
+                Content = @<text><partial name="~/Views/OshPolicy/_DetailsActivity.cshtml" model="Model" /></text>
+            }
+        }
+    };
+
+    var tabs = tabsConfig.BuildTabs();
+}
+
+<!-- Detail Card -->
+<div class="row">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/Cards/DetailCard.cshtml" model="detailCard" />
+    </div>
+</div>
+
+<!-- Horizontal Tabs -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/Tabs/HorizontalTabs.cshtml" model="tabs" />
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Future: Action handlers for dropdowns
+            window.scheduleReminder = function(policyId) {
+                alert('Schedule reminder feature coming in Phase 3');
+            };
+
+            window.markAsReviewed = function(policyId) {
+                alert('Mark as reviewed feature coming in Phase 3');
+            };
+        });
+    </script>
+}

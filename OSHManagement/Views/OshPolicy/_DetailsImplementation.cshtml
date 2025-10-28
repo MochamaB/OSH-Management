@@ -1,0 +1,308 @@
+@model OSHManagement.Models.ViewModels.OshPolicyViewModel
+
+<div class="p-3">
+    <!-- Implementation Status Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card custom-card border-primary">
+                <div class="card-header bg-primary-transparent">
+                    <h6 class="card-title mb-0">
+                        <i class="ri-rocket-line me-2"></i>Implementation Status
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h5 class="mb-1">@(ViewBag.ImplementationProgress ?? 0)% Complete</h5>
+                            <p class="text-muted mb-0">Overall implementation progress</p>
+                        </div>
+                        <div>
+                            @if (Model.IsPolicyImplemented)
+                            {
+                                <span class="badge bg-success fs-14">
+                                    <i class="ri-checkbox-circle-line me-1"></i>Active Implementation
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning fs-14">
+                                    <i class="ri-time-line me-1"></i>Not Yet Implemented
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    
+                    <div class="progress progress-lg mb-2">
+                        <div class="progress-bar bg-primary" 
+                             role="progressbar" 
+                             style="width: @(ViewBag.ImplementationProgress ?? 0)%"
+                             aria-valuenow="@(ViewBag.ImplementationProgress ?? 0)" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-3">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6 class="mb-1 text-primary">@(Model.HasTopManagementSignature ? "20%" : "0%")</h6>
+                                <small class="text-muted">Signature</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6 class="mb-1 text-primary">@(Model.IsPolicyImplemented ? "30%" : "0%")</h6>
+                                <small class="text-muted">Implementation</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6 class="mb-1 text-primary">@(!string.IsNullOrWhiteSpace(Model.CommunicationMethods) ? "20%" : "0%")</h6>
+                                <small class="text-muted">Communication</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6 class="mb-1 text-primary">@(Model.LastReviewedDate.HasValue ? "15%" : "0%")</h6>
+                                <small class="text-muted">Review</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Implementation Milestones -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card custom-card border">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="ri-flag-line me-2"></i>Implementation Milestones
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <!-- Policy Created -->
+                        <div class="timeline-item">
+                            <div class="timeline-badge bg-success">
+                                <i class="ri-check-line"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Policy Document Created</h6>
+                                <p class="text-muted mb-1">@Model.CreatedAt.ToString("MMM dd, yyyy")</p>
+                                <small class="text-success">
+                                    <i class="ri-checkbox-circle-line me-1"></i>Completed
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Signature -->
+                        @if (Model.HasTopManagementSignature && Model.DateSigned.HasValue)
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-badge bg-success">
+                                    <i class="ri-check-line"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Management Signed Policy</h6>
+                                    <p class="text-muted mb-1">@Model.DateSigned.Value.ToString("MMM dd, yyyy")</p>
+                                    <small class="text-muted">Signed by: @Model.SignedByName</small>
+                                    <br />
+                                    <small class="text-success">
+                                        <i class="ri-checkbox-circle-line me-1"></i>Completed
+                                    </small>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-badge bg-secondary">
+                                    <i class="ri-time-line"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Management Signature</h6>
+                                    <small class="text-warning">
+                                        <i class="ri-time-line me-1"></i>Pending
+                                    </small>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Communication -->
+                        @if (!string.IsNullOrWhiteSpace(Model.CommunicationMethods))
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-badge bg-success">
+                                    <i class="ri-check-line"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Policy Communicated to Staff</h6>
+                                    <p class="text-muted mb-1">Methods: @Model.CommunicationMethods</p>
+                                    <small class="text-success">
+                                        <i class="ri-checkbox-circle-line me-1"></i>Completed
+                                    </small>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-badge bg-secondary">
+                                    <i class="ri-time-line"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Communication to Staff</h6>
+                                    <small class="text-warning">
+                                        <i class="ri-time-line me-1"></i>Pending
+                                    </small>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- First Review -->
+                        @if (Model.LastReviewedDate.HasValue)
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-badge bg-success">
+                                    <i class="ri-check-line"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Policy Reviewed</h6>
+                                    <p class="text-muted mb-1">@Model.LastReviewedDate.Value.ToString("MMM dd, yyyy")</p>
+                                    <small class="text-success">
+                                        <i class="ri-checkbox-circle-line me-1"></i>Completed
+                                    </small>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-badge bg-secondary">
+                                    <i class="ri-time-line"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">First Review</h6>
+                                    <small class="text-warning">
+                                        <i class="ri-time-line me-1"></i>Not Started
+                                    </small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phase 3 Preview Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card custom-card border-dashed">
+                <div class="card-body text-center py-5">
+                    <img src="~/assets/images/vectors/tracking.png" 
+                         alt="Tracking" 
+                         class="img-fluid mb-4" 
+                         style="max-width: 350px; opacity: 0.7;" />
+                    <h5 class="mb-3">Advanced Implementation Tracking</h5>
+                    <p class="text-muted mb-4" style="max-width: 700px; margin: 0 auto;">
+                        <strong>Coming in Phase 3:</strong> Track detailed implementation progress with staff acknowledgments,
+                        training completion, quarterly inspections, and automated compliance monitoring.
+                    </p>
+                    
+                    <div class="row g-3 justify-content-center">
+                        <div class="col-md-3">
+                            <div class="card border">
+                                <div class="card-body p-3">
+                                    <div class="avatar avatar-md bg-primary-transparent mx-auto mb-2">
+                                        <i class="ri-user-check-line fs-20"></i>
+                                    </div>
+                                    <h6 class="mb-1">Staff Acknowledgment</h6>
+                                    <p class="text-muted small mb-0">Track who has read and acknowledged the policy</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border">
+                                <div class="card-body p-3">
+                                    <div class="avatar avatar-md bg-info-transparent mx-auto mb-2">
+                                        <i class="ri-presentation-line fs-20"></i>
+                                    </div>
+                                    <h6 class="mb-1">Training Status</h6>
+                                    <p class="text-muted small mb-0">Monitor safety training completion rates</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border">
+                                <div class="card-body p-3">
+                                    <div class="avatar avatar-md bg-warning-transparent mx-auto mb-2">
+                                        <i class="ri-search-eye-line fs-20"></i>
+                                    </div>
+                                    <h6 class="mb-1">Inspection Schedules</h6>
+                                    <p class="text-muted small mb-0">Quarterly inspections and compliance checks</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border">
+                                <div class="card-body p-3">
+                                    <div class="avatar avatar-md bg-success-transparent mx-auto mb-2">
+                                        <i class="ri-line-chart-line fs-20"></i>
+                                    </div>
+                                    <h6 class="mb-1">Metrics Over Time</h6>
+                                    <p class="text-muted small mb-0">View compliance trends with charts</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .timeline {
+            position: relative;
+            padding: 0;
+            list-style: none;
+        }
+        .timeline:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e9ecef;
+            left: 15px;
+        }
+        .timeline-item {
+            position: relative;
+            padding-left: 50px;
+            margin-bottom: 25px;
+        }
+        .timeline-badge {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 1;
+        }
+        .timeline-content {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+    </style>
+}
