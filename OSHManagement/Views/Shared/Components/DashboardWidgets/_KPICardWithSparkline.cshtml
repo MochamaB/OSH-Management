@@ -1,0 +1,83 @@
+@model OSHManagement.Models.ViewModels.Dashboard.KPICardViewModel
+
+@*
+    KPI Card Component - Pattern C (With Sparkline Chart)
+    Icon + Label + Value + Mini Trend Chart
+    RENDERING ONLY - NO LOGIC
+*@
+
+<div class="@Model.ColumnClass">
+    <div class="card custom-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between flex-wrap">
+                <div class="mb-2">
+                    <span class="avatar avatar-md bg-@Model.ColorTheme-transparent svg-@Model.ColorTheme">
+                        <i class="@Model.Icon fs-4"></i>
+                    </span>
+                </div>
+                <span class="fs-16">@Model.Title</span>
+            </div>
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="fs-20 fw-medium mb-0 d-flex align-items-center">@Model.Value</span>
+                    @if (!string.IsNullOrEmpty(Model.Subtitle))
+                    {
+                        <span class="fs-13 text-muted">@Model.Subtitle</span>
+                    }
+                </div>
+                @if (!string.IsNullOrEmpty(Model.SparklineId))
+                {
+                    <div id="@Model.SparklineId" class="sparkline-chart"></div>
+                }
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.LinkUrl))
+        {
+            <a href="@Model.LinkUrl" class="stretched-link" aria-label="View details for @Model.Title"></a>
+        }
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.SparklineId) && Model.SparklineData != null && Model.SparklineData.Any())
+{
+    @* Initialize ApexCharts Sparkline *@
+    <script>
+        (function() {
+            var options = {
+                series: [{
+                    data: [@string.Join(",", Model.SparklineData)]
+                }],
+                chart: {
+                    type: 'line',
+                    height: 50,
+                    sparkline: {
+                        enabled: true
+                    }
+                },
+                stroke: {
+                    curve: 'smooth',
+                    width: 2
+                },
+                colors: ['@Model.SparklineColor'],
+                tooltip: {
+                    fixed: {
+                        enabled: false
+                    },
+                    x: {
+                        show: false
+                    },
+                    y: {
+                        title: {
+                            formatter: function (seriesName) {
+                                return ''
+                            }
+                        }
+                    }
+                }
+            };
+
+            var chart = new ApexCharts(document.querySelector("#@Model.SparklineId"), options);
+            chart.render();
+        })();
+    </script>
+}

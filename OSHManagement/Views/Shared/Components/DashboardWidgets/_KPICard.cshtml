@@ -1,0 +1,45 @@
+@model OSHManagement.Models.ViewModels.Dashboard.KPICardViewModel
+
+@*
+    KPI Card Component - Pattern A (Standard)
+    Icon + Label + Value + Trend + Badge
+    RENDERING ONLY - NO LOGIC
+*@
+
+<div class="@Model.ColumnClass">
+    <div class="card custom-card widget-card-style1 @Model.ColorTheme">
+        <div class="card-body">
+            <div class="d-flex align-items-start gap-3 flex-wrap">
+                <div class="lh-1">
+                    <span class="avatar avatar-md bg-@Model.ColorTheme">
+                        <i class="@Model.Icon fs-5"></i>
+                    </span>
+                </div>
+                <div class="flex-fill">
+                    <span class="d-block">@Model.Title</span>
+                    <h5 class="fw-semibold mb-1">@Model.Value</h5>
+                    @if (!string.IsNullOrEmpty(Model.Badge))
+                    {
+                        <span class="badge bg-@Model.BadgeColorClass">@Model.Badge</span>
+                    }
+                </div>
+                @if (!string.IsNullOrEmpty(Model.TrendValue))
+                {
+                    <div class="fs-15 text-@Model.TrendColorClass">
+                        @Model.TrendValue
+                    </div>
+                }
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.LinkUrl))
+        {
+            <a href="@Model.LinkUrl" class="stretched-link" aria-label="View details for @Model.Title"></a>
+        }
+        @if (!string.IsNullOrEmpty(Model.Tooltip))
+        {
+            <div class="card-body pt-0">
+                <small class="text-muted">@Model.Tooltip</small>
+            </div>
+        }
+    </div>
+</div>

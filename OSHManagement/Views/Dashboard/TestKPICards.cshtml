@@ -1,0 +1,189 @@
+@using OSHManagement.Extensions.Dashboard
+@using OSHManagement.Models.ViewModels
+@using OSHManagement.Models.ViewModels.Dashboard
+
+@{
+    ViewData["Title"] = "KPI Cards - Component Testing";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // LAYER 3: ALL LOGIC IN EXTENSION METHODS
+    
+    // Pattern A: Standard KPI Cards
+    var standardCards = KPICardExtensions.BuildKPICardsRow(
+        titles: new List<string> { "Total Incidents", "Open Incidents", "Days Without Incident", "Compliance Rate" },
+        values: new List<string> { "247", "38", "12", "94%" },
+        icons: new List<string> { "ri-alert-line", "ri-error-warning-line", "ri-calendar-check-line", "ri-shield-check-line" },
+        colorThemes: new List<string> { "danger", "warning", "success", "primary" },
+        badges: new List<string> { "All Time", "This Month", "Current", "Q4 2025" },
+        trendValues: new List<string> { "+12.5%", "-8.2%", "+2 days", "+3.5%" },
+        trendDirections: new List<TrendDirection?> { TrendDirection.Up, TrendDirection.Down, TrendDirection.Up, TrendDirection.Up }
+    );
+
+    // Pattern B: KPI Cards with Trend Emphasis
+    var trendCard1 = KPICardExtensions.BuildKPICardWithTrend(
+        title: "Total Sales",
+        value: "$54,320",
+        icon: "ri-money-dollar-circle-line",
+        trendValue: "+0.54%",
+        trendDirection: TrendDirection.Up,
+        colorTheme: "primary",
+        trendLabel: "This Week"
+    );
+
+    var trendCard2 = KPICardExtensions.BuildKPICardWithTrend(
+        title: "Total Products",
+        value: "1,320",
+        icon: "ri-box-3-line",
+        trendValue: "-3.96%",
+        trendDirection: TrendDirection.Down,
+        colorTheme: "secondary",
+        trendLabel: "This Week"
+    );
+
+    var trendCards = new List<KPICardViewModel> { trendCard1, trendCard2 };
+
+    // Pattern C: KPI Cards with Sparkline
+    var sparklineCard1 = KPICardExtensions.BuildKPICardWithSparkline(
+        title: "Total Sales",
+        value: "12,432",
+        icon: "ri-bar-chart-box-line",
+        sparklineData: new List<decimal> { 25, 30, 28, 35, 40, 38, 45, 42, 48, 50, 55, 60 },
+        colorTheme: "primary",
+        subtitle: "Increases Today"
+    );
+
+    var sparklineCard2 = KPICardExtensions.BuildKPICardWithSparkline(
+        title: "Total Revenue",
+        value: "$9,432",
+        icon: "ri-money-dollar-box-line",
+        sparklineData: new List<decimal> { 30, 35, 32, 40, 45, 42, 50, 48, 55, 58, 62, 65 },
+        colorTheme: "secondary",
+        subtitle: "Increases Today"
+    );
+
+    var sparklineCards = new List<KPICardViewModel> { sparklineCard1, sparklineCard2 };
+
+    // Individual card examples
+    var singleCard = KPICardExtensions.BuildKPICardFromData(
+        title: "Training Completion",
+        value: 150,
+        icon: "ri-book-open-line",
+        colorTheme: "info",
+        comparisonValue: 120,
+        badgeText: "This Quarter",
+        valueFormat: "N0"
+    );
+}
+
+<!-- Page Header -->
+<div class="page-header-breadcrumb mb-3">
+    <div class="d-flex align-center justify-content-between flex-wrap">
+        <h1 class="page-title fw-medium fs-18 mb-0">KPI Cards Component Testing</h1>
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="/Dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active">KPI Cards Testing</li>
+        </ol>
+    </div>
+</div>
+
+<!-- Pattern A: Standard KPI Cards -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h4 class="mb-3">Pattern A: Standard KPI Cards (Icon + Value + Trend + Badge)</h4>
+    </div>
+    @* LAYER 2: VIEW USES FOREACH + PARTIAL *@
+    @foreach (var card in standardCards)
+    {
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_KPICard.cshtml" model="card" />
+    }
+</div>
+
+<!-- Pattern B: KPI Cards with Trend Emphasis -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h4 class="mb-3">Pattern B: KPI Cards with Trend Emphasis (Nested Avatar + Prominent Trend)</h4>
+    </div>
+    @foreach (var card in trendCards)
+    {
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_KPICardWithTrend.cshtml" model="card" />
+    }
+</div>
+
+<!-- Pattern C: KPI Cards with Sparkline -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h4 class="mb-3">Pattern C: KPI Cards with Sparkline (Mini Chart)</h4>
+    </div>
+    @foreach (var card in sparklineCards)
+    {
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_KPICardWithSparkline.cshtml" model="card" />
+    }
+</div>
+
+<!-- Single Card with Calculated Trend -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h4 class="mb-3">Dynamic KPI Card (Built from Data with Auto-Calculated Trend)</h4>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_KPICard.cshtml" model="singleCard" />
+</div>
+
+<!-- Skeleton Loading State Demo -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h4 class="mb-3">Skeleton Loading State</h4>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_SkeletonKPICard.cshtml" />
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_SkeletonKPICard.cshtml" />
+    </div>
+</div>
+
+<!-- Code Examples -->
+<div class="row">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <h5 class="card-title">Usage Examples</h5>
+            </div>
+            <div class="card-body">
+                <h6>1. Build Single Standard KPI Card:</h6>
+                <pre class="language-csharp"><code>var card = KPICardExtensions.BuildKPICard(
+    title: "Total Incidents",
+    value: "247",
+    icon: "ri-alert-line",
+    colorTheme: "danger",
+    badge: "All Time",
+    trendValue: "+12.5%",
+    trendDirection: TrendDirection.Up
+);</code></pre>
+
+                <h6 class="mt-3">2. Build Row of KPI Cards:</h6>
+                <pre class="language-csharp"><code>var cards = KPICardExtensions.BuildKPICardsRow(
+    titles: new List&lt;string&gt; { "Incidents", "Actions", "Training", "Compliance" },
+    values: new List&lt;string&gt; { "247", "38", "150", "94%" },
+    icons: new List&lt;string&gt; { "ri-alert-line", "ri-todo-line", "ri-book-line", "ri-shield-line" },
+    colorThemes: new List&lt;string&gt; { "danger", "warning", "info", "success" }
+);</code></pre>
+
+                <h6 class="mt-3">3. Build Card with Sparkline:</h6>
+                <pre class="language-csharp"><code>var card = KPICardExtensions.BuildKPICardWithSparkline(
+    title: "Total Sales",
+    value: "12,432",
+    icon: "ri-bar-chart-box-line",
+    sparklineData: new List&lt;decimal&gt; { 25, 30, 35, 40, 45, 50 },
+    colorTheme: "primary"
+);</code></pre>
+
+                <h6 class="mt-3">4. Render in View:</h6>
+                <pre class="language-html"><code>&lt;partial name="~/Views/Shared/Components/DashboardWidgets/_KPICard.cshtml" model="card" /&gt;</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+}

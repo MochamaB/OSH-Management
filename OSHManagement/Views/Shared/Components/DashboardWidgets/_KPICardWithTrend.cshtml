@@ -1,0 +1,42 @@
+@model OSHManagement.Models.ViewModels.Dashboard.KPICardViewModel
+
+@*
+    KPI Card Component - Pattern B (With Trend Emphasis)
+    Nested Avatar + Label + Value + Prominent Trend
+    RENDERING ONLY - NO LOGIC
+*@
+
+<div class="@Model.ColumnClass">
+    <div class="card custom-card">
+        <div class="card-body">
+            <div class="text-center">
+                <div class="lh-1 mb-3">
+                    <span class="avatar avatar-lg bg-@Model.ColorTheme-transparent avatar-rounded">
+                        <span class="avatar avatar-sm bg-@Model.ColorTheme avatar-rounded svg-white">
+                            <i class="@Model.Icon fs-5"></i>
+                        </span>
+                    </span>
+                </div>
+                <span class="d-block mb-1 text-muted">@Model.Title</span>
+                <h5 class="fw-semibold mb-2">@Model.Value</h5>
+                @if (!string.IsNullOrEmpty(Model.TrendValue))
+                {
+                    <div class="fs-13">
+                        <span class="text-@Model.TrendColorClass me-1">
+                            <i class="@Model.TrendIconClass"></i>
+                            @Model.TrendValue
+                        </span>
+                        @if (!string.IsNullOrEmpty(Model.TrendLabel))
+                        {
+                            <span class="text-muted">@Model.TrendLabel</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.LinkUrl))
+        {
+            <a href="@Model.LinkUrl" class="stretched-link" aria-label="View details for @Model.Title"></a>
+        }
+    </div>
+</div>

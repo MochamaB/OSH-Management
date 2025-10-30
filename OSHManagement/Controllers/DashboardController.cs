@@ -13,5 +13,15 @@ namespace OSHManagement.Controllers
 
             return View();
         }
+
+        /// <summary>
+        /// Test page for KPI Card components
+        /// Shows all three patterns and usage examples
+        /// </summary>
+        [AllowAnonymous] // Allow access for testing
+        public IActionResult TestKPICards()
+        {
+            return View();
+        }
     }
 }
