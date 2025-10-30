@@ -1,0 +1,390 @@
+@using OSHManagement.Extensions
+@model OSHManagement.Models.ViewModels.EmployeeViewModel
+@{
+    ViewData["Title"] = $"{Model.FullName} - Employee Details";
+    var roles = ViewBag.Roles as List<OSHManagement.Models.ViewModels.RoleViewModel> ?? new List<OSHManagement.Models.ViewModels.RoleViewModel>();
+    var teamRoles = ViewBag.TeamRoles as List<dynamic> ?? new List<dynamic>();
+
+    // Employment status badge config
+    var statusBadgeColor = Model.EmploymentStatus switch
+    {
+        "Active" => "success",
+        "On Leave" => "warning",
+        "Suspended" => "danger",
+        "Terminated" => "dark",
+        _ => "secondary"
+    };
+
+    var statusIcon = Model.EmploymentStatus switch
+    {
+        "Active" => "ri-checkbox-circle-line",
+        "On Leave" => "ri-time-line",
+        "Suspended" => "ri-pause-circle-line",
+        "Terminated" => "ri-close-circle-line",
+        _ => "ri-information-line"
+    };
+
+    // Configure Detail Card
+    var detailCardConfig = new OSHManagement.Models.ViewModels.DetailCardConfig
+    {
+        CardId = "employeeDetailCard",
+        Icon = "ri-user-line",
+        IconColor = "primary",
+        Title = Model.FullName,
+        Subtitle = Model.Designation ?? "No designation",
+        Category = Model.StationName,
+        StatusBadge = new OSHManagement.Models.ViewModels.DetailBadge
+        {
+            Text = Model.EmploymentStatus ?? "Unknown",
+            Color = statusBadgeColor,
+            Icon = statusIcon
+        },
+        Fields = new List<OSHManagement.Models.ViewModels.DetailField>
+        {
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Payroll No",
+                Value = Model.PayrollNo,
+                Icon = "ri-barcode-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Email",
+                Value = Model.EmailAddress ?? "N/A",
+                Icon = "ri-mail-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Phone",
+                Value = Model.PhoneNo ?? "N/A",
+                Icon = "ri-phone-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Department",
+                Value = Model.DepartmentName ?? "N/A",
+                Icon = "ri-building-2-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Employee Type",
+                Value = Model.EmployeeType ?? "N/A",
+                Icon = "ri-user-settings-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Hire Date",
+                Value = Model.FormattedHireDate,
+                Icon = "ri-calendar-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Service Years",
+                Value = Model.ServiceYears?.ToString() ?? "N/A",
+                Icon = "ri-time-line"
+            },
+            new OSHManagement.Models.ViewModels.DetailField
+            {
+                Label = "Created",
+                Value = Model.CreatedAt.ToString("MMM dd, yyyy"),
+                Icon = "ri-calendar-check-line"
+            }
+        },
+        Actions = new List<OSHManagement.Models.ViewModels.DetailCardAction>
+        {
+            new OSHManagement.Models.ViewModels.DetailCardAction
+            {
+                Text = "Edit Employee",
+                Icon = "ri-edit-line",
+                Url = $"/Employee/Edit/{Model.EmployeeId}",
+                ButtonStyle = "primary",
+                ButtonSize = ""
+            },
+            new OSHManagement.Models.ViewModels.DetailCardAction
+            {
+                Text = "Back",
+                Icon = "ri-arrow-left-line",
+                Url = "/Employee/Index",
+                ButtonStyle = "light",
+                ButtonSize = ""
+            }
+        }
+    };
+
+    var detailCard = detailCardConfig.BuildDetailCard();
+
+    // Configure Horizontal Tabs
+    var tabsConfig = new OSHManagement.Models.ViewModels.TabsConfig
+    {
+        TabsId = "employeeDetailsTabs",
+        Type = OSHManagement.Models.ViewModels.TabsType.HorizontalStyle8,
+        WrapInCard = true,
+        CardTitle = "",
+        Tabs = new List<OSHManagement.Models.ViewModels.TabConfig>
+        {
+            // TAB 1: Overview
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "overview",
+                Title = "Overview",
+                Icon = "ri-information-line",
+                IsActive = true,
+                Content = @<text>
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="card border">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title mb-0"><i class="ri-user-line me-2"></i>Personal Information</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-borderless mb-0">
+                                            <tbody>
+                                                <tr>
+                                                    <th class="ps-0" scope="row">Full Name:</th>
+                                                    <td class="text-muted">@Model.FullName</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="ps-0" scope="row">Payroll No:</th>
+                                                    <td class="text-muted">@Model.PayrollNo</td>
+                                                </tr>
+                                                @if (!string.IsNullOrEmpty(Model.RollNo))
+                                                {
+                                                    <tr>
+                                                        <th class="ps-0" scope="row">Roll No:</th>
+                                                        <td class="text-muted">@Model.RollNo</td>
+                                                    </tr>
+                                                }
+                                                <tr>
+                                                    <th class="ps-0" scope="row">Email:</th>
+                                                    <td class="text-muted">@(Model.EmailAddress ?? "N/A")</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="ps-0" scope="row">Phone:</th>
+                                                    <td class="text-muted">@(Model.PhoneNo ?? "N/A")</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="ps-0" scope="row">Username:</th>
+                                                    <td class="text-muted">@(Model.Username ?? "N/A")</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card border">
+                                <div class="card-header bg-light">
+                                    <h5 class="card-title mb-0"><i class="ri-briefcase-line me-2"></i>Employment Details</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-borderless mb-0">
+                                            <tbody>
+                                                <tr>
+                                                    <th class="ps-0" scope="row">Station:</th>
+                                                    <td class="text-muted">@Model.StationName</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="ps-0" scope="row">Department:</th>
+                                                    <td class="text-muted">@(Model.DepartmentName ?? "N/A")</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="ps-0" scope="row">Designation:</th>
+                                                    <td class="text-muted">@(Model.Designation ?? "N/A")</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="ps-0" scope="row">Employee Type:</th>
+                                                    <td class="text-muted">@(Model.EmployeeType ?? "N/A")</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="ps-0" scope="row">Employment Status:</th>
+                                                    <td>
+                                                        <span class="badge bg-@statusBadgeColor">
+                                                            <i class="@statusIcon me-1"></i>@Model.EmploymentStatus
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="ps-0" scope="row">Hire Date:</th>
+                                                    <td class="text-muted">@Model.FormattedHireDate</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="ps-0" scope="row">Service Years:</th>
+                                                    <td class="text-muted">@(Model.ServiceYears?.ToString() ?? "N/A")</td>
+                                                </tr>
+                                                @if (Model.ContractEndDate.HasValue)
+                                                {
+                                                    <tr>
+                                                        <th class="ps-0" scope="row">Contract End:</th>
+                                                        <td class="text-muted">@Model.ContractEndDate?.ToString("MMM dd, yyyy")</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </text>
+            },
+            // TAB 2: Roles
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "roles",
+                Title = $"Roles ({roles.Count})",
+                Icon = "ri-shield-user-line",
+                Content = @<text>
+                    @if (roles.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="rolesTable" style="width:100%">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="sortable">Role Name</th>
+                                        <th class="sortable">Description</th>
+                                        <th class="sortable">Scope Level</th>
+                                        <th class="sortable">Permissions</th>
+                                        <th class="sortable">Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var role in roles)
+                                    {
+                                        var scopeBadgeColor = role.ScopeLevel switch
+                                        {
+                                            OSHManagement.Models.Authorization.ScopeLevel.Organization => "danger",
+                                            OSHManagement.Models.Authorization.ScopeLevel.Station => "warning",
+                                            OSHManagement.Models.Authorization.ScopeLevel.Department => "info",
+                                            OSHManagement.Models.Authorization.ScopeLevel.Team => "primary",
+                                            OSHManagement.Models.Authorization.ScopeLevel.Self => "secondary",
+                                            _ => "secondary"
+                                        };
+                                        <tr>
+                                            <td class="fw-semibold">@role.RoleName</td>
+                                            <td>@(role.Description ?? "N/A")</td>
+                                            <td>
+                                                <span class="badge bg-@scopeBadgeColor">@role.ScopeLevelName</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">@role.PermissionsCount</span>
+                                            </td>
+                                            <td>
+                                                @if (role.IsActive)
+                                                {
+                                                    <span class="badge bg-success">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">Inactive</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <a href="@Url.Action("Details", "Role", new { id = role.RoleId })" 
+                                                   class="btn btn-sm btn-info" 
+                                                   title="View Role Details">
+                                                    <i class="ri-eye-line"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info mb-0">
+                            <i class="ri-information-line me-2"></i>
+                            This employee has not been assigned any roles yet.
+                        </div>
+                    }
+                </text>
+            },
+            // TAB 3: Team Roles
+            new OSHManagement.Models.ViewModels.TabConfig
+            {
+                TabId = "teamroles",
+                Title = $"Team Roles ({teamRoles.Count})",
+                Icon = "ri-team-line",
+                Content = @<text>
+                    @if (teamRoles.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="teamRolesTable" style="width:100%">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="sortable">Team Name</th>
+                                        <th class="sortable">Team Type</th>
+                                        <th class="sortable">Role</th>
+                                        <th class="sortable">Section</th>
+                                        <th class="sortable">Appointment Date</th>
+                                        <th class="sortable">Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var teamRole in teamRoles)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">@teamRole.TeamName</td>
+                                            <td>@teamRole.TeamType</td>
+                                            <td>
+                                                <span class="badge bg-primary">@teamRole.TeamRole</span>
+                                            </td>
+                                            <td>@(teamRole.SectionName ?? "N/A")</td>
+                                            <td>@teamRole.AppointmentDate.ToString("MMM dd, yyyy")</td>
+                                            <td>
+                                                @if (teamRole.IsActive)
+                                                {
+                                                    <span class="badge bg-success">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">Inactive</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <a href="@Url.Action("Details", "Team", new { id = teamRole.TeamId })" 
+                                                   class="btn btn-sm btn-info" 
+                                                   title="View Team Details">
+                                                    <i class="ri-eye-line"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info mb-0">
+                            <i class="ri-information-line me-2"></i>
+                            This employee is not a member of any teams yet.
+                        </div>
+                    }
+                </text>
+            }
+        }
+    };
+
+    var tabs = tabsConfig.BuildTabs();
+}
+
+<!-- Detail Card -->
+<div class="row">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/Cards/DetailCard.cshtml" model="detailCard" />
+    </div>
+</div>
+
+<!-- Horizontal Tabs -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/Tabs/HorizontalTabs.cshtml" model="tabs" />
+    </div>
+</div>

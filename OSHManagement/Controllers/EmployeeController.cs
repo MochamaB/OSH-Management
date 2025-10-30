@@ -192,10 +192,7 @@ namespace OSHManagement.Controllers
                     employee.SupervisorFullName = employeeNames[employee.SupervisorPayroll];
                 }
 
-                if (avatars.ContainsKey(employee.EmployeeId))
-                {
-                    employee.AvatarUrl = avatars[employee.EmployeeId];
-                }
+                
             }
 
             // Pass pagination info to view
@@ -699,6 +696,116 @@ namespace OSHManagement.Controllers
             .ToList();
 
             ViewBag.Roles = filteredRoles;
+        }
+
+        // GET: Employee/Details/5
+        public async Task<IActionResult> Details(int id)
+        {
+            // Fetch employee with all related data
+            var employee = await _context.Employees
+                .Include(e => e.Station)
+                    .ThenInclude(s => s.OrgCategory)
+                .Include(e => e.Department)
+                .Include(e => e.EmployeeRoles)
+                    .ThenInclude(er => er.Role)
+                        .ThenInclude(r => r.RolePermissions)
+                            .ThenInclude(rp => rp.Permission)
+                .FirstOrDefaultAsync(e => e.EmployeeId == id);
+
+            if (employee == null)
+            {
+                TempData["ErrorMessage"] = "Employee not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Apply scope security check
+            // Check if employee is within user's scope
+            var scopedEmployees = _scopeFilterService.ApplyScope(_context.Employees.AsQueryable(), CurrentScope);
+            var hasAccess = await scopedEmployees.AnyAsync(e => e.EmployeeId == id);
+
+            if (!hasAccess)
+            {
+                TempData["ErrorMessage"] = "You don't have permission to view this employee.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Fetch team memberships separately (no navigation property on Employee)
+            var teamMemberships = await _context.TeamMembers
+                .Where(tm => tm.EmployeePayroll == employee.PayrollNo && tm.IsActive)
+                .Include(tm => tm.Team)
+                    .ThenInclude(t => t.TeamTypeDefinition)
+                .Include(tm => tm.TeamRoleDefinition)
+                .Include(tm => tm.Section)
+                .ToListAsync();
+
+            // Map to ViewModel
+            var viewModel = new EmployeeViewModel
+            {
+                EmployeeId = employee.EmployeeId,
+                PayrollNo = employee.PayrollNo,
+                RollNo = employee.RollNo,
+                FirstName = employee.FirstName,
+                LastName = employee.LastName,
+                EmailAddress = employee.EmailAddress,
+                PhoneNo = employee.PhoneNo,
+                StationId = employee.StationId,
+                StationName = employee.Station?.StationName ?? "N/A",
+                DepartmentId = employee.DepartmentId,
+                DepartmentName = employee.Department?.DepartmentName,
+                Username = employee.Username,
+                EmploymentStatus = employee.EmploymentStatus,
+                EmployeeType = employee.EmployeeType,
+                Designation = employee.Designation,
+                HireDate = employee.HireDate,
+                ServiceYears = employee.ServiceYears,
+                ContractEndDate = employee.ContractEndDate,
+                HodPayroll = employee.HodPayroll,
+                SupervisorPayroll = employee.SupervisorPayroll,
+              
+                RoleNames = employee.EmployeeRoles
+                    .Where(er => er.IsActive)
+                    .Select(er => er.Role.RoleName)
+                    .ToList(),
+                CreatedAt = employee.CreatedAt,
+                UpdatedAt = employee.UpdatedAt
+            };
+
+            // Get employee roles with detailed info
+            var roles = employee.EmployeeRoles
+                .Where(er => er.IsActive)
+                .Select(er => new RoleViewModel
+                {
+                    RoleId = er.Role.RoleId,
+                    RoleName = er.Role.RoleName,
+                    Description = er.Role.Description,
+                    ScopeLevel = er.Role.ScopeLevel,
+                    ScopeLevelName = er.Role.ScopeLevel.ToString(),
+                    IsActive = er.Role.IsActive,
+                    IsSystemRole = er.Role.IsSystemRole,
+                    PermissionsCount = er.Role.RolePermissions.Count(rp => rp.Permission.IsActive),
+                    CreatedAt = er.Role.CreatedAt,
+                    UpdatedAt = er.Role.UpdatedAt
+                })
+                .ToList();
+
+            // Get team roles with detailed info
+            var teamRoles = teamMemberships
+                .Select(tm => new
+                {
+                    TeamId = tm.Team.TeamId,
+                    TeamName = tm.Team.TeamName,
+                    TeamType = tm.Team.TeamTypeDefinition?.TypeName ?? "N/A",
+                    TeamRole = tm.TeamRoleDefinition?.RoleName ?? "Member",
+                    SectionName = tm.Section?.SectionName,
+                    AppointmentDate = tm.AppointmentDate,
+                    IsActive = tm.Team.TeamStatus == "Active"
+                })
+                .ToList();
+
+            ViewBag.Roles = roles;
+            ViewBag.TeamRoles = teamRoles;
+
+            return View(viewModel);
         }
     }
 }

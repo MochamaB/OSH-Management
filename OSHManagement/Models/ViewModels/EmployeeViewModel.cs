@@ -82,7 +82,6 @@ namespace OSHManagement.Models.ViewModels
         public string? DepartmentName { get; set; }
         public string? HodFullName { get; set; }
         public string? SupervisorFullName { get; set; }
-        public string? AvatarUrl { get; set; }
         public List<string> RoleNames { get; set; } = new List<string>();
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

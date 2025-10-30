@@ -155,18 +155,9 @@
                     </td>
                     <td>
                         <div class="d-flex align-items-center">
-                            @if (!string.IsNullOrEmpty(item.AvatarUrl))
-                            {
-                                <div class="avatar avatar-md me-2">
-                                    <img src="@item.AvatarUrl" alt="@item.FullName" class="rounded-circle">
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="avatar avatar-md bg-primary-transparent me-2">
-                                    <span class="avatar-initials fs-16">@item.Initials</span>
-                                </div>
-                            }
+                            <div class="avatar avatar-md bg-primary-transparent me-2">
+                                <span class="avatar-initials fs-16">@item.Initials</span>
+                            </div>
                             <div>
                                 <div class="fw-medium">@item.FullName</div>
                                 <small class="text-muted">@item.PayrollNo</small>
@@ -245,7 +236,7 @@
                             var rowActions = new OSHManagement.Models.ViewModels.RowActionConfig
                             {
                                 EditUrl = $"/Employee/Edit/{{id}}",
-                                ViewUrl = $"/Employee/View/{{id}}",
+                                ViewUrl = $"/Employee/Details/{{id}}",
                                 DeleteUrl = $"/Employee/Delete/{{id}}",
                                 DeleteItemName = item.FullName,
                                 ShowView = true,
