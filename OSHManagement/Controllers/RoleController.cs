@@ -36,11 +36,34 @@ namespace OSHManagement.Controllers
                 .Include(r => r.RolePermissions)
                     .ThenInclude(rp => rp.Permission)
                 .Include(r => r.EmployeeRoles.Where(er => er.IsActive))
-                .OrderBy(r => r.ScopeLevel)
-                    .ThenBy(r => r.RoleName)
                 .ToListAsync();
 
-            // Map to ViewModels
+            // ⚠️ CRITICAL: Apply scope-based filtering to roles
+            // Users can only see roles at their scope level or below (more restrictive)
+            // This prevents users from assigning roles with broader access than their own
+            var isAdmin = User.IsInRole("Admin");
+            var userScopeLevel = CurrentScope?.Level ?? ScopeLevel.Self;
+
+            // Filter roles based on user's scope
+            roles = roles.Where(r =>
+            {
+                // Admin role only visible to users with Admin role
+                if (r.RoleName.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return isAdmin;
+                }
+
+                // Users can only see roles at their scope level or more restrictive
+                // E.g., Station-scope user (Level=2) can see: Station(2), Department(3), Team(4), Self(5)
+                // but NOT Organization(1)
+                return r.ScopeLevel >= userScopeLevel;
+            }).ToList();
+
+            // Map to ViewModels and order by access level
+            // Order by:
+            // 1. ScopeLevel (Organization=1 first, Self=5 last) - Broader scope = More access
+            // 2. PermissionsCount (Descending) - More permissions = More access
+            // 3. RoleName (Alphabetically)
             var viewModels = roles.Select(r => new RoleViewModel
             {
                 RoleId = r.RoleId,
@@ -59,9 +82,123 @@ namespace OSHManagement.Controllers
                     .ToList(),
                 CreatedAt = r.CreatedAt,
                 UpdatedAt = r.UpdatedAt
-            }).ToList();
+            })
+            .OrderBy(r => r.ScopeLevel)              // 1. Broader scope first (Organization → Self)
+            .ThenByDescending(r => r.PermissionsCount) // 2. More permissions first
+            .ThenBy(r => r.RoleName)                 // 3. Alphabetically
+            .ToList();
 
             return View(viewModels);
+        }
+
+        // GET: Role/Details/5
+        public async Task<IActionResult> Details(int id)
+        {
+            // Fetch role with related data
+            var role = await _context.Roles
+                .AsSplitQuery()
+                .Include(r => r.RolePermissions)
+                    .ThenInclude(rp => rp.Permission)
+                .Include(r => r.EmployeeRoles.Where(er => er.IsActive))
+                    .ThenInclude(er => er.Employee)
+                        .ThenInclude(e => e.Station)
+                .Include(r => r.EmployeeRoles.Where(er => er.IsActive))
+                    .ThenInclude(er => er.Employee)
+                        .ThenInclude(e => e.Department)
+                .FirstOrDefaultAsync(r => r.RoleId == id);
+
+            if (role == null)
+            {
+                TempData["Error"] = "Role not found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // ⚠️ CRITICAL: Check if user has permission to view this role
+            var userScopeLevel = CurrentScope?.Level ?? ScopeLevel.Self;
+            var isAdmin = User.IsInRole("Admin");
+
+            // Admin role only viewable by Admins
+            if (role.RoleName.Equals("Admin", StringComparison.OrdinalIgnoreCase) && !isAdmin)
+            {
+                TempData["Error"] = "You do not have permission to view the Admin role.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Users can only view roles at their scope level or more restrictive
+            if (role.ScopeLevel < userScopeLevel && !isAdmin)
+            {
+                TempData["Error"] = "You do not have permission to view roles with broader scope than your own.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Map to ViewModel
+            var model = new RoleViewModel
+            {
+                RoleId = role.RoleId,
+                RoleName = role.RoleName,
+                Description = role.Description,
+                ScopeLevel = role.ScopeLevel,
+                ScopeLevelName = role.ScopeLevel.ToString(),
+                IsSystemRole = role.IsSystemRole,
+                AllowCrossDepartmentAccess = role.AllowCrossDepartmentAccess,
+                AllowCrossStationAccess = role.AllowCrossStationAccess,
+                IsActive = role.IsActive,
+                PermissionsCount = role.RolePermissions.Count,
+                EmployeesCount = role.EmployeeRoles.Count(er => er.IsActive),
+                PermissionNames = role.RolePermissions
+                    .Select(rp => rp.Permission.PermissionName)
+                    .ToList(),
+                CreatedAt = role.CreatedAt,
+                UpdatedAt = role.UpdatedAt
+            };
+
+            // Prepare permissions grouped by module
+            var permissions = role.RolePermissions
+                .Select(rp => new PermissionViewModel
+                {
+                    PermissionId = rp.Permission.PermissionId,
+                    PermissionName = rp.Permission.PermissionName,
+                    Description = rp.Permission.Description,
+                    Module = rp.Permission.Module,
+                    Action = rp.Permission.Action,
+                    IsActive = rp.Permission.IsActive
+                })
+                .OrderBy(p => p.Module)
+                .ThenBy(p => p.Action)
+                .ToList();
+
+            ViewBag.PermissionsByModule = permissions
+                .GroupBy(p => p.Module)
+                .OrderBy(g => g.Key)
+                .ToList();
+
+            // Prepare employees list
+            var employees = role.EmployeeRoles
+                .Where(er => er.IsActive)
+                .Select(er => new EmployeeViewModel
+                {
+                    EmployeeId = er.Employee.EmployeeId,
+                    PayrollNo = er.Employee.PayrollNo,
+                    FirstName = er.Employee.FirstName,
+                    LastName = er.Employee.LastName,
+                    EmailAddress = er.Employee.EmailAddress,
+                    PhoneNo = er.Employee.PhoneNo,
+                    StationId = er.Employee.StationId,
+                    StationName = er.Employee.Station?.StationName,
+                    DepartmentId = er.Employee.DepartmentId,
+                    DepartmentName = er.Employee.Department?.DepartmentName,
+                    Designation = er.Employee.Designation,
+                    EmploymentStatus = er.Employee.EmploymentStatus,
+                    EmployeeType = er.Employee.EmployeeType
+                })
+                .OrderBy(e => e.LastName)
+                .ThenBy(e => e.FirstName)
+                .ToList();
+
+            ViewBag.Employees = employees;
+            ViewBag.Permissions = permissions;
+
+            return View(model);
         }
 
         // GET: Role/Create
@@ -116,6 +253,18 @@ namespace OSHManagement.Controllers
             {
                 try
                 {
+                    // ⚠️ CRITICAL: Prevent privilege escalation
+                    // Users cannot create roles with broader scope than their own
+                    var userScopeLevel = CurrentScope?.Level ?? ScopeLevel.Self;
+                    var isAdmin = User.IsInRole("Admin");
+
+                    if (model.ScopeLevel < userScopeLevel && !isAdmin)
+                    {
+                        ModelState.AddModelError("ScopeLevel", 
+                            $"You cannot create a role with broader scope than your own ({userScopeLevel}).");
+                        return View(model);
+                    }
+
                     // Check if role name already exists
                     var existingRole = await _context.Roles
                         .AnyAsync(r => r.RoleName == model.RoleName);
@@ -212,6 +361,24 @@ namespace OSHManagement.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            // ⚠️ CRITICAL: Prevent viewing/editing roles beyond user's scope
+            var userScopeLevel = CurrentScope?.Level ?? ScopeLevel.Self;
+            var isAdmin = User.IsInRole("Admin");
+
+            // Admin role only editable by Admins
+            if (role.RoleName.Equals("Admin", StringComparison.OrdinalIgnoreCase) && !isAdmin)
+            {
+                TempData["Error"] = "You do not have permission to edit the Admin role.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Users can only edit roles at their scope level or more restrictive
+            if (role.ScopeLevel < userScopeLevel && !isAdmin)
+            {
+                TempData["Error"] = $"You do not have permission to edit roles with broader scope than your own.";
+                return RedirectToAction(nameof(Index));
+            }
+
             // Map to EditRoleViewModel
             var model = new EditRoleViewModel
             {
@@ -296,6 +463,19 @@ namespace OSHManagement.Controllers
             {
                 try
                 {
+                    // ⚠️ CRITICAL: Prevent privilege escalation
+                    // Users cannot edit roles to have broader scope than their own
+                    var userScopeLevel = CurrentScope?.Level ?? ScopeLevel.Self;
+                    var isAdmin = User.IsInRole("Admin");
+
+                    if (model.ScopeLevel < userScopeLevel && !isAdmin)
+                    {
+                        ModelState.AddModelError("ScopeLevel", 
+                            $"You cannot set a role with broader scope than your own ({userScopeLevel}).");
+                        await LoadEditViewData(id, model);
+                        return View(model);
+                    }
+
                     // Check if role name already exists (excluding current role)
                     var existingRole = await _context.Roles
                         .AnyAsync(r => r.RoleName == model.RoleName && r.RoleId != id);

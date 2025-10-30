@@ -12,5 +12,8 @@ namespace OSHManagement.Models.DTOs.Dropdowns
         public string FullName { get; set; } = string.Empty; // FirstName + LastName
         public int? StationId { get; set; }
         public int? DepartmentId { get; set; }
+        public string? Designation { get; set; }
+        public string? RoleNames { get; set; } // Comma-separated role names
+        public string? TeamRole { get; set; } // Role in a specific team (if applicable)
     }
 }

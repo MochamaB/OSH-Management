@@ -290,6 +290,24 @@ namespace OSHManagement.Controllers
             ViewBag.Stations = await _orgHierarchyService.GetActiveStationsAsync(CurrentScope);
             ViewBag.Employees = await _employeeService.GetSupervisorCandidatesAsync(CurrentScope);
         }
+
+        /// <summary>
+        /// AJAX endpoint to get employees by station
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetEmployeesByStation(int stationId)
+        {
+            try
+            {
+                var employees = await _employeeService.GetEmployeesByStationAsync(stationId, CurrentScope);
+                return Json(new { success = true, data = employees });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching employees for station {StationId}", stationId);
+                return Json(new { success = false, message = "Failed to load employees" });
+            }
+        }
     }
 
     // Helper class for bulk section creation

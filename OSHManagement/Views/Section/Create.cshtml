@@ -31,9 +31,22 @@
     {
         foreach (var emp in (IEnumerable<dynamic>)ViewBag.Employees)
         {
+            // Build display text: FullName - Designation (Roles)
+            var displayText = emp.FullName;
+            
+            if (!string.IsNullOrWhiteSpace(emp.Designation))
+            {
+                displayText += $" - {emp.Designation}";
+            }
+            
+            if (!string.IsNullOrWhiteSpace(emp.RoleNames))
+            {
+                displayText += $" ({emp.RoleNames})";
+            }
+            
             employeeOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
             {
-                Text = emp.FullName,
+                Text = displayText,
                 Value = emp.PayrollNo
             });
         }
@@ -109,4 +122,55 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            var allEmployees = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Employees ?? new List<object>(), new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+            var $stationSelect = $('#StationId');
+            var $supervisorSelect = $('#SectionSupervisorPayroll');
+            
+            console.log('Total employees loaded:', allEmployees.length);
+            if (allEmployees.length > 0) {
+                console.log('Sample employee:', allEmployees[0]);
+            }
+            
+            // Store original employee options
+            var originalSupervisorHtml = $supervisorSelect.html();
+            
+            // Filter employees when station changes
+            $stationSelect.on('change', function() {
+                var selectedStationId = parseInt($(this).val());
+                console.log('Station selected:', selectedStationId);
+                
+                if (!selectedStationId) {
+                    // No station selected - show all employees
+                    $supervisorSelect.html(originalSupervisorHtml);
+                    return;
+                }
+                
+                // Filter employees by station
+                var filteredEmployees = allEmployees.filter(function(emp) {
+                    return emp.stationId === selectedStationId;
+                });
+                
+                console.log('Filtered employees count:', filteredEmployees.length);
+                
+                // Rebuild supervisor dropdown
+                var options = '<option value="">-- None --</option>';
+                filteredEmployees.forEach(function(emp) {
+                    var displayText = emp.fullName;
+                    if (emp.designation) {
+                        displayText += ' - ' + emp.designation;
+                    }
+                    if (emp.roleNames && emp.roleNames.trim() !== '') {
+                        displayText += ' (' + emp.roleNames + ')';
+                    }
+                    options += '<option value="' + emp.payrollNo + '">' + displayText + '</option>';
+                });
+                
+                $supervisorSelect.html(options);
+                console.log('Supervisor dropdown updated');
+            });
+        });
+    </script>
 }

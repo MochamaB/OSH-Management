@@ -55,6 +55,8 @@ namespace OSHManagement.Services
         public async Task<List<EmployeeDropdownDto>> GetEmployeesByStationAsync(int stationId, UserScope? scope = null)
         {
             var query = _context.Employees
+                .Include(e => e.EmployeeRoles)
+                    .ThenInclude(er => er.Role)
                 .Where(e => e.EmploymentStatus == "Active" && e.StationId == stationId);
 
             // CRITICAL: Apply scope BEFORE returning (security first!)
@@ -75,7 +77,9 @@ namespace OSHManagement.Services
                     PayrollNo = e.PayrollNo,
                     FullName = e.FirstName + " " + e.LastName,
                     StationId = e.StationId,
-                    DepartmentId = e.DepartmentId
+                    DepartmentId = e.DepartmentId,
+                    Designation = e.Designation,
+                    RoleNames = string.Join(", ", e.EmployeeRoles.Where(er => er.IsActive).Select(er => er.Role.RoleName))
                 })
                 .ToListAsync();
         }
@@ -146,7 +150,10 @@ namespace OSHManagement.Services
         public async Task<List<EmployeeDropdownDto>> GetHodCandidatesAsync(UserScope? scope = null)
         {
             // HOD candidates: Active employees (could add additional criteria)
-            var query = _context.Employees.Where(e => e.EmploymentStatus == "Active");
+            var query = _context.Employees
+                .Include(e => e.EmployeeRoles)
+                    .ThenInclude(er => er.Role)
+                .Where(e => e.EmploymentStatus == "Active");
 
             // CRITICAL: Apply scope filtering
             if (scope == null)
@@ -165,7 +172,9 @@ namespace OSHManagement.Services
                     PayrollNo = e.PayrollNo,
                     FullName = e.FirstName + " " + e.LastName,
                     StationId = e.StationId,
-                    DepartmentId = e.DepartmentId
+                    DepartmentId = e.DepartmentId,
+                    Designation = e.Designation,
+                    RoleNames = string.Join(", ", e.EmployeeRoles.Where(er => er.IsActive).Select(er => er.Role.RoleName))
                 })
                 .ToListAsync();
         }
@@ -173,7 +182,10 @@ namespace OSHManagement.Services
         public async Task<List<EmployeeDropdownDto>> GetSupervisorCandidatesAsync(UserScope? scope = null)
         {
             // Supervisor candidates: Active employees (could add additional criteria)
-            var query = _context.Employees.Where(e => e.EmploymentStatus == "Active");
+            var query = _context.Employees
+                .Include(e => e.EmployeeRoles)
+                    .ThenInclude(er => er.Role)
+                .Where(e => e.EmploymentStatus == "Active");
 
             // CRITICAL: Apply scope filtering
             if (scope == null)
@@ -192,7 +204,9 @@ namespace OSHManagement.Services
                     PayrollNo = e.PayrollNo,
                     FullName = e.FirstName + " " + e.LastName,
                     StationId = e.StationId,
-                    DepartmentId = e.DepartmentId
+                    DepartmentId = e.DepartmentId,
+                    Designation = e.Designation,
+                    RoleNames = string.Join(", ", e.EmployeeRoles.Where(er => er.IsActive).Select(er => er.Role.RoleName))
                 })
                 .ToListAsync();
         }

@@ -40,9 +40,22 @@
     {
         foreach (var emp in (IEnumerable<dynamic>)ViewBag.Employees)
         {
+            // Build display text: FullName - Designation (Roles)
+            var displayText = emp.FullName;
+            
+            if (!string.IsNullOrWhiteSpace(emp.Designation))
+            {
+                displayText += $" - {emp.Designation}";
+            }
+            
+            if (!string.IsNullOrWhiteSpace(emp.RoleNames))
+            {
+                displayText += $" ({emp.RoleNames})";
+            }
+            
             employeeOptions.Add(new OSHManagement.Models.ViewModels.FormSelectOption
             {
-                Text = $"{emp.FullName} ({emp.PayrollNo})",
+                Text = displayText,
                 Value = emp.PayrollNo
             });
         }
@@ -133,8 +146,81 @@
 
 @section Scripts {
     <script>
-        // Pass stations data to JavaScript for cascading filter
-        window.bulkAddSections_stationsData = @Html.Raw(Json.Serialize(ViewBag.Stations));
+        // Pass data to JavaScript with camelCase
+        window.bulkAddSections_stationsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Stations, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+        window.bulkAddSections_employeesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Employees ?? new List<object>(), new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+        
+        $(document).ready(function() {
+            var allEmployees = window.bulkAddSections_employeesData;
+            var $stationSelect = $('select[name="stationId"]');
+            
+            console.log('Total employees loaded:', allEmployees.length);
+            if (allEmployees.length > 0) {
+                console.log('Sample employee:', allEmployees[0]);
+            }
+            
+            // Function to update all supervisor dropdowns
+            function updateSupervisorDropdowns(selectedStationId) {
+                var $supervisorSelects = $('select[name$="[SupervisorPayroll]"]');
+                
+                console.log('Updating supervisor dropdowns for station:', selectedStationId);
+                
+                if (!selectedStationId) {
+                    // No station selected - show default
+                    $supervisorSelects.each(function() {
+                        var $select = $(this);
+                        var currentValue = $select.val();
+                        $select.html('<option value="">-- None --</option>');
+                        $select.val(currentValue);
+                    });
+                    return;
+                }
+                
+                // Filter employees by station
+                var filteredEmployees = allEmployees.filter(function(emp) {
+                    return emp.stationId === parseInt(selectedStationId);
+                });
+                
+                console.log('Filtered employees count:', filteredEmployees.length);
+                
+                // Update all supervisor dropdowns
+                $supervisorSelects.each(function() {
+                    var $select = $(this);
+                    var currentValue = $select.val();
+                    
+                    var options = '<option value="">-- None --</option>';
+                    filteredEmployees.forEach(function(emp) {
+                        var displayText = emp.fullName;
+                        if (emp.designation) {
+                            displayText += ' - ' + emp.designation;
+                        }
+                        if (emp.roleNames && emp.roleNames.trim() !== '') {
+                            displayText += ' (' + emp.roleNames + ')';
+                        }
+                        options += '<option value="' + emp.payrollNo + '">' + displayText + '</option>';
+                    });
+                    
+                    $select.html(options);
+                    $select.val(currentValue);
+                });
+                
+                console.log('Supervisor dropdowns updated');
+            }
+            
+            // Filter employees when station changes
+            $stationSelect.on('change', function() {
+                var selectedStationId = $(this).val();
+                updateSupervisorDropdowns(selectedStationId);
+            });
+            
+            // Also update when new rows are added
+            $(document).on('DOMNodeInserted', '.bulk-add-row', function() {
+                var selectedStationId = $stationSelect.val();
+                if (selectedStationId) {
+                    updateSupervisorDropdowns(selectedStationId);
+                }
+            });
+        });
     </script>
 }
 

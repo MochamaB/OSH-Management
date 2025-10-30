@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OSHManagement.Data;
+using OSHManagement.Models.Authorization;
 using OSHManagement.Models.ViewModels;
 using OSHManagement.Services;
 using OSHManagement.Services.Notifications;
@@ -255,6 +256,38 @@ namespace OSHManagement.Controllers
             {
                 try
                 {
+                    // ⚠️ CRITICAL: Validate role assignments to prevent privilege escalation
+                    if (SelectedRoles != null && SelectedRoles.Any())
+                    {
+                        var userScopeLevel = CurrentScope?.Level ?? ScopeLevel.Self;
+                        var isAdmin = User.IsInRole("Admin");
+
+                        var selectedRoleDetails = await _context.Roles
+                            .Where(r => SelectedRoles.Contains(r.RoleId))
+                            .Select(r => new { r.RoleId, r.RoleName, r.ScopeLevel })
+                            .ToListAsync();
+
+                        foreach (var role in selectedRoleDetails)
+                        {
+                            // Prevent assigning Admin role to others unless user is Admin
+                            if (role.RoleName.Equals("Admin", StringComparison.OrdinalIgnoreCase) && !isAdmin)
+                            {
+                                ModelState.AddModelError("", "Only administrators can assign the Admin role.");
+                                await PopulateDropdowns();
+                                return View(model);
+                            }
+
+                            // Prevent assigning roles with broader scope than user's own
+                            if (role.ScopeLevel < userScopeLevel && !isAdmin)
+                            {
+                                ModelState.AddModelError("", 
+                                    $"You cannot assign the '{role.RoleName}' role as it has broader scope than your own.");
+                                await PopulateDropdowns();
+                                return View(model);
+                            }
+                        }
+                    }
+
                     // Create new employee
                     var employee = new Models.Employee
                     {
@@ -440,6 +473,38 @@ namespace OSHManagement.Controllers
             {
                 try
                 {
+                    // ⚠️ CRITICAL: Validate role assignments to prevent privilege escalation
+                    if (SelectedRoles != null && SelectedRoles.Any())
+                    {
+                        var userScopeLevel = CurrentScope?.Level ?? ScopeLevel.Self;
+                        var isAdmin = User.IsInRole("Admin");
+
+                        var selectedRoleDetails = await _context.Roles
+                            .Where(r => SelectedRoles.Contains(r.RoleId))
+                            .Select(r => new { r.RoleId, r.RoleName, r.ScopeLevel })
+                            .ToListAsync();
+
+                        foreach (var role in selectedRoleDetails)
+                        {
+                            // Prevent assigning Admin role to others unless user is Admin
+                            if (role.RoleName.Equals("Admin", StringComparison.OrdinalIgnoreCase) && !isAdmin)
+                            {
+                                ModelState.AddModelError("", "Only administrators can assign the Admin role.");
+                                await PopulateDropdowns();
+                                return View(model);
+                            }
+
+                            // Prevent assigning roles with broader scope than user's own
+                            if (role.ScopeLevel < userScopeLevel && !isAdmin)
+                            {
+                                ModelState.AddModelError("", 
+                                    $"You cannot assign the '{role.RoleName}' role as it has broader scope than your own.");
+                                await PopulateDropdowns();
+                                return View(model);
+                            }
+                        }
+                    }
+
                     var employee = await _context.Employees
                         .Include(e => e.EmployeeRoles)
                         .FirstOrDefaultAsync(e => e.EmployeeId == id);
@@ -605,13 +670,35 @@ namespace OSHManagement.Controllers
             ViewBag.Departments = await _orgHierarchyService.GetActiveDepartmentsAsync(CurrentScope);
             ViewBag.Employees = await _employeeService.GetActiveEmployeesAsync(CurrentScope);
             
-            // Roles - no scope (reference data)
+            // ⚠️ CRITICAL: Roles - Apply scope-based filtering
+            // Users can only assign roles at their scope level or more restrictive
+            // This prevents privilege escalation
+            var isAdmin = User.IsInRole("Admin");
+            var userScopeLevel = CurrentScope?.Level ?? ScopeLevel.Self;
+
             var roles = await _context.Roles
                 .Where(r => r.IsActive)
-                .OrderBy(r => r.RoleName)
-                .Select(r => new { r.RoleId, r.RoleName })
+                .OrderBy(r => r.ScopeLevel)
+                .ThenBy(r => r.RoleName)
+                .Select(r => new { r.RoleId, r.RoleName, r.ScopeLevel })
                 .ToListAsync();
-            ViewBag.Roles = roles;
+
+            // Filter roles based on user's scope
+            var filteredRoles = roles.Where(r =>
+            {
+                // Admin role only assignable by users with Admin role
+                if (r.RoleName.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return isAdmin;
+                }
+
+                // Users can only assign roles at their scope level or more restrictive
+                return r.ScopeLevel >= userScopeLevel;
+            })
+            .Select(r => new { r.RoleId, r.RoleName })
+            .ToList();
+
+            ViewBag.Roles = filteredRoles;
         }
     }
 }

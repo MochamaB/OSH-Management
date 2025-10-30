@@ -1,0 +1,221 @@
+@model OSHManagement.Models.ViewModels.OshCommitteeViewModel
+
+@{
+    ViewData["Title"] = $"{Model.TeamName} - Committee Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+    <div>
+        <p class="fw-semibold fs-18 mb-0">@Model.TeamName</p>
+        <nav>
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/OshCommittee/Index">OSH Committees</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Committee Details</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+        <a href="/OshCommittee/Index" class="btn btn-light btn-wave">
+            <i class="ri-arrow-left-line me-1"></i> Back to List
+        </a>
+        @if (!Model.IsActivated)
+        {
+            <a href="/OshCommittee/Activate/@Model.TeamId" class="btn btn-success btn-wave">
+                <i class="ri-check-line me-1"></i> Activate Committee
+            </a>
+        }
+    </div>
+</div>
+
+<!-- Committee Status Alert -->
+@if (!Model.IsActivated)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="ri-error-warning-line me-2"></i>
+        <strong>Committee Not Activated!</strong> This committee needs to be activated with configuration and documents before it becomes fully operational.
+        <a href="/OshCommittee/Activate/@Model.TeamId" class="alert-link">Activate Now</a>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Committee Detail Card -->
+<div class="row">
+    <div class="col-xl-12">
+        <div class="card custom-card dashboard-main-card primary bg-primary-transparent">
+            <div class="card-body pt-4 pb-0 ps-4 pe-4">
+                <!-- Main Section: Icon + Title + Info -->
+                <div class="d-flex align-items-start gap-3">
+                    <!-- Icon -->
+                    <div class="flex-shrink-0">
+                        <span class="avatar avatar-xl avatar-rounded bg-primary-transparent text-primary">
+                            <i class="ri-team-line fs-3"></i>
+                        </span>
+                    </div>
+
+                    <!-- Title and Basic Info -->
+                    <div class="flex-fill">
+                        <!-- Title and Status Badge -->
+                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                            <h5 class="fw-semibold mb-0">@Model.TeamName</h5>
+                            <span class="badge bg-@(Model.IsActivated ? "success" : "warning")">
+                                @if (Model.IsActivated)
+                                {
+                                    <i class="ri-checkbox-circle-line me-1"></i>
+                                    <text>Activated</text>
+                                }
+                                else
+                                {
+                                    <i class="ri-error-warning-line me-1"></i>
+                                    <text>Pending Activation</text>
+                                }
+                            </span>
+                            <span class="badge bg-@(Model.TeamStatus == "Active" ? "success" : "secondary")">
+                                @Model.TeamStatus
+                            </span>
+                        </div>
+
+                        <!-- Station -->
+                        <p class="text-muted mb-1 fs-14">@Model.StationName</p>
+
+                        <!-- Formation Date -->
+                        <p class="text-muted mb-0 fs-12">
+                            <i class="ri-calendar-line me-1"></i>Formed: @Model.FormationDate.ToString("MMM dd, yyyy")
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Fields Grid with Top Border -->
+                <div class="border-top mt-3 pt-3">
+                    <div class="row g-0">
+                        <!-- Members -->
+                        <div class="col border-end">
+                            <div class="px-3 py-2 d-flex align-items-center gap-2">
+                                <i class="ri-group-line text-muted fs-16"></i>
+                                <div>
+                                    <span class="text-muted fs-12 d-block">Members</span>
+                                    <span class="fw-medium fs-13">@Model.Metrics.TotalMembers</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Training Status -->
+                        <div class="col border-end">
+                            <div class="px-3 py-2 d-flex align-items-center gap-2">
+                                <i class="ri-book-line text-muted fs-16"></i>
+                                <div>
+                                    <span class="text-muted fs-12 d-block">Training</span>
+                                    @if (Model.Config?.IsCommitteeTrained == true)
+                                    {
+                                        <span class="badge bg-success fs-11">
+                                            <i class="ri-checkbox-circle-line me-1"></i>Trained
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning fs-11">
+                                            <i class="ri-close-circle-line me-1"></i>Pending
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Open Issues -->
+                        <div class="col border-end">
+                            <div class="px-3 py-2 d-flex align-items-center gap-2">
+                                <i class="ri-error-warning-line text-muted fs-16"></i>
+                                <div>
+                                    <span class="text-muted fs-12 d-block">Open Issues</span>
+                                    <span class="fw-medium fs-13">@Model.Metrics.OpenIssues</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Next Inspection -->
+                        <div class="col">
+                            <div class="px-3 py-2 d-flex align-items-center gap-2">
+                                <i class="ri-calendar-check-line text-muted fs-16"></i>
+                                <div>
+                                    <span class="text-muted fs-12 d-block">Next Inspection</span>
+                                    <span class="fw-medium fs-13">
+                                        @if (Model.Metrics.NextInspectionDate.HasValue)
+                                        {
+                                            @Model.Metrics.NextInspectionDate.Value.ToString("MMM dd, yyyy")
+                                        }
+                                        else
+                                        {
+                                            <text>Not Set</text>
+                                        }
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Placeholder for future tabs/content -->
+<div class="row mt-4">
+    <div class="col-xl-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Committee Dashboard</div>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="ri-information-line me-2"></i>
+                    <strong>Coming Soon!</strong> Committee dashboard with Issues, Recommendations, Actions, and Documents tabs will be implemented in Phase 2.
+                </div>
+
+                @if (Model.IsActivated)
+                {
+                    <h6 class="mb-3">Committee Configuration</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <strong>Training Status:</strong> 
+                            @if (Model.Config?.IsCommitteeTrained == true)
+                            {
+                                <span class="text-success">Trained on @Model.Config.TrainingDate?.ToString("MMM dd, yyyy")</span>
+                            }
+                            else
+                            {
+                                <span class="text-warning">Not Trained</span>
+                            }
+                        </li>
+                        <li class="mb-2">
+                            <strong>Meeting Schedule:</strong> 
+                            @if (Model.Config?.HasMeetingSchedule == true)
+                            {
+                                <span class="text-success">Schedule Exists</span>
+                            }
+                            else
+                            {
+                                <span class="text-warning">No Schedule</span>
+                            }
+                        </li>
+                        <li class="mb-2">
+                            <strong>Inspection Frequency:</strong> @Model.Config?.InspectionFrequency
+                        </li>
+                        <li class="mb-2">
+                            <strong>Last Inspection:</strong> 
+                            @if (Model.Config?.LastInspectionDate.HasValue == true)
+                            {
+                                @Model.Config.LastInspectionDate?.ToString("MMM dd, yyyy")
+                            }
+                            else
+                            {
+                                <text>N/A</text>
+                            }
+                        </li>
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>

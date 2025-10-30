@@ -1,0 +1,150 @@
+@using OSHManagement.Extensions
+@model List<OSHManagement.Models.Team>
+@{
+    ViewData["Title"] = "OSH Committees";
+
+    // Build stat cards
+    var statConfig = new OSHManagement.Models.ViewModels.StatsRowConfig
+    {
+        Titles = new List<string> { "Total Committees", "Active Committees", "Forming Committees", "Compliance Rate" },
+        Values = new List<string> {
+            ViewBag.TotalCommittees.ToString(),
+            ViewBag.ActiveCommittees.ToString(),
+            ViewBag.FormingCommittees.ToString(),
+            $"{ViewBag.ComplianceRate}%"
+        },
+        Icons = new List<string> {
+            "ri-team-line",
+            "ri-checkbox-circle-line",
+            "ri-time-line",
+            "ri-bar-chart-line"
+        },
+        ColorThemes = new List<string> { "primary", "success", "warning", "info" },
+        CardType = OSHManagement.Models.ViewModels.CardType.BackgroundFillCard
+    };
+    var statCards = statConfig.BuildStatsRow();
+}
+
+<!-- Stat Cards Row -->
+<div class="row">
+    @foreach (var card in statCards)
+    {
+        <partial name="~/Views/Shared/Components/StatisticCards/_LeftBackgroundFillCard.cshtml" model="card" />
+    }
+</div>
+
+@{
+    // Build table configuration
+    var tableConfig = new OSHManagement.Models.ViewModels.TableConfig
+    {
+        TableId = "committeesTable",
+        ActionUrl = "/OshCommittee/Index",
+        Columns = new List<string> {
+            "Committee Name",
+            "Station",
+            "Formation Date",
+            "Members",
+            "Status",
+            "Activation",
+            "Last Activity",
+            "Actions"
+        },
+        SearchPlaceholder = "Search committees...",
+        CreateButtonText = "Create Committee",
+        CreateButtonUrl = "/Team/Create",
+        Filters = new List<OSHManagement.Models.ViewModels.FilterConfig>
+        {
+            new OSHManagement.Models.ViewModels.FilterConfig
+            {
+                Label = "Activation Status",
+                ParameterName = "filter",
+                CurrentValue = ViewBag.CurrentFilter,
+                Type = OSHManagement.Models.ViewModels.FilterType.Select,
+                Options = new List<OSHManagement.Models.ViewModels.FilterOptionConfig>
+                {
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "All Committees", Value = "" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Active", Value = "active" },
+                    new OSHManagement.Models.ViewModels.FilterOptionConfig { Text = "Pending", Value = "pending" }
+                }
+            }
+        }
+    };
+
+    // Build table with row data
+    var table = tableConfig.BuildTable(
+        tableContent: @<text>
+            @foreach (var committee in Model)
+            {
+                <tr onclick="window.location.href='@Url.Action("Details", new { teamId = committee.TeamId })';" style="cursor: pointer;">
+                    <td>
+                        <div class="fw-medium">@committee.TeamName</div>
+                    </td>
+                    <td>
+                        <span class="text-muted">@committee.Station.StationName</span>
+                        @if (committee.Station.OrgCategory != null)
+                        {
+                            <br/><small class="badge bg-light text-muted">@committee.Station.OrgCategory.CategoryName</small>
+                        }
+                    </td>
+                    <td>
+                        <span class="text-muted">@committee.FormationDate.ToString("MMM dd, yyyy")</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-info-transparent">@committee.TeamMembers.Count/@(committee.MaxMemberCount ?? 10)</span>
+                    </td>
+                    <td>
+                        @{
+                            var statusClass = committee.TeamStatus == "Active" ? "success" : 
+                                            committee.TeamStatus == "Forming" ? "warning" : "secondary";
+                        }
+                        <span class="badge bg-@statusClass">@committee.TeamStatus</span>
+                    </td>
+                    <td>
+                        @if (committee.OshCommitteeConfig != null)
+                        {
+                            <span class="badge bg-success">
+                                <i class="ri-checkbox-circle-line me-1"></i>Activated
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning">
+                                <i class="ri-error-warning-line me-1"></i>Pending
+                            </span>
+                        }
+                    </td>
+                    <td>
+                        <span class="text-muted">
+                            @(committee.UpdatedAt?.ToString("MMM dd, yyyy") ?? committee.CreatedAt.ToString("MMM dd, yyyy"))
+                        </span>
+                    </td>
+                    <td onclick="event.stopPropagation();">
+                        <div class="btn-group" role="group">
+                            <a href="@Url.Action("Details", new { teamId = committee.TeamId })" 
+                               class="btn btn-sm btn-primary" 
+                               title="View Details">
+                                <i class="ri-eye-line"></i>
+                            </a>
+                            @if (committee.OshCommitteeConfig == null)
+                            {
+                                <a href="@Url.Action("Activate", new { teamId = committee.TeamId })" 
+                                   class="btn btn-sm btn-success" 
+                                   title="Activate Committee">
+                                    <i class="ri-check-line"></i>
+                                </a>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </text>,
+        currentUrl: Context.Request.Path + Context.Request.QueryString
+    );
+}
+
+<!-- Main Content -->
+<div class="row mt-3">
+    <div class="col-xl-12">
+        <partial name="~/Views/Shared/Components/_DataTable.cshtml" model="table" />
+    </div>
+</div>
