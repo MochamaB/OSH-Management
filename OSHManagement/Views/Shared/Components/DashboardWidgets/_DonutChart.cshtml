@@ -1,0 +1,149 @@
+@model OSHManagement.Models.ViewModels.Dashboard.DonutChartViewModel
+
+@*
+    Donut Chart Component using ApexCharts
+    Shows data in donut/pie format with legend
+    RENDERING ONLY - NO LOGIC
+*@
+
+<div class="@Model.ColumnClass">
+    <div class="card custom-card">
+        <div class="card-header justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                @if (!string.IsNullOrEmpty(Model.Icon))
+                {
+                    <span class="avatar avatar-xs bg-primary-transparent">
+                        <i class="@Model.Icon fs-12"></i>
+                    </span>
+                }
+                <div>
+                    <div class="card-title mb-0">@Model.Title</div>
+                    @if (!string.IsNullOrEmpty(Model.Subtitle))
+                    {
+                        <span class="d-block text-muted fs-12">@Model.Subtitle</span>
+                    }
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.ViewAllUrl))
+            {
+                <a href="@Model.ViewAllUrl" class="link-primary fw-semibold fs-12">
+                    @Model.ViewAllText <i class="ri-arrow-right-s-line"></i>
+                </a>
+            }
+        </div>
+        <div class="card-body">
+            @if (Model.HasData)
+            {
+                <div id="chart-@Model.ChartId" style="min-height: @(Model.Height)px;"></div>
+            }
+            else
+            {
+                <div class="text-center text-muted py-5">
+                    <i class="ri-pie-chart-line fs-40 opacity-50"></i>
+                    <p class="mb-0 mt-2">No data available</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (Model.HasData)
+{
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if ApexCharts is loaded
+            if (typeof ApexCharts === 'undefined') {
+                console.error('ApexCharts library not loaded');
+                return;
+            }
+
+            var options = {
+                series: @Html.Raw(Model.GetSeriesJson()),
+                chart: {
+                    type: 'donut',
+                    height: @Model.Height,
+                    fontFamily: 'Inter, sans-serif',
+                    toolbar: {
+                        show: false
+                    }
+                },
+                labels: @Html.Raw(Model.GetLabelsJson()),
+                colors: @Html.Raw(Model.GetColorsJson()),
+                legend: {
+                    show: @Model.ShowLegend.ToString().ToLower(),
+                    position: '@Model.LegendPosition',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    markers: {
+                        width: 10,
+                        height: 10,
+                        radius: 2
+                    },
+                    itemMargin: {
+                        horizontal: 10,
+                        vertical: 5
+                    }@if (Model.ShowValuesInLegend)
+                    {
+                        @:,
+                        @:formatter: function(seriesName, opts) {
+                        @:    return seriesName + ': ' + opts.w.globals.series[opts.seriesIndex]
+                        @:}
+                    }
+                },
+                dataLabels: {
+                    enabled: @((Model.ShowValuesInLegend ? false : Model.ShowDataLabels).ToString().ToLower()),
+                    style: {
+                        fontSize: '13px',
+                        fontWeight: 600
+                    },
+                    dropShadow: {
+                        enabled: false
+                    }
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '70%',
+                            labels: {
+                                show: @Model.ShowTotal.ToString().ToLower(),
+                                total: {
+                                    show: @Model.ShowTotal.ToString().ToLower(),
+                                    label: '@Model.TotalLabel',
+                                    fontSize: '14px',
+                                    fontWeight: 600,
+                                    color: '#64748b',
+                                    formatter: function (w) {
+                                        return w.globals.seriesTotals.reduce((a, b) => {
+                                            return a + b
+                                        }, 0)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                responsive: [{
+                    breakpoint: 480,
+                    options: {
+                        chart: {
+                            height: 280
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }],
+                tooltip: {
+                    y: {
+                        formatter: function(value) {
+                            return value;
+                        }
+                    }
+                }
+            };
+
+            var chart = new ApexCharts(document.querySelector("#chart-@Model.ChartId"), options);
+            chart.render();
+        });
+    </script>
+}

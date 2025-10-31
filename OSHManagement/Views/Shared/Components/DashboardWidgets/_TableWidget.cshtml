@@ -1,0 +1,169 @@
+@model OSHManagement.Models.ViewModels.Dashboard.TableWidgetViewModel
+
+@*
+    Table Widget Component
+    Shows tabular data with columns and rows
+    RENDERING ONLY - NO LOGIC
+*@
+
+<div class="@Model.ColumnClass">
+    <div class="card custom-card">
+        <div class="card-header justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                @if (!string.IsNullOrEmpty(Model.Icon))
+                {
+                    <span class="avatar avatar-xs bg-primary-transparent">
+                        <i class="@Model.Icon fs-12"></i>
+                    </span>
+                }
+                <div class="card-title mb-0">@Model.Title</div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.ViewAllUrl))
+            {
+                <a href="@Model.ViewAllUrl" class="link-primary fw-semibold fs-12">
+                    @Model.ViewAllText <i class="ri-arrow-right-s-line"></i>
+                </a>
+            }
+        </div>
+        <div class="card-body p-0">
+            @if (Model.HasData)
+            {
+                <div class="table-responsive">
+                    <table class="@Model.TableClasses mb-0">
+                        @if (Model.ShowHeader)
+                        {
+                            <thead>
+                                <tr>
+                                    @foreach (var column in Model.Columns)
+                                    {
+                                        <th class="@column.CssClass" @(column.Width.HasValue ? $"style=width:{column.Width}%" : "")>
+                                            @column.Header
+                                            @if (column.Sortable)
+                                            {
+                                                <i class="ri-arrow-up-down-line fs-12 ms-1 text-muted"></i>
+                                            }
+                                        </th>
+                                    }
+                                </tr>
+                            </thead>
+                        }
+                        <tbody>
+                            @foreach (var row in Model.Rows.Take(Model.MaxRows))
+                            {
+                                <tr class="@row.RowCssClass">
+                                    @foreach (var column in Model.Columns)
+                                    {
+                                        <td class="@column.CssClass">
+                                            @if (row.Data.ContainsKey(column.PropertyName))
+                                            {
+                                                var cellData = row.Data[column.PropertyName];
+                                                
+                                                @switch (column.Type)
+                                                {
+                                                    case OSHManagement.Models.ViewModels.Dashboard.ColumnType.Badge:
+                                                        if (cellData is OSHManagement.Models.ViewModels.Dashboard.TableBadgeData badgeData)
+                                                        {
+                                                            <span class="badge bg-@(badgeData.ColorClass)-transparent">@badgeData.Text</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>@cellData</span>
+                                                        }
+                                                        break;
+                                                        
+                                                    case OSHManagement.Models.ViewModels.Dashboard.ColumnType.Icon:
+                                                        if (cellData is OSHManagement.Models.ViewModels.Dashboard.TableIconData iconData)
+                                                        {
+                                                            <i class="@iconData.Icon text-@(iconData.ColorClass)" title="@iconData.Tooltip"></i>
+                                                        }
+                                                        break;
+                                                        
+                                                    case OSHManagement.Models.ViewModels.Dashboard.ColumnType.Date:
+                                                        if (cellData is DateTime date)
+                                                        {
+                                                            <span>@OSHManagement.Extensions.Dashboard.TableWidgetExtensions.FormatDate(date)</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>@cellData</span>
+                                                        }
+                                                        break;
+                                                        
+                                                    case OSHManagement.Models.ViewModels.Dashboard.ColumnType.DateTime:
+                                                        if (cellData is DateTime dateTime)
+                                                        {
+                                                            <span>@dateTime.ToString("MMM dd, yyyy h:mm tt")</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>@cellData</span>
+                                                        }
+                                                        break;
+                                                        
+                                                    case OSHManagement.Models.ViewModels.Dashboard.ColumnType.Percentage:
+                                                        if (cellData is decimal percentage)
+                                                        {
+                                                            <span>@OSHManagement.Extensions.Dashboard.TableWidgetExtensions.FormatPercentage(percentage)</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>@cellData</span>
+                                                        }
+                                                        break;
+                                                        
+                                                    case OSHManagement.Models.ViewModels.Dashboard.ColumnType.Currency:
+                                                        if (cellData is decimal currency)
+                                                        {
+                                                            <span>@OSHManagement.Extensions.Dashboard.TableWidgetExtensions.FormatCurrency(currency)</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>@cellData</span>
+                                                        }
+                                                        break;
+                                                        
+                                                    case OSHManagement.Models.ViewModels.Dashboard.ColumnType.Link:
+                                                        if (!string.IsNullOrEmpty(row.LinkUrl))
+                                                        {
+                                                            <a href="@row.LinkUrl" class="link-primary">@cellData</a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>@cellData</span>
+                                                        }
+                                                        break;
+                                                        
+                                                    case OSHManagement.Models.ViewModels.Dashboard.ColumnType.Number:
+                                                        <span class="text-end d-block">@cellData</span>
+                                                        break;
+                                                        
+                                                    default:
+                                                        @if (!string.IsNullOrEmpty(row.LinkUrl) && column == Model.Columns.First())
+                                                        {
+                                                            <a href="@row.LinkUrl" class="link-primary fw-medium">@cellData</a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>@cellData</span>
+                                                        }
+                                                        break;
+                                                }
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="p-4 text-center text-muted">
+                    <i class="ri-table-line fs-40 opacity-50"></i>
+                    <p class="mb-0 mt-2">@Model.EmptyMessage</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,163 @@
+@model OSHManagement.Models.ViewModels.Dashboard.BarChartViewModel
+
+@*
+    Bar Chart Component using ApexCharts
+    Shows data in vertical or horizontal bar format
+    RENDERING ONLY - NO LOGIC
+*@
+
+<div class="@Model.ColumnClass">
+    <div class="card custom-card">
+        <div class="card-header justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                @if (!string.IsNullOrEmpty(Model.Icon))
+                {
+                    <span class="avatar avatar-xs bg-primary-transparent">
+                        <i class="@Model.Icon fs-12"></i>
+                    </span>
+                }
+                <div>
+                    <div class="card-title mb-0">@Model.Title</div>
+                    @if (!string.IsNullOrEmpty(Model.Subtitle))
+                    {
+                        <span class="d-block text-muted fs-12">@Model.Subtitle</span>
+                    }
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.ViewAllUrl))
+            {
+                <a href="@Model.ViewAllUrl" class="link-primary fw-semibold fs-12">
+                    @Model.ViewAllText <i class="ri-arrow-right-s-line"></i>
+                </a>
+            }
+        </div>
+        <div class="card-body">
+            @if (Model.HasData)
+            {
+                <div id="chart-@Model.ChartId" style="min-height: @(Model.Height)px;"></div>
+            }
+            else
+            {
+                <div class="text-center text-muted py-5">
+                    <i class="ri-bar-chart-line fs-40 opacity-50"></i>
+                    <p class="mb-0 mt-2">No data available</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (Model.HasData)
+{
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof ApexCharts === 'undefined') {
+                console.error('ApexCharts library not loaded');
+                return;
+            }
+
+            var options = {
+                series: @Html.Raw(Model.GetSeriesJson()),
+                chart: {
+                    type: 'bar',
+                    height: @Model.Height,
+                    fontFamily: 'Inter, sans-serif',
+                    toolbar: {
+                        show: true,
+                        tools: {
+                            download: true,
+                            zoom: false,
+                            pan: false
+                        }
+                    },
+                    stacked: @Model.Stacked.ToString().ToLower()
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: @Model.Horizontal.ToString().ToLower(),
+                        borderRadius: 4,
+                        columnWidth: '60%',
+                        dataLabels: {
+                            position: '@(Model.Horizontal ? "center" : "top")'
+                        }
+                    }
+                },
+                dataLabels: {
+                    enabled: @Model.ShowDataLabels.ToString().ToLower(),
+                    style: {
+                        fontSize: '12px',
+                        fontWeight: 600
+                    }
+                },
+                colors: @Html.Raw(Model.GetColorsJson()),
+                xaxis: {
+                    categories: @Html.Raw(Model.GetCategoriesJson()),
+                    title: {
+                        text: '@Model.XAxisLabel',
+                        style: {
+                            fontSize: '12px',
+                            fontWeight: 600
+                        }
+                    },
+                    labels: {
+                        style: {
+                            fontSize: '12px'
+                        }
+                    }
+                },
+                yaxis: {
+                    title: {
+                        text: '@Model.YAxisLabel',
+                        style: {
+                            fontSize: '12px',
+                            fontWeight: 600
+                        }
+                    },
+                    labels: {
+                        style: {
+                            fontSize: '12px'
+                        }
+                    }
+                },
+                legend: {
+                    show: @Model.ShowLegend.ToString().ToLower(),
+                    position: 'top',
+                    horizontalAlign: 'left',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    markers: {
+                        width: 10,
+                        height: 10,
+                        radius: 2
+                    }
+                },
+                grid: {
+                    show: @Model.ShowGrid.ToString().ToLower(),
+                    borderColor: '#e5e7eb',
+                    strokeDashArray: 3
+                },
+                tooltip: {
+                    y: {
+                        formatter: function(value) {
+                            return value;
+                        }
+                    }
+                },
+                responsive: [{
+                    breakpoint: 480,
+                    options: {
+                        chart: {
+                            height: 300
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }]
+            };
+
+            var chart = new ApexCharts(document.querySelector("#chart-@Model.ChartId"), options);
+            chart.render();
+        });
+    </script>
+}

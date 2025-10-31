@@ -1,0 +1,247 @@
+@using OSHManagement.Extensions.Dashboard
+@using OSHManagement.Models.ViewModels
+@using OSHManagement.Models.ViewModels.Dashboard
+
+@{
+    ViewData["Title"] = "Bar & Line Charts - Component Testing";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // LAYER 3: ALL LOGIC IN EXTENSION METHODS
+    
+    // === BAR CHARTS ===
+    
+    // Example 1: Incidents by Month
+    var monthlyIncidents = new Dictionary<string, int>
+    {
+        { "Jan", 12 }, { "Feb", 8 }, { "Mar", 15 }, { "Apr", 10 },
+        { "May", 7 }, { "Jun", 14 }, { "Jul", 9 }, { "Aug", 11 },
+        { "Sep", 13 }, { "Oct", 6 }, { "Nov", 10 }, { "Dec", 8 }
+    };
+    var incidentsBarChart = BarChartExtensions.BuildIncidentsByMonthChart(monthlyIncidents, DateTime.Now.Year);
+
+    // Example 2: Incidents by Department (Horizontal)
+    var departmentIncidents = new Dictionary<string, int>
+    {
+        { "Production", 45 },
+        { "Maintenance", 32 },
+        { "Warehouse", 28 },
+        { "Office", 12 },
+        { "Security", 15 }
+    };
+    var departmentBarChart = BarChartExtensions.BuildIncidentsByDepartmentChart(departmentIncidents);
+
+    // Example 3: Training Completion (Stacked)
+    var departmentTraining = new Dictionary<string, (int Completed, int Total)>
+    {
+        { "Production", (45, 60) },
+        { "Maintenance", (30, 35) },
+        { "Warehouse", (25, 40) },
+        { "Office", (15, 20) },
+        { "Security", (10, 15) }
+    };
+    var trainingBarChart = BarChartExtensions.BuildTrainingCompletionChart(departmentTraining);
+
+    // Example 4: Actions by Status
+    var actionsBarChart = BarChartExtensions.BuildActionsByStatusChart(45, 12, 8, 5);
+
+    // === LINE CHARTS ===
+    
+    // Example 5: Incident Trend
+    var incidentTrendData = new Dictionary<string, int>
+    {
+        { "Jan", 12 }, { "Feb", 8 }, { "Mar", 15 }, { "Apr", 10 },
+        { "May", 7 }, { "Jun", 14 }, { "Jul", 9 }, { "Aug", 11 },
+        { "Sep", 13 }, { "Oct", 6 }, { "Nov", 10 }, { "Dec", 8 }
+    };
+    var incidentLineChart = LineChartExtensions.BuildIncidentTrendChart(incidentTrendData, DateTime.Now.Year);
+
+    // Example 6: Training Completion Trend
+    var trainingTrendData = new Dictionary<string, int>
+    {
+        { "Jan", 45 }, { "Feb", 52 }, { "Mar", 48 }, { "Apr", 61 },
+        { "May", 58 }, { "Jun", 65 }, { "Jul", 55 }, { "Aug", 70 },
+        { "Sep", 68 }, { "Oct", 75 }, { "Nov", 72 }, { "Dec", 80 }
+    };
+    var trainingLineChart = LineChartExtensions.BuildTrainingCompletionTrendChart(trainingTrendData, DateTime.Now.Year);
+
+    // Example 7: Incidents vs Actions
+    var incidentsVsActionsData = new Dictionary<string, (int Incidents, int Actions)>
+    {
+        { "Jan", (12, 15) }, { "Feb", (8, 10) }, { "Mar", (15, 18) },
+        { "Apr", (10, 12) }, { "May", (7, 8) }, { "Jun", (14, 16) },
+        { "Jul", (9, 11) }, { "Aug", (11, 13) }, { "Sep", (13, 15) },
+        { "Oct", (6, 7) }, { "Nov", (10, 12) }, { "Dec", (8, 10) }
+    };
+    var incidentsVsActionsChart = LineChartExtensions.BuildIncidentsVsActionsChart(incidentsVsActionsData, DateTime.Now.Year);
+
+    // Example 8: Compliance Rate Trend
+    var complianceData = new Dictionary<string, decimal>
+    {
+        { "Jan", 85.5m }, { "Feb", 87.2m }, { "Mar", 88.5m }, { "Apr", 90.1m },
+        { "May", 89.8m }, { "Jun", 91.2m }, { "Jul", 92.5m }, { "Aug", 93.0m },
+        { "Sep", 92.8m }, { "Oct", 94.2m }, { "Nov", 93.5m }, { "Dec", 95.0m }
+    };
+    var complianceLineChart = LineChartExtensions.BuildComplianceRateTrendChart(complianceData, DateTime.Now.Year);
+}
+
+<!-- Page Header -->
+<div class="page-header-breadcrumb mb-3">
+    <div class="d-flex align-center justify-content-between flex-wrap">
+        <h1 class="page-title fw-medium fs-18 mb-0">Bar & Line Charts Component Testing</h1>
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="/Dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active">Charts Testing</li>
+        </ol>
+    </div>
+</div>
+
+<!-- Section: Bar Charts -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card custom-card bg-primary-transparent">
+            <div class="card-body py-2">
+                <span class="fw-semibold fs-16 text-primary">📊 Bar Charts</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Example 1 & 2: Monthly Incidents and Department Incidents -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Incidents by Month & Department</div>
+            </div>
+        </div>
+    </div>
+    @* LAYER 2: VIEW USES PARTIAL *@
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_BarChart.cshtml" model="incidentsBarChart" />
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_BarChart.cshtml" model="departmentBarChart" />
+</div>
+
+<!-- Example 3 & 4: Training (Stacked) and Actions Status -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Training Completion (Stacked) & Actions by Status</div>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_BarChart.cshtml" model="trainingBarChart" />
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_BarChart.cshtml" model="actionsBarChart" />
+</div>
+
+<!-- Section: Line Charts -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card custom-card bg-success-transparent">
+            <div class="card-body py-2">
+                <span class="fw-semibold fs-16 text-success">📈 Line Charts</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Example 5 & 6: Incident Trend and Training Trend -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Incident Trend & Training Completion Trend</div>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_LineChart.cshtml" model="incidentLineChart" />
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_LineChart.cshtml" model="trainingLineChart" />
+</div>
+
+<!-- Example 7 & 8: Incidents vs Actions and Compliance Rate -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Incidents vs Actions & Compliance Rate Trend</div>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_LineChart.cshtml" model="incidentsVsActionsChart" />
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_LineChart.cshtml" model="complianceLineChart" />
+</div>
+
+<!-- Skeleton Loading States -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Skeleton Loading States</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_SkeletonBarChart.cshtml" />
+    </div>
+    <div class="col-xl-6">
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_SkeletonLineChart.cshtml" />
+    </div>
+</div>
+
+<!-- Code Examples -->
+<div class="row">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Usage Examples</div>
+            </div>
+            <div class="card-body">
+                <span class="d-block fw-semibold mb-2">📊 Bar Chart Examples:</span>
+                
+                <span class="d-block fw-medium mb-2 mt-3">1. Incidents by Month:</span>
+                <pre class="language-csharp"><code>var data = new Dictionary&lt;string, int&gt; { { "Jan", 12 }, { "Feb", 8 }, ... };
+var chart = BarChartExtensions.BuildIncidentsByMonthChart(data, 2025);</code></pre>
+
+                <span class="d-block fw-medium mb-2 mt-3">2. Horizontal Bar (Department Incidents):</span>
+                <pre class="language-csharp"><code>var deptData = new Dictionary&lt;string, int&gt; { { "Production", 45 }, ... };
+var chart = BarChartExtensions.BuildIncidentsByDepartmentChart(deptData);</code></pre>
+
+                <span class="d-block fw-medium mb-2 mt-3">3. Stacked Bar (Training Completion):</span>
+                <pre class="language-csharp"><code>var training = new Dictionary&lt;string, (int Completed, int Total)&gt; 
+{ 
+    { "Production", (45, 60) }, 
+    ... 
+};
+var chart = BarChartExtensions.BuildTrainingCompletionChart(training);</code></pre>
+
+                <hr class="my-4">
+
+                <span class="d-block fw-semibold mb-2">📈 Line Chart Examples:</span>
+
+                <span class="d-block fw-medium mb-2 mt-3">1. Incident Trend (with area):</span>
+                <pre class="language-csharp"><code>var data = new Dictionary&lt;string, int&gt; { { "Jan", 12 }, { "Feb", 8 }, ... };
+var chart = LineChartExtensions.BuildIncidentTrendChart(data, 2025);</code></pre>
+
+                <span class="d-block fw-medium mb-2 mt-3">2. Multi-Series (Incidents vs Actions):</span>
+                <pre class="language-csharp"><code>var data = new Dictionary&lt;string, (int Incidents, int Actions)&gt; 
+{ 
+    { "Jan", (12, 15) }, 
+    ... 
+};
+var chart = LineChartExtensions.BuildIncidentsVsActionsChart(data, 2025);</code></pre>
+
+                <span class="d-block fw-medium mb-2 mt-3">3. Compliance Rate Trend:</span>
+                <pre class="language-csharp"><code>var rates = new Dictionary&lt;string, decimal&gt; { { "Jan", 85.5m }, ... };
+var chart = LineChartExtensions.BuildComplianceRateTrendChart(rates, 2025);</code></pre>
+
+                <hr class="my-4">
+
+                <span class="d-block fw-semibold mb-2">Render in View:</span>
+                <pre class="language-html"><code>&lt;!-- Bar Chart --&gt;
+&lt;partial name="~/Views/Shared/Components/DashboardWidgets/_BarChart.cshtml" model="barChart" /&gt;
+
+&lt;!-- Line Chart --&gt;
+&lt;partial name="~/Views/Shared/Components/DashboardWidgets/_LineChart.cshtml" model="lineChart" /&gt;</code></pre>
+            </div>
+        </div>
+    </div>
+</div>

@@ -89,7 +89,11 @@
 <!-- Pattern A: Standard KPI Cards -->
 <div class="row mb-4">
     <div class="col-12">
-        <h4 class="mb-3">Pattern A: Standard KPI Cards (Icon + Value + Trend + Badge)</h4>
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Pattern A: Standard KPI Cards (Icon + Value + Trend + Badge)</div>
+            </div>
+        </div>
     </div>
     @* LAYER 2: VIEW USES FOREACH + PARTIAL *@
     @foreach (var card in standardCards)
@@ -101,7 +105,11 @@
 <!-- Pattern B: KPI Cards with Trend Emphasis -->
 <div class="row mb-4">
     <div class="col-12">
-        <h4 class="mb-3">Pattern B: KPI Cards with Trend Emphasis (Nested Avatar + Prominent Trend)</h4>
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Pattern B: KPI Cards with Trend Emphasis (Nested Avatar + Prominent Trend)</div>
+            </div>
+        </div>
     </div>
     @foreach (var card in trendCards)
     {
@@ -112,7 +120,11 @@
 <!-- Pattern C: KPI Cards with Sparkline -->
 <div class="row mb-4">
     <div class="col-12">
-        <h4 class="mb-3">Pattern C: KPI Cards with Sparkline (Mini Chart)</h4>
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Pattern C: KPI Cards with Sparkline (Mini Chart)</div>
+            </div>
+        </div>
     </div>
     @foreach (var card in sparklineCards)
     {
@@ -123,7 +135,11 @@
 <!-- Single Card with Calculated Trend -->
 <div class="row mb-4">
     <div class="col-12">
-        <h4 class="mb-3">Dynamic KPI Card (Built from Data with Auto-Calculated Trend)</h4>
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Dynamic KPI Card (Built from Data with Auto-Calculated Trend)</div>
+            </div>
+        </div>
     </div>
     <partial name="~/Views/Shared/Components/DashboardWidgets/_KPICard.cshtml" model="singleCard" />
 </div>
@@ -131,7 +147,11 @@
 <!-- Skeleton Loading State Demo -->
 <div class="row mb-4">
     <div class="col-12">
-        <h4 class="mb-3">Skeleton Loading State</h4>
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Skeleton Loading State</div>
+            </div>
+        </div>
     </div>
     <div class="col-xl-3 col-md-6">
         <partial name="~/Views/Shared/Components/DashboardWidgets/_SkeletonKPICard.cshtml" />
@@ -146,10 +166,10 @@
     <div class="col-12">
         <div class="card custom-card">
             <div class="card-header">
-                <h5 class="card-title">Usage Examples</h5>
+                <div class="card-title">Usage Examples</div>
             </div>
             <div class="card-body">
-                <h6>1. Build Single Standard KPI Card:</h6>
+                <span class="d-block fw-semibold mb-2">1. Build Single Standard KPI Card:</span>
                 <pre class="language-csharp"><code>var card = KPICardExtensions.BuildKPICard(
     title: "Total Incidents",
     value: "247",
@@ -160,7 +180,7 @@
     trendDirection: TrendDirection.Up
 );</code></pre>
 
-                <h6 class="mt-3">2. Build Row of KPI Cards:</h6>
+                <span class="d-block fw-semibold mb-2 mt-3">2. Build Row of KPI Cards:</span>
                 <pre class="language-csharp"><code>var cards = KPICardExtensions.BuildKPICardsRow(
     titles: new List&lt;string&gt; { "Incidents", "Actions", "Training", "Compliance" },
     values: new List&lt;string&gt; { "247", "38", "150", "94%" },
@@ -168,7 +188,7 @@
     colorThemes: new List&lt;string&gt; { "danger", "warning", "info", "success" }
 );</code></pre>
 
-                <h6 class="mt-3">3. Build Card with Sparkline:</h6>
+                <span class="d-block fw-semibold mb-2 mt-3">3. Build Card with Sparkline:</span>
                 <pre class="language-csharp"><code>var card = KPICardExtensions.BuildKPICardWithSparkline(
     title: "Total Sales",
     value: "12,432",
@@ -177,7 +197,7 @@
     colorTheme: "primary"
 );</code></pre>
 
-                <h6 class="mt-3">4. Render in View:</h6>
+                <span class="d-block fw-semibold mb-2 mt-3">4. Render in View:</span>
                 <pre class="language-html"><code>&lt;partial name="~/Views/Shared/Components/DashboardWidgets/_KPICard.cshtml" model="card" /&gt;</code></pre>
             </div>
         </div>

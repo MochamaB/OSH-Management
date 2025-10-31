@@ -1,0 +1,108 @@
+@model OSHManagement.Models.ViewModels.Dashboard.ListWidgetViewModel
+
+@*
+    List Widget Component
+    Shows lists of items with icons, badges, and timestamps
+    RENDERING ONLY - NO LOGIC
+*@
+
+<div class="@Model.ColumnClass">
+    <div class="card custom-card">
+        <div class="card-header justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                @if (!string.IsNullOrEmpty(Model.Icon))
+                {
+                    <span class="avatar avatar-xs bg-primary-transparent">
+                        <i class="@Model.Icon fs-12"></i>
+                    </span>
+                }
+                <div class="card-title mb-0">@Model.Title</div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.ViewAllUrl))
+            {
+                <a href="@Model.ViewAllUrl" class="link-primary fw-semibold fs-12">
+                    @Model.ViewAllText <i class="ri-arrow-right-s-line"></i>
+                </a>
+            }
+        </div>
+        <div class="card-body p-0">
+            @if (Model.HasItems)
+            {
+                <ul class="list-unstyled mb-0">
+                    @foreach (var item in Model.Items.Take(Model.MaxItems))
+                    {
+                        <li class="@(Model.WidgetType == OSHManagement.Models.ViewModels.Dashboard.ListWidgetType.Compact ? "py-2 px-3" : "")">
+                            <a href="@(item.LinkUrl ?? "#")" 
+                               class="d-flex align-items-start gap-3 @(Model.WidgetType == OSHManagement.Models.ViewModels.Dashboard.ListWidgetType.Compact ? "py-1" : "p-3") border-bottom @(!item.IsRead ? "bg-light" : "")">
+                                
+                                @* Icon or Avatar *@
+                                @if (Model.ShowIcons && !string.IsNullOrEmpty(item.Icon))
+                                {
+                                    <div class="lh-1">
+                                        <span class="avatar avatar-sm bg-@(item.IconColorClass)-transparent">
+                                            <i class="@item.Icon"></i>
+                                        </span>
+                                    </div>
+                                }
+                                else if (!string.IsNullOrEmpty(item.AvatarUrl))
+                                {
+                                    <div class="lh-1">
+                                        <span class="avatar avatar-sm">
+                                            <img src="@item.AvatarUrl" alt="@item.Title">
+                                        </span>
+                                    </div>
+                                }
+                                else if (!string.IsNullOrEmpty(item.AvatarInitials))
+                                {
+                                    <div class="lh-1">
+                                        <span class="avatar avatar-sm bg-primary-transparent">
+                                            @item.AvatarInitials
+                                        </span>
+                                    </div>
+                                }
+
+                                @* Content *@
+                                <div class="flex-fill">
+                                    <span class="d-block fw-semibold @(Model.WidgetType == OSHManagement.Models.ViewModels.Dashboard.ListWidgetType.Compact ? "fs-13" : "fs-14")">
+                                        @item.Title
+                                    </span>
+                                    @if (Model.ShowSubtitles && !string.IsNullOrEmpty(item.Subtitle))
+                                    {
+                                        <span class="d-block text-muted fs-12">@item.Subtitle</span>
+                                    }
+                                </div>
+
+                                @* Right Side (Badge/Timestamp) *@
+                                <div class="text-end">
+                                    @if (Model.ShowTimestamps && !string.IsNullOrEmpty(item.Timestamp))
+                                    {
+                                        <span class="d-block text-muted fs-11 mb-1">@item.Timestamp</span>
+                                    }
+                                    @if (Model.ShowBadges && !string.IsNullOrEmpty(item.Badge))
+                                    {
+                                        <span class="badge bg-@(item.BadgeColorClass)-transparent fs-11">@item.Badge</span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(item.SecondaryText))
+                                    {
+                                        <span class="d-block text-muted fs-12 mt-1">@item.SecondaryText</span>
+                                    }
+                                    @if (!item.IsRead && Model.WidgetType == OSHManagement.Models.ViewModels.Dashboard.ListWidgetType.Notification)
+                                    {
+                                        <span class="badge bg-primary rounded-pill">New</span>
+                                    }
+                                </div>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="p-4 text-center text-muted">
+                    <i class="ri-inbox-line fs-40 opacity-50"></i>
+                    <p class="mb-0 mt-2">@Model.EmptyMessage</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

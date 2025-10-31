@@ -1,0 +1,272 @@
+@using OSHManagement.Extensions.Dashboard
+@using OSHManagement.Models.ViewModels
+@using OSHManagement.Models.ViewModels.Dashboard
+
+@{
+    ViewData["Title"] = "Donut Charts - Component Testing";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // LAYER 3: ALL LOGIC IN EXTENSION METHODS
+    
+    // Example 1: Incident Severity Chart
+    var incidentChart = DonutChartExtensions.BuildIncidentSeverityChart(
+        fatal: 2,
+        major: 8,
+        minor: 25,
+        nearMiss: 15
+    );
+
+    // Example 2: Action Status Chart
+    var actionChart = DonutChartExtensions.BuildActionStatusChart(
+        completed: 45,
+        inProgress: 12,
+        pending: 8,
+        overdue: 5
+    );
+
+    // Example 3: Training Compliance Chart
+    var trainingChart = DonutChartExtensions.BuildTrainingComplianceChart(
+        compliant: 120,
+        partial: 35,
+        nonCompliant: 15
+    );
+
+    // Example 4: Equipment Condition Chart
+    var equipmentChart = DonutChartExtensions.BuildEquipmentConditionChart(
+        excellent: 45,
+        good: 78,
+        fair: 23,
+        poor: 8
+    );
+
+    // Example 5: Department Distribution Chart
+    var departmentCounts = new Dictionary<string, int>
+    {
+        { "Production", 45 },
+        { "Maintenance", 23 },
+        { "Warehouse", 18 },
+        { "Office", 12 },
+        { "Security", 8 }
+    };
+    var departmentChart = DonutChartExtensions.BuildDepartmentDistributionChart(
+        departmentCounts,
+        title: "Employees by Department"
+    );
+
+    // Example 6: Custom Chart
+    var customData = new List<ChartDataItem>
+    {
+        new() { Label = "Fire Extinguishers", Value = 45, Color = "danger" },
+        new() { Label = "First Aid Kits", Value = 32, Color = "success" },
+        new() { Label = "Safety Helmets", Value = 78, Color = "warning" },
+        new() { Label = "Eye Protection", Value = 56, Color = "info" },
+        new() { Label = "Hearing Protection", Value = 34, Color = "purple" }
+    };
+
+    var customChart = DonutChartExtensions.BuildDonutChartFromData(
+        title: "PPE Inventory Distribution",
+        data: customData,
+        subtitle: "Total: 245 items",
+        showLegend: true,
+        height: 320
+    );
+
+    // Example 7: Simple Chart with Arrays
+    var simpleChart = DonutChartExtensions.BuildDonutChart(
+        title: "Risk Assessment Categories",
+        series: new List<decimal> { 12, 23, 8, 5 },
+        labels: new List<string> { "High Risk", "Medium Risk", "Low Risk", "No Risk" },
+        colors: new List<string> { "danger", "warning", "info", "success" },
+        subtitle: "Total: 48 assessments",
+        showLegend: true,
+        height: 320
+    );
+
+    // Example 8: Chart with Total in Center
+    var totalChart = DonutChartExtensions.BuildIncidentSeverityChart(30, 45, 78, 22);
+    totalChart.ShowTotal = true;
+    totalChart.TotalLabel = "Total Incidents";
+
+    // Example 9: Chart with Values in Legend (Clean Donut)
+    var legendValuesChart = DonutChartExtensions.BuildActionStatusChart(45, 12, 8, 5);
+    legendValuesChart.ShowValuesInLegend = true; // Values shown in legend
+    legendValuesChart.ShowDataLabels = false;    // No labels on donut (auto-set when ShowValuesInLegend = true)
+}
+
+<!-- Page Header -->
+<div class="page-header-breadcrumb mb-3">
+    <div class="d-flex align-center justify-content-between flex-wrap">
+        <h1 class="page-title fw-medium fs-18 mb-0">Donut Charts Component Testing</h1>
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="/Dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active">Donut Charts Testing</li>
+        </ol>
+    </div>
+</div>
+
+<!-- Example 1 & 2: Incidents and Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Incident Severity & Action Status Charts</div>
+            </div>
+        </div>
+    </div>
+    @* LAYER 2: VIEW USES PARTIAL *@
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_DonutChart.cshtml" model="incidentChart" />
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_DonutChart.cshtml" model="actionChart" />
+</div>
+
+<!-- Example 3 & 4: Training and Equipment -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Training Compliance & Equipment Condition Charts</div>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_DonutChart.cshtml" model="trainingChart" />
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_DonutChart.cshtml" model="equipmentChart" />
+</div>
+
+<!-- Example 5 & 6: Department and Custom -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Department Distribution & Custom PPE Chart</div>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_DonutChart.cshtml" model="departmentChart" />
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_DonutChart.cshtml" model="customChart" />
+</div>
+
+<!-- Example 7 & 8: Simple and Total -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Simple Chart & Chart with Total in Center</div>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_DonutChart.cshtml" model="simpleChart" />
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_DonutChart.cshtml" model="totalChart" />
+</div>
+
+<!-- Example 9: Chart with Values in Legend -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Chart with Values in Legend (Clean Donut, No Labels)</div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-0">Values appear in legend instead of on the donut segments for a cleaner look</p>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_DonutChart.cshtml" model="legendValuesChart" />
+</div>
+
+<!-- Skeleton Loading State Demo -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Skeleton Loading State</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_SkeletonDonutChart.cshtml" />
+    </div>
+</div>
+
+<!-- Code Examples -->
+<div class="row">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Usage Examples</div>
+            </div>
+            <div class="card-body">
+                <span class="d-block fw-semibold mb-2">1. Pre-built Incident Severity Chart:</span>
+                <pre class="language-csharp"><code>var chart = DonutChartExtensions.BuildIncidentSeverityChart(
+    fatal: 2,
+    major: 8,
+    minor: 25,
+    nearMiss: 15
+);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">2. Pre-built Action Status Chart:</span>
+                <pre class="language-csharp"><code>var chart = DonutChartExtensions.BuildActionStatusChart(
+    completed: 45,
+    inProgress: 12,
+    pending: 8,
+    overdue: 5
+);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">3. Department Distribution Chart:</span>
+                <pre class="language-csharp"><code>var departmentCounts = new Dictionary&lt;string, int&gt;
+{
+    { "Production", 45 },
+    { "Maintenance", 23 },
+    { "Warehouse", 18 }
+};
+
+var chart = DonutChartExtensions.BuildDepartmentDistributionChart(
+    departmentCounts,
+    title: "Employees by Department"
+);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">4. Custom Chart from Data Items:</span>
+                <pre class="language-csharp"><code>var data = new List&lt;ChartDataItem&gt;
+{
+    new() { Label = "Category A", Value = 45, Color = "danger" },
+    new() { Label = "Category B", Value = 32, Color = "success" },
+    new() { Label = "Category C", Value = 78, Color = "warning" }
+};
+
+var chart = DonutChartExtensions.BuildDonutChartFromData(
+    title: "Custom Distribution",
+    data: data,
+    subtitle: "Total: 155 items"
+);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">5. Simple Chart with Arrays:</span>
+                <pre class="language-csharp"><code>var chart = DonutChartExtensions.BuildDonutChart(
+    title: "Risk Categories",
+    series: new List&lt;decimal&gt; { 12, 23, 8, 5 },
+    labels: new List&lt;string&gt; { "High", "Medium", "Low", "None" },
+    colors: new List&lt;string&gt; { "danger", "warning", "info", "success" }
+);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">6. Chart with Total in Center:</span>
+                <pre class="language-csharp"><code>var chart = DonutChartExtensions.BuildIncidentSeverityChart(30, 45, 78, 22);
+chart.ShowTotal = true;
+chart.TotalLabel = "Total Incidents";</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">7. Chart with Values in Legend (Clean Donut):</span>
+                <pre class="language-csharp"><code>var chart = DonutChartExtensions.BuildActionStatusChart(45, 12, 8, 5);
+chart.ShowValuesInLegend = true; // Shows "Completed: 45" in legend
+// Note: ShowDataLabels is automatically disabled when ShowValuesInLegend = true</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">8. Available Pre-built Charts:</span>
+                <ul class="list-unstyled ms-3">
+                    <li><strong>BuildIncidentSeverityChart():</strong> Fatal, Major, Minor, Near Miss</li>
+                    <li><strong>BuildActionStatusChart():</strong> Completed, In Progress, Pending, Overdue</li>
+                    <li><strong>BuildTrainingComplianceChart():</strong> Compliant, Partial, Non-Compliant</li>
+                    <li><strong>BuildEquipmentConditionChart():</strong> Excellent, Good, Fair, Poor</li>
+                    <li><strong>BuildDepartmentDistributionChart():</strong> Any department counts</li>
+                </ul>
+
+                <span class="d-block fw-semibold mb-2 mt-3">9. Render in View:</span>
+                <pre class="language-html"><code>&lt;partial name="~/Views/Shared/Components/DashboardWidgets/_DonutChart.cshtml" model="chart" /&gt;</code></pre>
+            </div>
+        </div>
+    </div>
+</div>

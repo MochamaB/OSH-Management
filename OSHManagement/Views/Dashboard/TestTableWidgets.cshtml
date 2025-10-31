@@ -1,0 +1,263 @@
+@using OSHManagement.Extensions.Dashboard
+@using OSHManagement.Models.ViewModels
+@using OSHManagement.Models.ViewModels.Dashboard
+
+@{
+    ViewData["Title"] = "Table Widgets - Component Testing";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // LAYER 3: ALL LOGIC IN EXTENSION METHODS
+    
+    // Example 1: Recent Incidents Table
+    var recentIncidents = new List<(int Id, string Title, string Location, string Severity, DateTime Date, string ReportedBy)>
+    {
+        (1, "Worker slipped on wet floor", "Main Workshop", "Minor", DateTime.Now.AddHours(-2), "John Doe"),
+        (2, "Chemical spill in storage area", "Storage Room B", "Major", DateTime.Now.AddHours(-5), "Jane Smith"),
+        (3, "Near miss with forklift", "Warehouse Zone 3", "Near Miss", DateTime.Now.AddDays(-1), "Mike Johnson"),
+        (4, "Equipment malfunction", "Production Line 2", "Minor", DateTime.Now.AddDays(-2), "Sarah Williams"),
+        (5, "Fire alarm false trigger", "Office Building", "Minor", DateTime.Now.AddDays(-3), "Tom Brown")
+    };
+
+    var incidentsTable = TableWidgetExtensions.BuildRecentIncidentsTable(recentIncidents, maxRows: 10);
+
+    // Example 2: Actions Table
+    var actions = new List<(int Id, string Title, string AssignedTo, string Status, DateTime DueDate, string Priority)>
+    {
+        (1, "Complete safety training", "John Doe", "In Progress", DateTime.Now.AddDays(3), "High"),
+        (2, "Inspect fire extinguishers", "Jane Smith", "Pending", DateTime.Now.AddDays(1), "Medium"),
+        (3, "Review incident report", "Mike Johnson", "Overdue", DateTime.Now.AddDays(-2), "High"),
+        (4, "Update safety manual", "Sarah Williams", "Completed", DateTime.Now.AddDays(-5), "Low"),
+        (5, "Conduct PPE audit", "Tom Brown", "Pending", DateTime.Now.AddDays(7), "Medium")
+    };
+
+    var actionsTable = TableWidgetExtensions.BuildActionsTable(actions, maxRows: 10);
+
+    // Example 3: Equipment Table
+    var equipment = new List<(int Id, string Name, string Type, string Status, DateTime LastInspection, string Condition)>
+    {
+        (1, "Fire Extinguisher FE-001", "Safety Equipment", "Active", DateTime.Now.AddDays(-30), "Good"),
+        (2, "First Aid Kit FK-023", "Medical", "Active", DateTime.Now.AddDays(-15), "Fair"),
+        (3, "Safety Helmet SH-145", "PPE", "Active", DateTime.Now.AddDays(-5), "Excellent"),
+        (4, "Eye Protection EP-089", "PPE", "Inactive", DateTime.Now.AddDays(-60), "Needs Replacement"),
+        (5, "Hearing Protection HP-234", "PPE", "Active", DateTime.Now.AddDays(-20), "Good")
+    };
+
+    var equipmentTable = TableWidgetExtensions.BuildEquipmentTable(equipment, maxRows: 10);
+
+    // Example 4: Training Compliance Table
+    var training = new List<(int Id, string EmployeeName, string Department, int CompletedCourses, int TotalCourses, decimal ComplianceRate)>
+    {
+        (1, "John Doe", "Production", 8, 10, 80.0m),
+        (2, "Jane Smith", "Maintenance", 10, 10, 100.0m),
+        (3, "Mike Johnson", "Warehouse", 5, 10, 50.0m),
+        (4, "Sarah Williams", "Office", 9, 10, 90.0m),
+        (5, "Tom Brown", "Production", 7, 10, 70.0m)
+    };
+
+    var trainingTable = TableWidgetExtensions.BuildTrainingComplianceTable(training, maxRows: 10);
+
+    // Example 5: Custom Table
+    var customColumns = new List<TableColumnViewModel>
+    {
+        TableWidgetExtensions.BuildColumn("Item", "Item", ColumnType.Text),
+        TableWidgetExtensions.BuildColumn("Quantity", "Quantity", ColumnType.Number, cssClass: "text-end"),
+        TableWidgetExtensions.BuildColumn("Status", "Status", ColumnType.Badge),
+        TableWidgetExtensions.BuildColumn("Last Updated", "Updated", ColumnType.Date)
+    };
+
+    var customRows = new List<TableRowViewModel>
+    {
+        TableWidgetExtensions.BuildRow(
+            data: new Dictionary<string, object>
+            {
+                { "Item", "Hard Hats" },
+                { "Quantity", 45 },
+                { "Status", new TableBadgeData { Text = "In Stock", ColorClass = "success" } },
+                { "Updated", DateTime.Now.AddDays(-2) }
+            },
+            linkUrl: "/Inventory/Details/1"
+        ),
+        TableWidgetExtensions.BuildRow(
+            data: new Dictionary<string, object>
+            {
+                { "Item", "Safety Goggles" },
+                { "Quantity", 12 },
+                { "Status", new TableBadgeData { Text = "Low Stock", ColorClass = "warning" } },
+                { "Updated", DateTime.Now.AddDays(-1) }
+            },
+            linkUrl: "/Inventory/Details/2"
+        ),
+        TableWidgetExtensions.BuildRow(
+            data: new Dictionary<string, object>
+            {
+                { "Item", "Safety Gloves" },
+                { "Quantity", 0 },
+                { "Status", new TableBadgeData { Text = "Out of Stock", ColorClass = "danger" } },
+                { "Updated", DateTime.Now }
+            },
+            linkUrl: "/Inventory/Details/3"
+        )
+    };
+
+    var customTable = TableWidgetExtensions.BuildTableWidget(
+        title: "Inventory Status",
+        columns: customColumns,
+        rows: customRows,
+        viewAllUrl: "/Inventory/Index"
+    );
+}
+
+<!-- Page Header -->
+<div class="page-header-breadcrumb mb-3">
+    <div class="d-flex align-center justify-content-between flex-wrap">
+        <h1 class="page-title fw-medium fs-18 mb-0">Table Widgets Component Testing</h1>
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="/Dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active">Table Widgets Testing</li>
+        </ol>
+    </div>
+</div>
+
+<!-- Example 1: Recent Incidents Table -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Recent Incidents Table Widget</div>
+            </div>
+        </div>
+    </div>
+    @* LAYER 2: VIEW USES PARTIAL *@
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_TableWidget.cshtml" model="incidentsTable" />
+</div>
+
+<!-- Example 2: Actions Table -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Actions Table Widget</div>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_TableWidget.cshtml" model="actionsTable" />
+</div>
+
+<!-- Example 3 & 4: Equipment and Training Tables Side by Side -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Equipment & Training Compliance Tables</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_TableWidget.cshtml" model="equipmentTable" />
+    </div>
+    <div class="col-xl-6">
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_TableWidget.cshtml" model="trainingTable" />
+    </div>
+</div>
+
+<!-- Example 5: Custom Table -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Custom Table Widget (Manual Columns & Rows)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_TableWidget.cshtml" model="customTable" />
+    </div>
+</div>
+
+<!-- Skeleton Loading State Demo -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Skeleton Loading State</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_SkeletonTableWidget.cshtml" />
+    </div>
+</div>
+
+<!-- Code Examples -->
+<div class="row">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Usage Examples</div>
+            </div>
+            <div class="card-body">
+                <span class="d-block fw-semibold mb-2">1. Pre-built Recent Incidents Table:</span>
+                <pre class="language-csharp"><code>var incidents = new List&lt;(int Id, string Title, string Location, string Severity, DateTime Date, string ReportedBy)&gt;
+{
+    (1, "Worker slipped", "Workshop", "Minor", DateTime.Now, "John Doe"),
+    // ... more incidents
+};
+
+var table = TableWidgetExtensions.BuildRecentIncidentsTable(incidents, maxRows: 10);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">2. Pre-built Actions Table:</span>
+                <pre class="language-csharp"><code>var actions = new List&lt;(int Id, string Title, string AssignedTo, string Status, DateTime DueDate, string Priority)&gt;
+{
+    (1, "Complete training", "John Doe", "Pending", DateTime.Now.AddDays(3), "High"),
+    // ... more actions
+};
+
+var table = TableWidgetExtensions.BuildActionsTable(actions, maxRows: 10);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">3. Custom Table with Columns and Rows:</span>
+                <pre class="language-csharp"><code>var columns = new List&lt;TableColumnViewModel&gt;
+{
+    TableWidgetExtensions.BuildColumn("Name", "Name", ColumnType.Text),
+    TableWidgetExtensions.BuildColumn("Status", "Status", ColumnType.Badge),
+    TableWidgetExtensions.BuildColumn("Date", "Date", ColumnType.Date)
+};
+
+var rows = new List&lt;TableRowViewModel&gt;
+{
+    TableWidgetExtensions.BuildRow(
+        data: new Dictionary&lt;string, object&gt;
+        {
+            { "Name", "Item 1" },
+            { "Status", new TableBadgeData { Text = "Active", ColorClass = "success" } },
+            { "Date", DateTime.Now }
+        },
+        linkUrl: "/Items/Details/1"
+    )
+};
+
+var table = TableWidgetExtensions.BuildTableWidget(
+    title: "My Table",
+    columns: columns,
+    rows: rows,
+    viewAllUrl: "/Items/Index"
+);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">4. Column Types Available:</span>
+                <ul class="list-unstyled ms-3">
+                    <li><strong>Text:</strong> Plain text</li>
+                    <li><strong>Number:</strong> Numeric value (right-aligned)</li>
+                    <li><strong>Badge:</strong> Status badges with colors</li>
+                    <li><strong>Date:</strong> Formatted dates ("Today", "Yesterday", "MMM dd, yyyy")</li>
+                    <li><strong>DateTime:</strong> Full date and time</li>
+                    <li><strong>Percentage:</strong> Formatted percentages (75.5%)</li>
+                    <li><strong>Currency:</strong> Formatted currency ($1,234.56)</li>
+                    <li><strong>Icon:</strong> Icon display with colors</li>
+                    <li><strong>Link:</strong> Clickable links</li>
+                </ul>
+
+                <span class="d-block fw-semibold mb-2 mt-3">5. Render in View:</span>
+                <pre class="language-html"><code>&lt;partial name="~/Views/Shared/Components/DashboardWidgets/_TableWidget.cshtml" model="table" /&gt;</code></pre>
+            </div>
+        </div>
+    </div>
+</div>

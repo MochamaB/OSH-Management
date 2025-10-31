@@ -1,0 +1,143 @@
+@model OSHManagement.Models.ViewModels.Dashboard.ListWidgetViewModel
+
+@*
+    Activity List Widget Component (Timeline Style)
+    Shows activities with vertical timeline line and colored dots
+    RENDERING ONLY - NO LOGIC
+*@
+
+<div class="@Model.ColumnClass">
+    <div class="card custom-card">
+        <div class="card-header justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                @if (!string.IsNullOrEmpty(Model.Icon))
+                {
+                    <span class="avatar avatar-xs bg-primary-transparent">
+                        <i class="@Model.Icon fs-12"></i>
+                    </span>
+                }
+                <div class="card-title mb-0">@Model.Title</div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.ViewAllUrl))
+            {
+                <a href="@Model.ViewAllUrl" class="link-primary fw-semibold fs-12">
+                    @Model.ViewAllText <i class="ri-arrow-right-s-line"></i>
+                </a>
+            }
+        </div>
+        <div class="card-body">
+            @if (Model.HasItems)
+            {
+                <ul class="list-unstyled activity-timeline mb-0">
+                    @foreach (var item in Model.Items.Take(Model.MaxItems))
+                    {
+                        <li class="activity-item">
+                            <a href="@(item.LinkUrl ?? "#")" class="d-flex align-items-start gap-3 text-decoration-none">
+                                
+                                @* Timeline Icon/Dot *@
+                                <div class="timeline-icon-wrapper">
+                                    <span class="timeline-icon bg-@(item.IconColorClass)-transparent text-@(item.IconColorClass)">
+                                        @if (!string.IsNullOrEmpty(item.Icon))
+                                        {
+                                            <i class="@item.Icon fs-14"></i>
+                                        }
+                                        else if (!string.IsNullOrEmpty(item.AvatarInitials))
+                                        {
+                                            <span class="fs-11">@item.AvatarInitials</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="ri-checkbox-circle-line fs-14"></i>
+                                        }
+                                    </span>
+                                </div>
+
+                                @* Content *@
+                                <div class="flex-fill">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <span class="d-block fw-semibold text-dark fs-14 mb-1">
+                                                @item.Title
+                                            </span>
+                                            @if (Model.ShowSubtitles && !string.IsNullOrEmpty(item.Subtitle))
+                                            {
+                                                <span class="d-block text-muted fs-12">@item.Subtitle</span>
+                                            }
+                                        </div>
+                                        @if (Model.ShowTimestamps && !string.IsNullOrEmpty(item.Timestamp))
+                                        {
+                                            <span class="text-@(item.IconColorClass) fs-12 ms-3 text-nowrap">@item.Timestamp</span>
+                                        }
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="text-center text-muted py-4">
+                    <i class="ri-inbox-line fs-40 opacity-50"></i>
+                    <p class="mb-0 mt-2">@Model.EmptyMessage</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Activity Timeline Styles */
+    .activity-timeline {
+        position: relative;
+        padding-left: 0;
+    }
+
+    .activity-item {
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+
+    .activity-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .activity-item:not(:last-child) .timeline-icon-wrapper::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 32px;
+        transform: translateX(-50%);
+        width: 2px;
+        height: calc(100% + 0.5rem);
+        background: #e9ecef;
+    }
+
+    .timeline-icon-wrapper {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .timeline-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        position: relative;
+        z-index: 1;
+    }
+
+    .activity-item a {
+        transition: all 0.2s ease;
+    }
+
+    .activity-item a:hover {
+        transform: translateX(2px);
+    }
+
+    .activity-item a:hover .timeline-icon {
+        transform: scale(1.1);
+    }
+</style>

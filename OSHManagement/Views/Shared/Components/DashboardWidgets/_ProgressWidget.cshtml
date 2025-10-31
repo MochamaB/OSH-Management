@@ -1,0 +1,80 @@
+@model OSHManagement.Models.ViewModels.Dashboard.ProgressWidgetViewModel
+
+@*
+    Progress Widget Component
+    Shows completion/progress metrics with progress bars
+    RENDERING ONLY - NO LOGIC
+*@
+
+<div class="@Model.ColumnClass">
+    <div class="card custom-card">
+        <div class="card-body">
+            @if (Model.WidgetType == OSHManagement.Models.ViewModels.Dashboard.ProgressWidgetType.WithIcon && !string.IsNullOrEmpty(Model.Icon))
+            {
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="avatar avatar-sm bg-@Model.ProgressBarColorClass-transparent">
+                        <i class="@Model.Icon"></i>
+                    </span>
+                    <div class="flex-fill">
+                        <span class="d-block fw-medium fs-14 mb-0">@Model.Title</span>
+                        @if (!string.IsNullOrEmpty(Model.Subtitle))
+                        {
+                            <span class="fs-12 text-muted">@Model.Subtitle</span>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-medium fs-14">@Model.Title</span>
+                    <span class="fw-semibold text-@Model.ProgressBarColorClass">@Model.Percentage%</span>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Subtitle))
+                {
+                    <span class="d-block fs-12 text-muted mb-2">@Model.Subtitle</span>
+                }
+            }
+
+            <div class="progress" style="height: @(Model.Height)px;">
+                <div class="@Model.ProgressBarClasses" 
+                     role="progressbar" 
+                     style="width: @Model.Percentage%" 
+                     aria-valuenow="@Model.CurrentValue" 
+                     aria-valuemin="0" 
+                     aria-valuemax="@Model.TotalValue"
+                     aria-label="@Model.Title progress">
+                    @if (Model.Height >= 20)
+                    {
+                        <span class="px-2">@Model.Percentage%</span>
+                    }
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.FormattedDescription))
+            {
+                <div class="mt-2">
+                    <small class="text-muted">@Model.FormattedDescription</small>
+                </div>
+            }
+
+            @* Show threshold labels if defined *@
+            @if (Model.Thresholds != null && Model.Thresholds.Any())
+            {
+                var currentThreshold = Model.Thresholds.FirstOrDefault(t => Model.Percentage >= t.MinValue && Model.Percentage <= t.MaxValue);
+                if (currentThreshold != null && !string.IsNullOrEmpty(currentThreshold.Label))
+                {
+                    <div class="mt-2">
+                        <span class="badge bg-@(currentThreshold.ColorClass)-transparent">
+                            @currentThreshold.Label
+                        </span>
+                    </div>
+                }
+            }
+        </div>
+        @if (!string.IsNullOrEmpty(Model.LinkUrl))
+        {
+            <a href="@Model.LinkUrl" class="stretched-link" aria-label="View details for @Model.Title"></a>
+        }
+    </div>
+</div>

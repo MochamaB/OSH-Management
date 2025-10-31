@@ -1,0 +1,300 @@
+@using OSHManagement.Extensions.Dashboard
+@using OSHManagement.Models.ViewModels
+@using OSHManagement.Models.ViewModels.Dashboard
+
+@{
+    ViewData["Title"] = "Progress Widgets - Component Testing";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // LAYER 3: ALL LOGIC IN EXTENSION METHODS
+    
+    // Example 1: Standard Progress Widgets
+    var standardWidgets = ProgressWidgetExtensions.BuildProgressWidgets(
+        titles: new List<string> { 
+            "Training Completion", 
+            "Action Closure Rate", 
+            "PPE Compliance", 
+            "Inspection Progress" 
+        },
+        currentValues: new List<int> { 150, 85, 234, 45 },
+        totalValues: new List<int> { 200, 100, 250, 50 },
+        colorClasses: new List<string> { "primary", "success", "info", "warning" },
+        descriptions: new List<string> { 
+            "150 of 200 employees completed",
+            "85 of 100 actions closed",
+            "234 of 250 employees compliant",
+            "45 of 50 stations inspected"
+        },
+        striped: true,
+        animated: false
+    );
+
+    // Example 2: Progress with Icon
+    var iconWidget = ProgressWidgetExtensions.BuildProgressWidgetWithIcon(
+        title: "Safety Training 2025",
+        currentValue: 175,
+        totalValue: 200,
+        icon: "ri-book-open-line",
+        description: "175 employees completed mandatory training",
+        colorClass: "success"
+    );
+
+    // Example 3: Progress with Thresholds (Auto Color Change)
+    var thresholdWidget1 = ProgressWidgetExtensions.BuildProgressWidgetWithThresholds(
+        title: "Overall Compliance Score",
+        currentValue: 95,
+        totalValue: 100,
+        thresholds: ProgressWidgetExtensions.GetStrictThresholds(),
+        description: "Excellent compliance across all areas",
+        striped: true
+    );
+
+    var thresholdWidget2 = ProgressWidgetExtensions.BuildProgressWidgetWithThresholds(
+        title: "Incident Reduction Target",
+        currentValue: 65,
+        totalValue: 100,
+        thresholds: ProgressWidgetExtensions.GetDefaultThresholds(),
+        description: "On track to meet annual target",
+        striped: true
+    );
+
+    var thresholdWidget3 = ProgressWidgetExtensions.BuildProgressWidgetWithThresholds(
+        title: "Equipment Maintenance",
+        currentValue: 35,
+        totalValue: 100,
+        thresholds: ProgressWidgetExtensions.GetLenientThresholds(),
+        description: "Requires immediate attention",
+        striped: true
+    );
+
+    // Example 4: Pre-built Common Widgets
+    var trainingWidget = ProgressWidgetExtensions.BuildTrainingProgressWidget(
+        completed: 180,
+        total: 200,
+        courseName: "Fire Safety Essentials"
+    );
+
+    var complianceWidget = ProgressWidgetExtensions.BuildComplianceProgressWidget(
+        complianceName: "PPE",
+        compliantCount: 234,
+        totalCount: 250
+    );
+
+    var actionWidget = ProgressWidgetExtensions.BuildActionClosureWidget(
+        closedActions: 85,
+        totalActions: 100
+    );
+
+    // Example 5: Progress from Percentage
+    var percentageWidget = ProgressWidgetExtensions.BuildProgressWidgetFromPercentage(
+        title: "Annual Safety Goal Achievement",
+        percentage: 87.5m,
+        description: "87.5% of annual safety goals achieved",
+        colorClass: "success"
+    );
+}
+
+<!-- Page Header -->
+<div class="page-header-breadcrumb mb-3">
+    <div class="d-flex align-center justify-content-between flex-wrap">
+        <h1 class="page-title fw-medium fs-18 mb-0">Progress Widgets Component Testing</h1>
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="/Dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active">Progress Widgets Testing</li>
+        </ol>
+    </div>
+</div>
+
+<!-- Example 1: Standard Progress Widgets -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Standard Progress Widgets (Multiple Metrics)</div>
+            </div>
+        </div>
+    </div>
+    @* LAYER 2: VIEW USES FOREACH + PARTIAL *@
+    @foreach (var widget in standardWidgets)
+    {
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_ProgressWidget.cshtml" model="widget" />
+    }
+</div>
+
+<!-- Example 2: Progress Widget with Icon -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Progress Widget with Icon</div>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ProgressWidget.cshtml" model="iconWidget" />
+</div>
+
+<!-- Example 3: Progress with Thresholds (Auto Color Change) -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Progress with Thresholds (Auto Color Based on Percentage)</div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-0">Colors automatically change based on completion percentage</p>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ProgressWidget.cshtml" model="thresholdWidget1" />
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ProgressWidget.cshtml" model="thresholdWidget2" />
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ProgressWidget.cshtml" model="thresholdWidget3" />
+</div>
+
+<!-- Example 4: Pre-built Common Widgets -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Pre-built Common Use Case Widgets</div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-0">Ready-to-use widgets for common OSH metrics</p>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ProgressWidget.cshtml" model="trainingWidget" />
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ProgressWidget.cshtml" model="complianceWidget" />
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ProgressWidget.cshtml" model="actionWidget" />
+</div>
+
+<!-- Example 5: Progress from Percentage -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Progress Widget from Percentage (No Absolute Values)</div>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ProgressWidget.cshtml" model="percentageWidget" />
+</div>
+
+<!-- Skeleton Loading State Demo -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Skeleton Loading State</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6 col-md-12">
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_SkeletonProgressWidget.cshtml" />
+    </div>
+    <div class="col-xl-6 col-md-12">
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_SkeletonProgressWidget.cshtml" />
+    </div>
+</div>
+
+<!-- Code Examples -->
+<div class="row">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Usage Examples</div>
+            </div>
+            <div class="card-body">
+                <span class="d-block fw-semibold mb-2">1. Build Single Standard Progress Widget:</span>
+                <pre class="language-csharp"><code>var widget = ProgressWidgetExtensions.BuildProgressWidget(
+    title: "Training Completion",
+    currentValue: 150,
+    totalValue: 200,
+    description: "150 of 200 employees completed",
+    colorClass: "primary",
+    striped: true,
+    animated: false
+);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">2. Build Progress Widget with Icon:</span>
+                <pre class="language-csharp"><code>var widget = ProgressWidgetExtensions.BuildProgressWidgetWithIcon(
+    title: "Safety Training 2025",
+    currentValue: 175,
+    totalValue: 200,
+    icon: "ri-book-open-line",
+    description: "175 employees completed",
+    colorClass: "success"
+);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">3. Build Progress with Auto Color Thresholds:</span>
+                <pre class="language-csharp"><code>var widget = ProgressWidgetExtensions.BuildProgressWidgetWithThresholds(
+    title: "Overall Compliance",
+    currentValue: 95,
+    totalValue: 100,
+    thresholds: ProgressWidgetExtensions.GetStrictThresholds(),
+    description: "Excellent compliance"
+);
+
+// GetStrictThresholds() returns:
+// 0-70%: Danger (Red)
+// 70-90%: Warning (Orange)
+// 90-100%: Success (Green)</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">4. Pre-built Training Widget:</span>
+                <pre class="language-csharp"><code>var widget = ProgressWidgetExtensions.BuildTrainingProgressWidget(
+    completed: 180,
+    total: 200,
+    courseName: "Fire Safety Essentials"
+);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">5. Pre-built Compliance Widget:</span>
+                <pre class="language-csharp"><code>var widget = ProgressWidgetExtensions.BuildComplianceProgressWidget(
+    complianceName: "PPE",
+    compliantCount: 234,
+    totalCount: 250
+);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">6. Render in View:</span>
+                <pre class="language-html"><code>&lt;partial name="~/Views/Shared/Components/DashboardWidgets/_ProgressWidget.cshtml" model="widget" /&gt;</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Threshold Reference -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Threshold Presets Reference</div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <span class="d-block fw-semibold mb-2">GetDefaultThresholds()</span>
+                        <ul class="list-unstyled">
+                            <li><span class="badge bg-danger">0-50%</span> Poor</li>
+                            <li><span class="badge bg-warning">50-80%</span> Fair</li>
+                            <li><span class="badge bg-success">80-100%</span> Good</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="d-block fw-semibold mb-2">GetStrictThresholds()</span>
+                        <ul class="list-unstyled">
+                            <li><span class="badge bg-danger">0-70%</span> Non-Compliant</li>
+                            <li><span class="badge bg-warning">70-90%</span> Partial</li>
+                            <li><span class="badge bg-success">90-100%</span> Compliant</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="d-block fw-semibold mb-2">GetLenientThresholds()</span>
+                        <ul class="list-unstyled">
+                            <li><span class="badge bg-danger">0-30%</span> Low</li>
+                            <li><span class="badge bg-warning">30-60%</span> Medium</li>
+                            <li><span class="badge bg-success">60-100%</span> High</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,311 @@
+@using OSHManagement.Extensions.Dashboard
+@using OSHManagement.Models.ViewModels
+@using OSHManagement.Models.ViewModels.Dashboard
+
+@{
+    ViewData["Title"] = "List Widgets - Component Testing";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // LAYER 3: ALL LOGIC IN EXTENSION METHODS
+    
+    // Example 1: Recent Incidents Widget
+    var recentIncidents = new List<(string Title, string Location, string Severity, DateTime Date, int Id)>
+    {
+        ("Worker slipped on wet floor", "Main Workshop", "Minor", DateTime.Now.AddHours(-2), 1),
+        ("Chemical spill in storage area", "Storage Room B", "Major", DateTime.Now.AddHours(-5), 2),
+        ("Near miss with forklift", "Warehouse Zone 3", "Near Miss", DateTime.Now.AddDays(-1), 3),
+        ("Equipment malfunction", "Production Line 2", "Minor", DateTime.Now.AddDays(-2), 4),
+        ("Fire alarm false trigger", "Office Building", "Minor", DateTime.Now.AddDays(-3), 5)
+    };
+
+    var incidentsWidget = ListWidgetExtensions.BuildRecentIncidentsWidget(recentIncidents, maxItems: 5);
+
+    // Example 2: Recent Actions Widget
+    var recentActions = new List<(string Title, string AssignedTo, string Status, DateTime DueDate, int Id)>
+    {
+        ("Complete safety training", "John Doe", "In Progress", DateTime.Now.AddDays(3), 1),
+        ("Inspect fire extinguishers", "Jane Smith", "Pending", DateTime.Now.AddDays(1), 2),
+        ("Review incident report", "Mike Johnson", "Overdue", DateTime.Now.AddDays(-2), 3),
+        ("Update safety manual", "Sarah Williams", "Completed", DateTime.Now.AddDays(-5), 4),
+        ("Conduct PPE audit", "Tom Brown", "Pending", DateTime.Now.AddDays(7), 5)
+    };
+
+    var actionsWidget = ListWidgetExtensions.BuildRecentActionsWidget(recentActions, maxItems: 5);
+
+    // Example 3: Notifications Widget
+    var notifications = new List<(string Title, string Message, DateTime Date, bool IsRead, int Id)>
+    {
+        ("New incident reported", "Worker slipped on wet floor in Main Workshop", DateTime.Now.AddMinutes(-30), false, 1),
+        ("Action assigned to you", "Complete safety training by end of week", DateTime.Now.AddHours(-2), false, 2),
+        ("Training reminder", "Fire safety training tomorrow at 10:00 AM", DateTime.Now.AddHours(-5), true, 3),
+        ("Inspection completed", "Monthly fire extinguisher inspection completed", DateTime.Now.AddDays(-1), true, 4),
+        ("Document approved", "Updated safety manual has been approved", DateTime.Now.AddDays(-2), true, 5)
+    };
+
+    var notificationsWidget = ListWidgetExtensions.BuildNotificationsWidget(notifications, maxItems: 5);
+
+    // Example 4: Activity Timeline Widget
+    var activities = new List<(string Activity, string User, DateTime Date, string Icon)>
+    {
+        ("Incident reported", "John Doe", DateTime.Now.AddMinutes(-15), "ri-alert-line"),
+        ("Action completed", "Jane Smith", DateTime.Now.AddHours(-1), "ri-checkbox-circle-line"),
+        ("Document uploaded", "Mike Johnson", DateTime.Now.AddHours(-3), "ri-file-upload-line"),
+        ("Training completed", "Sarah Williams", DateTime.Now.AddHours(-5), "ri-book-open-line"),
+        ("Inspection scheduled", "Tom Brown", DateTime.Now.AddDays(-1), "ri-calendar-event-line")
+    };
+
+    var activityWidget = ListWidgetExtensions.BuildActivityTimelineWidget(activities, maxItems: 5);
+
+    // Example 5: Simple List Widget
+    var simpleItems = ListWidgetExtensions.BuildListItems(
+        titles: new List<string> { "Fire Extinguisher", "First Aid Kit", "Safety Helmet", "Eye Protection", "Hearing Protection" },
+        subtitles: new List<string> { "Due for inspection", "Restocking required", "In good condition", "Needs replacement", "Recently inspected" },
+        icons: new List<string> { "ri-fire-line", "ri-briefcase-4-line", "ri-hard-hat-line", "ri-eye-line", "ri-headphone-line" },
+        badges: new List<string> { "Urgent", "Low Stock", "OK", "Replace", "OK" },
+        timestamps: new List<string> { "2d ago", "1w ago", "3d ago", "5d ago", "1d ago" }
+    );
+
+    var simpleWidget = ListWidgetExtensions.BuildListWidget(
+        title: "Equipment Status",
+        items: simpleItems,
+        viewAllUrl: "/Equipment/Index",
+        maxItems: 5
+    );
+
+    // Example 6: Compact List Widget
+    var compactItems = ListWidgetExtensions.BuildListItems(
+        titles: new List<string> { 
+            "Safety Manual v2.3", 
+            "Incident Report Form", 
+            "PPE Guidelines", 
+            "Emergency Procedures",
+            "Training Materials"
+        }
+    );
+
+    var compactWidget = ListWidgetExtensions.BuildCompactListWidget(
+        title: "Recent Documents",
+        items: compactItems,
+        viewAllUrl: "/Document/Index",
+        maxItems: 5
+    );
+
+    // Example 7: Custom List Items
+    var customItems = new List<ListItemViewModel>
+    {
+        new() {
+            Title = "High Priority Hazard",
+            Subtitle = "Exposed electrical wiring in Workshop A",
+            Icon = "ri-error-warning-line",
+            IconColor = "danger",
+            Badge = "Critical",
+            BadgeColor = "danger",
+            Timestamp = "1h ago",
+            LinkUrl = "/Hazard/Details/1"
+        },
+        new() {
+            Title = "Scheduled Maintenance",
+            Subtitle = "Fire suppression system check",
+            Icon = "ri-tools-line",
+            IconColor = "info",
+            Badge = "Scheduled",
+            BadgeColor = "info",
+            Timestamp = "Tomorrow",
+            LinkUrl = "/Maintenance/Details/2"
+        },
+        new() {
+            Title = "Training Session",
+            Subtitle = "Emergency evacuation drill",
+            Icon = "ri-book-open-line",
+            IconColor = "success",
+            Badge = "Upcoming",
+            BadgeColor = "success",
+            Timestamp = "Next week",
+            LinkUrl = "/Training/Details/3"
+        }
+    };
+
+    var customWidget = ListWidgetExtensions.BuildListWidget(
+        title: "Important Updates",
+        items: customItems,
+        viewAllUrl: "/Dashboard/Updates"
+    );
+}
+
+<!-- Page Header -->
+<div class="page-header-breadcrumb mb-3">
+    <div class="d-flex align-center justify-content-between flex-wrap">
+        <h1 class="page-title fw-medium fs-18 mb-0">List Widgets Component Testing</h1>
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="/Dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active">List Widgets Testing</li>
+        </ol>
+    </div>
+</div>
+
+<!-- Example 1: Recent Incidents Widget -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Recent Incidents List Widget</div>
+            </div>
+        </div>
+    </div>
+    @* LAYER 2: VIEW USES PARTIAL *@
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ListWidget.cshtml" model="incidentsWidget" />
+</div>
+
+<!-- Example 2: Recent Actions Widget -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Recent Actions List Widget</div>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ListWidget.cshtml" model="actionsWidget" />
+</div>
+
+<!-- Example 3 & 4: Notifications and Activity Side by Side -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Notifications & Activity Timeline (With Timeline Styling)</div>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ListWidget.cshtml" model="notificationsWidget" />
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ActivityListWidget.cshtml" model="activityWidget" />
+</div>
+
+<!-- Example 5 & 6: Simple and Compact Lists -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Simple & Compact List Widgets</div>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ListWidget.cshtml" model="simpleWidget" />
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ListWidget.cshtml" model="compactWidget" />
+</div>
+
+<!-- Example 7: Custom List Widget -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Custom List Widget (Manual Items)</div>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ListWidget.cshtml" model="customWidget" />
+</div>
+
+<!-- Example 8: Activity Timeline Widget (Dedicated) -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Activity Timeline Widget (Timeline Style with Vertical Line)</div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-0">Same ViewModels and Extensions, but with timeline styling (colored dots + vertical line)</p>
+            </div>
+        </div>
+    </div>
+    <partial name="~/Views/Shared/Components/DashboardWidgets/_ActivityListWidget.cshtml" model="activityWidget" />
+</div>
+
+<!-- Skeleton Loading State Demo -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Skeleton Loading State</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6 col-md-12">
+        <partial name="~/Views/Shared/Components/DashboardWidgets/_SkeletonListWidget.cshtml" />
+    </div>
+</div>
+
+<!-- Code Examples -->
+<div class="row">
+    <div class="col-12">
+        <div class="card custom-card">
+            <div class="card-header">
+                <div class="card-title">Usage Examples</div>
+            </div>
+            <div class="card-body">
+                <span class="d-block fw-semibold mb-2">1. Pre-built Recent Incidents Widget:</span>
+                <pre class="language-csharp"><code>var incidents = new List&lt;(string Title, string Location, string Severity, DateTime Date, int Id)&gt;
+{
+    ("Worker slipped", "Workshop", "Minor", DateTime.Now, 1),
+    // ... more incidents
+};
+
+var widget = ListWidgetExtensions.BuildRecentIncidentsWidget(incidents, maxItems: 5);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">2. Pre-built Recent Actions Widget:</span>
+                <pre class="language-csharp"><code>var actions = new List&lt;(string Title, string AssignedTo, string Status, DateTime DueDate, int Id)&gt;
+{
+    ("Complete training", "John Doe", "Pending", DateTime.Now.AddDays(3), 1),
+    // ... more actions
+};
+
+var widget = ListWidgetExtensions.BuildRecentActionsWidget(actions, maxItems: 5);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">3. Simple List from Data:</span>
+                <pre class="language-csharp"><code>var items = ListWidgetExtensions.BuildListItems(
+    titles: new List&lt;string&gt; { "Item 1", "Item 2", "Item 3" },
+    subtitles: new List&lt;string&gt; { "Subtitle 1", "Subtitle 2", "Subtitle 3" },
+    icons: new List&lt;string&gt; { "ri-alert-line", "ri-todo-line", "ri-book-line" },
+    badges: new List&lt;string&gt; { "New", "Pending", "Done" }
+);
+
+var widget = ListWidgetExtensions.BuildListWidget(
+    title: "My List",
+    items: items,
+    viewAllUrl: "/Items/Index"
+);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">4. Custom List Items:</span>
+                <pre class="language-csharp"><code>var item = ListWidgetExtensions.BuildListItem(
+    title: "High Priority Hazard",
+    subtitle: "Exposed wiring in Workshop A",
+    icon: "ri-error-warning-line",
+    iconColor: "danger",
+    badge: "Critical",
+    badgeColor: "danger",
+    timestamp: "1h ago",
+    linkUrl: "/Hazard/Details/1"
+);
+
+var items = new List&lt;ListItemViewModel&gt; { item };
+var widget = ListWidgetExtensions.BuildListWidget("Important Updates", items);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">5. Activity Timeline (Same ViewModels, Timeline Styling):</span>
+                <pre class="language-csharp"><code>var activities = new List&lt;(string Activity, string User, DateTime Date, string Icon)&gt;
+{
+    ("Incident reported", "John Doe", DateTime.Now.AddMinutes(-15), "ri-alert-line"),
+    ("Action completed", "Jane Smith", DateTime.Now.AddHours(-1), "ri-checkbox-circle-line"),
+    // ... more activities
+};
+
+var widget = ListWidgetExtensions.BuildActivityTimelineWidget(activities, maxItems: 10);</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">6. Render List Widget:</span>
+                <pre class="language-html"><code>&lt;partial name="~/Views/Shared/Components/DashboardWidgets/_ListWidget.cshtml" model="widget" /&gt;</code></pre>
+
+                <span class="d-block fw-semibold mb-2 mt-3">7. Render Activity Timeline (with timeline styling):</span>
+                <pre class="language-html"><code>&lt;partial name="~/Views/Shared/Components/DashboardWidgets/_ActivityListWidget.cshtml" model="widget" /&gt;</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
