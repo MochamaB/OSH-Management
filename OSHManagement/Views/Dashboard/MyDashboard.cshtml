@@ -1,0 +1,234 @@
+@using OSHManagement.Extensions
+@using OSHManagement.Extensions.Dashboard
+@using OSHManagement.Models.ViewModels
+@using OSHManagement.Models.ViewModels.Dashboard
+@model MyDashboardViewModel
+
+@{
+    ViewData["Title"] = "My Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    
+    // === BUILD KPI CARDS (Actions, Incidents, Hazards, Teams) ===
+    var kpiCards = KPICardExtensions.BuildKPICardsRow(
+        titles: new List<string> { 
+            "My Open Actions", 
+            "Overdue Actions", 
+            "My Incidents",
+            "My Teams"
+        },
+        values: new List<string> {
+            Model.MyActions.Count.ToString(),
+            Model.OverdueActionsCount.ToString(),
+            Model.MyIncidents.Count.ToString(),
+            Model.MyTeams.Count.ToString()
+        },
+        icons: new List<string> {
+            "ri-task-line",
+            "ri-alert-line",
+            "ri-error-warning-line",
+            "ri-team-line"
+        },
+        colorThemes: new List<string> { "primary", "danger", "warning", "info" },
+        cardType: KPICardType.Standard
+    );
+    
+    // === BUILD TABLE WIDGET FOR MY ACTIONS ===
+    var actionsColumns = new List<TableColumnViewModel>
+    {
+        TableWidgetExtensions.BuildColumn("Action", "Description", ColumnType.Text, width: 35),
+        TableWidgetExtensions.BuildColumn("Type", "ActionType", ColumnType.Badge, width: 15),
+        TableWidgetExtensions.BuildColumn("Category", "Category", ColumnType.Badge, width: 20),
+        TableWidgetExtensions.BuildColumn("Due Date", "TargetDate", ColumnType.Date, width: 15),
+        TableWidgetExtensions.BuildColumn("Status", "Status", ColumnType.Badge, width: 15)
+    };
+    
+    var actionsRows = Model.MyActions.Select(a => TableWidgetExtensions.BuildRow(
+        data: new Dictionary<string, object>
+        {
+            { "Description", a.Description.Length > 50 ? a.Description.Substring(0, 50) + "..." : a.Description },
+            { "ActionType", new TableBadgeData { Text = a.ActionType, ColorClass = "primary" } },
+            { "Category", new TableBadgeData { Text = a.Category, ColorClass = "info" } },
+            { "TargetDate", a.TargetDate ?? (object)"N/A" },
+            { "Status", new TableBadgeData 
+                { 
+                    Text = a.Status, 
+                    ColorClass = a.Status == "Pending" ? "warning" : a.Status == "Completed" ? "success" : "primary" 
+                } 
+            }
+        },
+        linkUrl: $"/ControlActions/Details/{a.ActionId}",
+        id: a.ActionId.ToString()
+    )).ToList();
+    
+    var actionsTableWidget = TableWidgetExtensions.BuildTableWidget(
+        title: "My Action Items",
+        columns: actionsColumns,
+        rows: actionsRows,
+        viewAllUrl: "/ControlActions",
+        viewAllText: "View All Actions",
+        maxRows: 10
+    );
+    actionsTableWidget.Icon = "ri-task-line";
+    actionsTableWidget.EmptyMessage = "No action items assigned";
+    
+    // === BUILD LIST FOR MY INCIDENTS ===
+    var myIncidentsWidget = ListWidgetExtensions.BuildListWidget(
+        title: "My Recent Incidents",
+        items: Model.MyIncidents.Select(i => new ListItemViewModel
+        {
+            Title = i.Description,
+            Subtitle = $"{i.IncidentDate:MMM dd, yyyy} • {i.Severity} • {i.Location}",
+            Icon = "ri-alert-line",
+            IconColor = i.Severity == "Fatal" || i.Severity == "Major" ? "danger" : "warning",
+            Timestamp = i.IncidentDate.ToString("MMM dd, yyyy"),
+            Badge = i.Status,
+            BadgeColor = i.Status == "Closed" ? "success" : "warning",
+            LinkUrl = $"/Incidents/Details/{i.IncidentId}"
+        }).ToList()
+    );
+    
+    // === BUILD LIST FOR HAZARDS ===
+    var myHazardsWidget = ListWidgetExtensions.BuildListWidget(
+        title: "Recent Hazards",
+        items: Model.MyHazards.Select(h => new ListItemViewModel
+        {
+            Title = h.Description,
+            Subtitle = $"{h.IdentifiedDate:MMM dd, yyyy} • {h.Category}",
+            Icon = "ri-shield-alert-line",
+            IconColor = h.RiskLevel == "High" ? "danger" : h.RiskLevel == "Medium" ? "warning" : "info",
+            Timestamp = h.IdentifiedDate.ToString("MMM dd, yyyy"),
+            Badge = h.RiskLevel,
+            BadgeColor = h.RiskLevel == "High" ? "danger" : h.RiskLevel == "Medium" ? "warning" : "info",
+            LinkUrl = $"/Hazards/Details/{h.HazardId}"
+        }).ToList()
+    );
+}
+
+
+<!-- Welcome Banner -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card custom-card bg-primary-transparent">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <span class="avatar avatar-xl bg-primary me-3">
+                        <i class="ri-user-line fs-24"></i>
+                    </span>
+                    <div>
+                        <h6 class="mb-1 text-primary">Welcome back, @Model.Employee.FullName! 👋</h6>
+                        <p class="text-muted mb-0">
+                            @Model.Employee.Designation • @Model.Employee.DepartmentName • @Model.Employee.StationName
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Cards Row -->
+<div class="row mb-4">
+    @foreach (var card in kpiCards)
+    {
+       
+            <partial name="~/Views/Shared/Components/DashboardWidgets/_KPICard.cshtml" model="card" />
+       
+    }
+</div>
+
+<!-- Two Column Layout -->
+<div class="row">
+    
+    <!-- LEFT COLUMN (Main Content - 70%) -->
+    <div class="col-lg-8">
+        
+        <!-- My Actions Table -->
+        <div class="row mb-4">
+            <partial name="~/Views/Shared/Components/DashboardWidgets/_TableWidget.cshtml" model="actionsTableWidget" />
+        </div>
+        
+        <!-- My Recent Incidents -->
+        @if (Model.MyIncidents.Any())
+        {
+            <div class="row mb-4">
+                <partial name="~/Views/Shared/Components/DashboardWidgets/_ListWidget.cshtml" model="myIncidentsWidget" />
+            </div>
+        }
+        
+        <!-- Recent Hazards -->
+        @if (Model.MyHazards.Any())
+        {
+            <div class="row mb-4">
+                <partial name="~/Views/Shared/Components/DashboardWidgets/_ListWidget.cshtml" model="myHazardsWidget" />
+            </div>
+        }
+        
+    </div>
+    
+    <!-- RIGHT SIDEBAR (30%) -->
+    <div class="col-lg-4">
+        
+        <!-- Quick Actions Card -->
+       <div class="card custom-card mb-4">
+            <div class="card-header">
+                <div class="card-title">Quick Actions</div>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-column gap-2">
+                    <a href="/Incidents/Create" class="btn btn-danger align-self-start">
+                        <i class="ri-alert-line me-2"></i>Report Incident
+                    </a>
+                    <a href="/Hazards/Create" class="btn btn-warning align-self-start">
+                        <i class="ri-error-warning-line me-2"></i>Report Hazard
+                    </a>
+                    <a href="/ControlActions" class="btn btn-primary align-self-start">
+                        <i class="ri-task-line me-2"></i>View All Actions
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        
+        <!-- My Teams -->
+        <div class="card custom-card mb-4">
+            <div class="card-header justify-content-between">
+                <div class="card-title">My Teams & Committees</div>
+                @if (Model.MyTeams.Any())
+                {
+                    <span class="badge bg-primary">@Model.MyTeams.Count</span>
+                }
+            </div>
+            <div class="card-body">
+                @if (Model.MyTeams.Any())
+                {
+                    <ul class="list-unstyled mb-0">
+                        @foreach (var team in Model.MyTeams)
+                        {
+                            <li class="mb-3 pb-3 @(team != Model.MyTeams.Last() ? "border-bottom" : "")">
+                                <div class="d-flex align-items-center">
+                                    <span class="avatar avatar-md bg-primary-transparent me-2">
+                                        <i class="ri-team-line"></i>
+                                    </span>
+                                    <div class="flex-fill">
+                                        <div class="fw-semibold">@team.TeamName</div>
+                                        <small class="text-muted">@team.RoleName • @team.TeamType</small>
+                                        <small class="text-muted d-block">Since @team.AppointmentDate.ToString("MMM yyyy")</small>
+                                    </div>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-3">
+                        <i class="ri-team-line fs-40 opacity-50"></i>
+                        <p class="mb-0 mt-2">No team memberships</p>
+                    </div>
+                }
+            </div>
+        </div>
+        
+    </div>
+    
+</div>

@@ -86,6 +86,9 @@ builder.Services.AddScoped<IOrganizationService, OrganizationService>();
 builder.Services.AddScoped<IOrganizationalHierarchyService, OrganizationalHierarchyService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 
+// Register dashboard services
+builder.Services.AddScoped<OSHManagement.Services.Dashboards.MyDashboardService>();
+
 // Register security services
 builder.Services.AddDataProtection(); // ASP.NET Core Data Protection API
 builder.Services.AddSingleton<IEncryptionService, DataProtectionEncryptionService>();
